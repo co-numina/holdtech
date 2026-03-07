@@ -931,7 +931,7 @@ export default function Home() {
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <GitHubIcon size={20} />
             </a>
-            <a href="https://x.com/latebuild" target="_blank" rel="noopener" title="Twitter"
+            <a href="https://x.com/co_numina" target="_blank" rel="noopener" title="Twitter"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
@@ -1413,7 +1413,7 @@ export default function Home() {
             <a href="https://github.com/co-numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
               <GitHubIcon size={14} /> github
             </a>
-            <a href="https://x.com/latebuild" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
+            <a href="https://x.com/co_numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
               <XIcon size={14} /> twitter
             </a>
           </div>
