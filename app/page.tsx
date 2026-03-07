@@ -892,7 +892,7 @@ export default function Home() {
         </div>
 
         {/* ═══ SEARCH BAR ═══ */}
-        <div className="reveal" style={{ marginBottom: "32px" }}>
+        <div style={{ marginBottom: "32px" }}>
           <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
             <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center" }}>
               <div style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", display: "flex", zIndex: 2 }}>
