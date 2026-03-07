@@ -747,11 +747,41 @@ export default function Dashboard() {
                 Full scan with verdict, deep analysis, bundle detection, funding traces, and charts.
               </div>
               <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && scanInput.trim()) window.open(`/?mint=${scanInput.trim()}`, "_blank"); }} placeholder="Paste token mint address..." className="scan-input" spellCheck={false} />
-                <button onClick={() => { if (scanInput.trim()) window.open(`/?mint=${scanInput.trim()}`, "_blank"); }} disabled={!scanInput.trim()} className="btn-primary" style={{ ...M, padding: "13px 28px", fontSize: "12px", opacity: !scanInput.trim() ? 0.5 : 1 }}>FULL SCAN →</button>
+                <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleScan(); }} placeholder="Paste token mint address..." className="scan-input" spellCheck={false} />
+                <button onClick={handleScan} disabled={!scanInput.trim() || scanning} className="btn-primary" style={{ ...M, padding: "13px 28px", fontSize: "12px", opacity: (!scanInput.trim() || scanning) ? 0.5 : 1 }}>{scanning ? `${progress || "Scanning..."}` : "SCAN →"}</button>
               </div>
 
               {/* Recent scans for quick re-access */}
+              {/* ── Scan Result ── */}
+              {scanResult && (
+                <div style={{ ...card({ padding: "20px" }), borderLeft: `3px solid ${gc(scanResult.grade)}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
+                    <span style={{ ...M, fontSize: "32px", fontWeight: 900, color: gc(scanResult.grade) }}>{scanResult.grade}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ ...M, fontSize: "16px", fontWeight: 800 }}>{scanResult.symbol} <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-muted, #888)" }}>{scanResult.score}/100</span></div>
+                      <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)", fontFamily: "var(--mono)" }}>{scanResult.mint}</div>
+                    </div>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>+ Watch</button>
+                      <button onClick={() => window.open(`/?mint=${scanResult.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full View →</button>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "10px" }}>
+                    {[
+                      { label: "Holders", value: scanResult.holders.toLocaleString() },
+                      { label: "Fresh Wallets", value: `${scanResult.freshPct}%` },
+                      { label: "Top 5 Hold", value: `${scanResult.top5Pct}%` },
+                      { label: "Avg Age", value: `${scanResult.avgAge}d` },
+                    ].map(m => (
+                      <div key={m.label} style={{ padding: "8px 10px", background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(153,69,255,0.03)", borderRadius: "6px" }}>
+                        <div style={{ ...M, fontSize: "8px", fontWeight: 700, color: "var(--text-muted, #999)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{m.label}</div>
+                        <div style={{ ...M, fontSize: "16px", fontWeight: 800, marginTop: "2px" }}>{m.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {history.length > 0 && (
                 <div style={{ ...card({ padding: "20px" }) }}>
                   <div style={{ ...M, fontSize: "11px", fontWeight: 700, color: "var(--text-muted, #888)", marginBottom: "12px" }}>RECENT SCANS</div>
