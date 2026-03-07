@@ -291,31 +291,15 @@ export async function POST(req: NextRequest) {
       "39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg", // Raydium Authority
     ]);
 
-    // Detect pools: known programs + check if it's the largest holder with very high tx count
-    // Also check on-chain if the account is owned by a known AMM program
     const poolDetected = new Set<string>();
+    
+    // #1 holder is always the liquidity pool for graduated tokens
+    if (holders.length > 0) {
+      poolDetected.add(holders[0].owner);
+    }
     
     function isPoolOrProgram(address: string): boolean {
       return KNOWN_PROGRAMS.has(address) || poolDetected.has(address);
-    }
-    
-    // Pre-check: the #1 holder is almost always the liquidity pool
-    // Check if it's owned by a known AMM program
-    if (holders.length > 0) {
-      try {
-        const topInfo = await heliusRpc("getAccountInfo", [
-          holders[0].owner,
-          { encoding: "jsonParsed" },
-        ]);
-        const owner = topInfo?.value?.owner;
-        if (owner && (
-          KNOWN_PROGRAMS.has(owner) ||
-          owner === "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" ||
-          owner === "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
-        )) {
-          poolDetected.add(holders[0].owner);
-        }
-      } catch { /* skip */ }
     }
 
     // Step 4: Analyze wallets in parallel batches of 5
