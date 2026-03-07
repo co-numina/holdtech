@@ -564,9 +564,18 @@ export default function Home() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
       const data: AnalysisResult = await res.json();
       setResult(data);
-      // Patch holder count from analysis (more accurate than token-info API)
-      setTokenInfo(prev => prev ? { ...prev, holderCount: data.totalHolders || prev.holderCount } : prev);
       setProgress("Generating verdict...");
+
+      // Fire holder count fetch async (non-blocking, patches in when ready)
+      fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (d?.holderCount) {
+            setTokenInfo(prev => prev ? { ...prev, holderCount: d.holderCount } : prev);
+            setResult(prev => prev ? { ...prev, totalHolders: d.holderCount } : prev);
+          }
+        })
+        .catch(() => {});
 
       const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: data.totalHolders, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
       if (vRes.ok) setVerdict(await vRes.json());
