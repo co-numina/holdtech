@@ -127,12 +127,19 @@ async function fullScanToken(mint: string, baseUrl: string): Promise<{ holderCou
     // Step 1: Run the real analyze endpoint (top 20 holders)
     const analyzeRes = await fetch(`${baseUrl}/api/analyze`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-internal-key": "holdtech-trending-refresh" },
       body: JSON.stringify({ mint, limit: 20 }),
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(20000),
     });
-    if (!analyzeRes.ok) return null;
+    if (!analyzeRes.ok) {
+      console.log(`[trending] analyze failed for ${mint}: ${analyzeRes.status}`);
+      return null;
+    }
     const analyzeData = await analyzeRes.json();
+    if (analyzeData.error) {
+      console.log(`[trending] analyze error for ${mint}: ${analyzeData.error}`);
+      return null;
+    }
     if (!analyzeData.metrics) return null;
 
     // Step 2: Run ai-verdict on the results
@@ -186,19 +193,27 @@ export async function GET(req: NextRequest) {
   const baseUrl = req.nextUrl.origin;
 
   try {
-    // Fetch from all sources
+    // Fetch from all sources in parallel
     const [hot, live, graduated, active, boosted] = await Promise.all([
       getPumpHot(), getPumpLive(), getPumpGraduated(), getPumpMostTraded(), getDexBoosted(),
     ]);
 
-    let tokens: TrendingToken[] = [...hot, ...live, ...graduated, ...active, ...boosted];
+    // Interleave sources so dedup doesn't kill any one category
+    let tokens: TrendingToken[] = [];
+    const sources = [graduated, hot, boosted, active, live];
+    const maxLen = Math.max(...sources.map(s => s.length));
+    for (let i = 0; i < maxLen; i++) {
+      for (const src of sources) {
+        if (i < src.length) tokens.push(src[i]);
+      }
+    }
 
     // Deduplicate
     const seen = new Set<string>();
     tokens = tokens.filter(t => { if (seen.has(t.mint)) return false; seen.add(t.mint); return true; });
 
     // Run full scans — 3 at a time to respect Helius rate limits
-    const toScan = tokens.slice(0, 20);
+    const toScan = tokens.slice(0, 30);
     const scored: ScoredToken[] = [];
 
     for (let i = 0; i < toScan.length; i += 3) {
@@ -206,7 +221,10 @@ export async function GET(req: NextRequest) {
       const results = await Promise.allSettled(
         batch.map(async (token) => {
           const scanResult = await fullScanToken(token.mint, baseUrl);
-          if (!scanResult) return null;
+          if (!scanResult) {
+            // Keep token with unknown grade rather than dropping
+            return { ...token, holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 } as ScoredToken;
+          }
           return { ...token, ...scanResult } as ScoredToken;
         })
       );

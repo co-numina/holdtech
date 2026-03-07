@@ -176,14 +176,17 @@ export async function POST(req: NextRequest) {
 
     const analyzeLimit = Math.min(Math.max(reqLimit || 20, 10), 100);
 
-    // Rate limit: 10 scans per IP per minute
+    // Rate limit: 10 scans per IP per minute (skip for internal trending refresh)
+    const internalKey = req.headers.get("x-internal-key");
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    const rl = await rateLimit(`analyze:${ip}`, 10, 60);
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: "Rate limited — try again in a minute" },
-        { status: 429, headers: { "X-RateLimit-Remaining": "0" } }
-      );
+    if (internalKey !== "holdtech-trending-refresh") {
+      const rl = await rateLimit(`analyze:${ip}`, 10, 60);
+      if (!rl.allowed) {
+        return NextResponse.json(
+          { error: "Rate limited — try again in a minute" },
+          { status: 429, headers: { "X-RateLimit-Remaining": "0" } }
+        );
+      }
     }
 
     // Check cache first — full analysis results cached for 60s per mint+limit
