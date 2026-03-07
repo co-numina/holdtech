@@ -113,8 +113,8 @@ function shortenAddr(addr: string) { return addr.slice(0, 4) + "..." + addr.slic
 const T = {
   en: {
     subtitle: "SOLANA TOKEN INTELLIGENCE PLATFORM",
-    hero: "X-ray every token on",
-    heroHighlight: "Solana.",
+    hero: "The technology behind",
+    heroHighlight: "who's holding.",
     heroDesc: "Real-time bundler wallet tracking, coordinated buy alerts, holder quality analysis, and plain-English verdicts — all in one dashboard. Stop being the drillpig.",
     placeholder: "Paste token mint address...",
     analyze: "Analyze",
@@ -224,8 +224,8 @@ const T = {
   },
   zh: {
     subtitle: "SOLANA 代币情报平台",
-    hero: "透视Solana上的",
-    heroHighlight: "每一个代币。",
+    hero: "持有者背后的",
+    heroHighlight: "技术。",
     heroDesc: "实时捆绑者钱包追踪、协调买入警报、持有者质量分析和中文评估报告——一站式仪表盘。别再当drillpig了。",
     placeholder: "粘贴代币地址...",
     analyze: "分析",
