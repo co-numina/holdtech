@@ -11,7 +11,7 @@ interface TrendingToken {
   symbol: string;
   image: string | null;
   marketCap: number;
-  source: "pump_hot" | "pump_live" | "pump_graduated" | "pump_active" | "dex_boosted";
+  source: "pump_hot" | "pump_live" | "pump_graduated" | "pump_active" | "pump_volume" | "dex_boosted";
   boostAmount?: number;
 }
 
@@ -91,6 +91,25 @@ async function getPumpMostTraded(): Promise<TrendingToken[]> {
       image: c.image_uri || null,
       marketCap: Math.round(c.usd_market_cap || 0),
       source: "pump_active" as const,
+    }));
+  } catch { return []; }
+}
+
+async function getPumpHighVolume(): Promise<TrendingToken[]> {
+  try {
+    // Graduated tokens by highest mcap = highest volume proxy
+    const res = await fetch("https://frontend-api-v3.pump.fun/coins?limit=10&sort=market_cap&order=DESC&includeNsfw=false&complete=true", {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data || []).slice(0, 10).map((c: any) => ({
+      mint: c.mint,
+      name: c.name || "Unknown",
+      symbol: c.symbol || "???",
+      image: c.image_uri || null,
+      marketCap: Math.round(c.usd_market_cap || 0),
+      source: "pump_volume" as const,
     }));
   } catch { return []; }
 }
@@ -223,6 +242,9 @@ export async function GET(req: NextRequest) {
     }
     if (source === "all" || source === "pump_active") {
       tokens.push(...await getPumpMostTraded());
+    }
+    if (source === "all" || source === "pump_volume") {
+      tokens.push(...await getPumpHighVolume());
     }
     if (source === "all" || source === "dex_boosted") {
       tokens.push(...await getDexBoosted());
