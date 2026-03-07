@@ -59,12 +59,7 @@ function getShareCardUrl(r: ScanResult) {
   });
   return `/api/share-card?${p.toString()}`;
 }
-async function downloadShareCard(r: ScanResult) {
-  const url = getShareCardUrl(r);
-  const res = await fetch(url); const blob = await res.blob();
-  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-  a.download = `holdtech-${r.symbol}-${r.grade}${r.score}.png`; a.click(); URL.revokeObjectURL(a.href);
-}
+// Share card is shown via state in the component
 function getTier(b: number) { let t = TIERS[0]; for (const x of TIERS) { if (b >= x.min) t = x; } return t; }
 function timeAgo(ts: number) { const d = Date.now() - ts; if (d < 60000) return "just now"; if (d < 3600000) return `${Math.floor(d / 60000)}m ago`; if (d < 86400000) return `${Math.floor(d / 3600000)}h ago`; return `${Math.floor(d / 86400000)}d ago`; }
 function gc(g: string) { if (g?.startsWith("A")) return "#14F195"; if (g?.startsWith("B")) return "#4ade80"; if (g?.startsWith("C")) return "#eab308"; if (g?.startsWith("D")) return "#f97316"; return "#ef4444"; }
@@ -100,6 +95,8 @@ export default function Dashboard() {
   const [tokenPrices, setTokenPrices] = useState<Record<string, TokenPrice>>({});
   const [expandedFeedItem, setExpandedFeedItem] = useState<string | null>(null);
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
+  const [shareCard, setShareCard] = useState<{ url: string; symbol: string } | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const [inlineScanResult, setInlineScanResult] = useState<ScanResult | null>(null);
   const [inlineScanning, setInlineScanning] = useState(false);
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
@@ -818,7 +815,7 @@ export default function Dashboard() {
                       </div>
                       <div style={{ display: "flex", gap: "6px" }}>
                         <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>+ Watch</button>
-                        <button onClick={() => downloadShareCard(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
+                        <button onClick={() => setShareCard({ url: getShareCardUrl(scanResult), symbol: scanResult.symbol })} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
                         <button onClick={() => window.open(`/?mint=${scanResult.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
                       </div>
                     </div>
@@ -1050,7 +1047,7 @@ export default function Dashboard() {
                             </div>
                           )}
                           <div style={{ display: "flex", gap: "6px" }}>
-                            <button onClick={() => downloadShareCard(h)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
+                            <button onClick={() => setShareCard({ url: getShareCardUrl(h), symbol: h.symbol })} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
                             <button onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
                           </div>
                         </div>
@@ -1311,6 +1308,38 @@ export default function Dashboard() {
           .metrics-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
+
+      {/* Share Card Modal */}
+      {shareCard && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={() => { setShareCard(null); setShareCopied(false); }}>
+          <div style={{ background: darkMode ? "#1a1a2e" : "#fff", borderRadius: "16px", padding: "20px", maxWidth: "660px", width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+              <span style={{ ...M, fontSize: "14px", fontWeight: 800 }}>Share Card — ${shareCard.symbol}</span>
+              <button onClick={() => { setShareCard(null); setShareCopied(false); }} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-muted, #888)" }}>✕</button>
+            </div>
+            <img src={shareCard.url} alt={`${shareCard.symbol} scan card`} style={{ width: "100%", borderRadius: "10px", border: "1px solid rgba(153,69,255,0.15)" }} />
+            <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
+              <button onClick={async () => {
+                try {
+                  const res = await fetch(shareCard.url);
+                  const blob = await res.blob();
+                  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+                  setShareCopied(true); setTimeout(() => setShareCopied(false), 2000);
+                } catch { /* fallback: download */ const res = await fetch(shareCard.url); const blob = await res.blob(); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `holdtech-${shareCard.symbol}.png`; a.click(); }
+              }} style={{ ...M, flex: 1, padding: "10px", background: shareCopied ? "rgba(20,241,149,0.15)" : "rgba(153,69,255,0.1)", color: shareCopied ? "#14F195" : "#9945FF", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+                {shareCopied ? "✓ Copied to clipboard" : "📋 Copy Image"}
+              </button>
+              <button onClick={async () => {
+                const res = await fetch(shareCard.url); const blob = await res.blob();
+                const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+                a.download = `holdtech-${shareCard.symbol}.png`; a.click(); URL.revokeObjectURL(a.href);
+              }} style={{ ...M, padding: "10px 20px", background: "rgba(20,241,149,0.1)", color: "#14F195", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>
+                ⬇ Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
