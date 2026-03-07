@@ -1,0 +1,133 @@
+#holderscope-badge {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  animation: hs-slide-in 0.3s ease-out;
+}
+
+@keyframes hs-slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.hs-badge-inner {
+  background: rgba(240, 240, 246, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(153, 69, 255, 0.15);
+  border-radius: 14px;
+  padding: 14px 16px;
+  min-width: 220px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(153, 69, 255, 0.06);
+}
+
+.hs-badge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.hs-logo {
+  font-size: 10px;
+  font-weight: 700;
+  color: #9945FF;
+  letter-spacing: 0.05em;
+  font-family: 'Courier New', monospace;
+}
+
+.hs-grade {
+  font-family: 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 6px;
+}
+
+.hs-scanning {
+  font-size: 11px;
+  color: #9945FF;
+  font-family: 'Courier New', monospace;
+  animation: hs-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes hs-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.hs-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.hs-metric {
+  display: flex;
+  flex-direction: column;
+  background: rgba(153, 69, 255, 0.04);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.hs-label {
+  font-size: 8px;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 0.05em;
+  font-family: 'Courier New', monospace;
+}
+
+.hs-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1a2e;
+  font-family: 'Courier New', monospace;
+  margin-top: 1px;
+}
+
+.hs-full-link {
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  color: #9945FF;
+  text-decoration: none;
+  font-weight: 600;
+  padding-top: 8px;
+  border-top: 1px solid rgba(153, 69, 255, 0.08);
+}
+
+.hs-full-link:hover {
+  text-decoration: underline;
+}
+
+/* Dark site overrides (pump.fun, dexscreener use dark themes) */
+@media (prefers-color-scheme: dark) {
+  .hs-badge-inner {
+    background: rgba(26, 26, 46, 0.95);
+    border-color: rgba(153, 69, 255, 0.25);
+  }
+  .hs-val { color: #e8e8f0; }
+  .hs-metric { background: rgba(153, 69, 255, 0.08); }
+}
+
+/* Force dark on known dark sites */
+:root[data-theme="dark"] #holderscope-badge .hs-badge-inner,
+body.dark #holderscope-badge .hs-badge-inner,
+body[data-theme="dark"] #holderscope-badge .hs-badge-inner {
+  background: rgba(26, 26, 46, 0.95);
+  border-color: rgba(153, 69, 255, 0.25);
+}
+:root[data-theme="dark"] #holderscope-badge .hs-val,
+body.dark #holderscope-badge .hs-val,
+body[data-theme="dark"] #holderscope-badge .hs-val {
+  color: #e8e8f0;
+}
+:root[data-theme="dark"] #holderscope-badge .hs-metric,
+body.dark #holderscope-badge .hs-metric,
+body[data-theme="dark"] #holderscope-badge .hs-metric {
+  background: rgba(153, 69, 255, 0.08);
+}

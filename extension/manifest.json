@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "HolderScope",
+  "version": "1.0.0",
+  "description": "X-ray any Solana token's holder quality. Stop being the drillpig.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://holder-quality.vercel.app/*"
+  ],
+  "action": {
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://pump.fun/*",
+        "https://www.pump.fun/*",
+        "https://dexscreener.com/solana/*",
+        "https://birdeye.so/token/*",
+        "https://solscan.io/token/*",
+        "https://www.defined.fi/sol/*"
+      ],
+      "js": ["src/content.js"],
+      "css": ["src/content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
