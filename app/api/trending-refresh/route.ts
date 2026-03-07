@@ -138,8 +138,8 @@ export async function GET(req: NextRequest) {
 
     console.log(`[trending] ${tokens.length} unique tokens from ${sources.map(s => s.length).join('+')} sources`);
 
-    // Run full scans — 2 at a time (each scan does ~30+ RPC calls)
-    const toScan = tokens.slice(0, 25);
+    // Run full scans — 2 at a time, 10 holders each to fit in 60s timeout
+    const toScan = tokens.slice(0, 12);
     const scored: ScoredToken[] = [];
 
     for (let i = 0; i < toScan.length; i += 2) {
@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
       const results = await Promise.allSettled(
         batch.map(async (token) => {
           try {
-            const scanResult = await runScan(token.mint, 20);
+            const scanResult = await runScan(token.mint, 10);
             if (!scanResult) {
               console.log(`[trending] scan returned null for ${token.symbol} (${token.mint.slice(0,8)})`);
               return { ...token, holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 } as ScoredToken;
@@ -176,6 +176,14 @@ export async function GET(req: NextRequest) {
       );
       for (const r of results) {
         if (r.status === "fulfilled" && r.value) scored.push(r.value);
+      }
+    }
+
+    // Add remaining unscanned tokens
+    const scannedMints = new Set(scored.map(t => t.mint));
+    for (const token of tokens) {
+      if (!scannedMints.has(token.mint)) {
+        scored.push({ ...token, holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 });
       }
     }
 
