@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" aria-hidden="true">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a14"/>
+      <stop offset="100%" stop-color="#12111f"/>
+    </linearGradient>
+    <linearGradient id="sol" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9945FF"/>
+      <stop offset="100%" stop-color="#14F195"/>
+    </linearGradient>
+    <linearGradient id="tier1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(153,69,255,0.15)"/>
+      <stop offset="100%" stop-color="rgba(153,69,255,0.05)"/>
+    </linearGradient>
+    <linearGradient id="tier2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(20,241,149,0.12)"/>
+      <stop offset="100%" stop-color="rgba(20,241,149,0.04)"/>
+    </linearGradient>
+    <linearGradient id="tier3" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(234,179,8,0.12)"/>
+      <stop offset="100%" stop-color="rgba(234,179,8,0.04)"/>
+    </linearGradient>
+    <linearGradient id="burn" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="rgba(239,68,68,0.15)"/>
+      <stop offset="100%" stop-color="rgba(239,68,68,0.05)"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="1600" fill="url(#bg)"/>
+
+  <!-- Subtle grid -->
+  <g opacity="0.03" stroke="#9945FF" stroke-width="0.5">
+    <line x1="0" y1="200" x2="1200" y2="200"/>
+    <line x1="0" y1="400" x2="1200" y2="400"/>
+    <line x1="0" y1="600" x2="1200" y2="600"/>
+    <line x1="0" y1="800" x2="1200" y2="800"/>
+    <line x1="0" y1="1000" x2="1200" y2="1000"/>
+    <line x1="0" y1="1200" x2="1200" y2="1200"/>
+    <line x1="0" y1="1400" x2="1200" y2="1400"/>
+    <line x1="200" y1="0" x2="200" y2="1600"/>
+    <line x1="400" y1="0" x2="400" y2="1600"/>
+    <line x1="600" y1="0" x2="600" y2="1600"/>
+    <line x1="800" y1="0" x2="800" y2="1600"/>
+    <line x1="1000" y1="0" x2="1000" y2="1600"/>
+  </g>
+
+  <!-- Ambient glow -->
+  <circle cx="600" cy="200" r="300" fill="#9945FF" opacity="0.04" filter="url(#glow)"/>
+  <circle cx="900" cy="1200" r="250" fill="#14F195" opacity="0.03" filter="url(#glow)"/>
+
+  <!-- Header shield icon -->
+  <g transform="translate(600, 90)" text-anchor="middle">
+    <text fill="url(#sol)" font-family="system-ui, -apple-system, sans-serif" font-size="48" font-weight="900" y="0">🛡️</text>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="170" text-anchor="middle" fill="url(#sol)" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="900" letter-spacing="-2">$HOLDTECH</text>
+  <text x="600" y="215" text-anchor="middle" fill="#888" font-family="ui-monospace, monospace" font-size="20" letter-spacing="4">HOLDER QUALITY INTELLIGENCE</text>
+
+  <!-- Divider -->
+  <line x1="400" y1="250" x2="800" y2="250" stroke="url(#sol)" stroke-width="2" opacity="0.3"/>
+
+  <!-- What it does section -->
+  <text x="80" y="310" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="800">WHAT IT DOES</text>
+  
+  <g transform="translate(80, 340)">
+    <rect width="1040" height="120" rx="16" fill="rgba(153,69,255,0.06)" stroke="rgba(153,69,255,0.15)" stroke-width="1"/>
+    <text x="30" y="38" fill="#ccc" font-family="system-ui, sans-serif" font-size="20">Paste any Solana CA → full holderbase analysis in seconds</text>
+    <text x="30" y="70" fill="#888" font-family="ui-monospace, monospace" font-size="16">wallet age · bundler detection · funding clusters · sybil patterns</text>
+    <text x="30" y="100" fill="#888" font-family="ui-monospace, monospace" font-size="16">fresh wallet % · activity scoring · A-F grade · shareable cards</text>
+  </g>
+
+  <!-- Burn mechanism -->
+  <text x="80" y="530" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="800">🔥 BURN FLYWHEEL</text>
+
+  <g transform="translate(80, 560)">
+    <rect width="1040" height="140" rx="16" fill="url(#burn)" stroke="rgba(239,68,68,0.2)" stroke-width="1"/>
+    <text x="30" y="38" fill="#ef4444" font-family="system-ui, sans-serif" font-size="22" font-weight="700">Every deep scan burns $HOLDTECH</text>
+    <text x="30" y="72" fill="#ccc" font-family="system-ui, sans-serif" font-size="18">More usage → less supply → price follows product</text>
+    <text x="30" y="105" fill="#888" font-family="ui-monospace, monospace" font-size="15">scans increase → tokens burn → supply shrinks → value grows → more users</text>
+  </g>
+
+  <!-- Hold tiers -->
+  <text x="80" y="775" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="800">HOLD TIERS</text>
+
+  <!-- Tier 1 -->
+  <g transform="translate(80, 800)">
+    <rect width="1040" height="90" rx="14" fill="url(#tier1)" stroke="rgba(153,69,255,0.2)" stroke-width="1"/>
+    <text x="30" y="32" fill="#9945FF" font-family="system-ui, sans-serif" font-size="18" font-weight="800">🥉 100,000 $HOLDTECH</text>
+    <text x="30" y="62" fill="#ccc" font-family="system-ui, sans-serif" font-size="18">Deep scans + bundle detection + scan history</text>
+  </g>
+
+  <!-- Tier 2 -->
+  <g transform="translate(80, 905)">
+    <rect width="1040" height="90" rx="14" fill="url(#tier2)" stroke="rgba(20,241,149,0.2)" stroke-width="1"/>
+    <text x="30" y="32" fill="#14F195" font-family="system-ui, sans-serif" font-size="18" font-weight="800">🥈 500,000 $HOLDTECH</text>
+    <text x="30" y="62" fill="#ccc" font-family="system-ui, sans-serif" font-size="18">API access + real-time alerts</text>
+  </g>
+
+  <!-- Tier 3 -->
+  <g transform="translate(80, 1010)">
+    <rect width="1040" height="90" rx="14" fill="url(#tier3)" stroke="rgba(234,179,8,0.2)" stroke-width="1"/>
+    <text x="30" y="32" fill="#eab308" font-family="system-ui, sans-serif" font-size="18" font-weight="800">🥇 1,000,000 $HOLDTECH</text>
+    <text x="30" y="62" fill="#ccc" font-family="system-ui, sans-serif" font-size="18">Watchlists + Telegram bot + priority scanning</text>
+  </g>
+
+  <!-- API section -->
+  <text x="80" y="1175" fill="#fff" font-family="system-ui, sans-serif" font-size="28" font-weight="800">⚡ PUBLIC API</text>
+
+  <g transform="translate(80, 1200)">
+    <rect width="1040" height="100" rx="14" fill="rgba(153,69,255,0.06)" stroke="rgba(153,69,255,0.12)" stroke-width="1"/>
+    <text x="30" y="35" fill="#ccc" font-family="system-ui, sans-serif" font-size="19">Token-gated programmatic access for developers and traders</text>
+    <text x="30" y="68" fill="#888" font-family="ui-monospace, monospace" font-size="15">scan any holderbase from your bots · build on holdtech data</text>
+  </g>
+
+  <!-- Chrome extension -->
+  <g transform="translate(80, 1325)">
+    <rect width="1040" height="70" rx="14" fill="rgba(20,241,149,0.06)" stroke="rgba(20,241,149,0.1)" stroke-width="1"/>
+    <text x="30" y="28" fill="#14F195" font-family="system-ui, sans-serif" font-size="16" font-weight="700">CHROME EXTENSION LIVE</text>
+    <text x="30" y="52" fill="#888" font-family="system-ui, sans-serif" font-size="15">Scores injected on pump.fun · DexScreener · Birdeye · Solscan</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="80" y1="1440" x2="1120" y2="1440" stroke="rgba(153,69,255,0.15)" stroke-width="1"/>
+  <text x="600" y="1485" text-anchor="middle" fill="url(#sol)" font-family="ui-monospace, monospace" font-size="22" font-weight="700">holder-quality.vercel.app</text>
+  <text x="600" y="1520" text-anchor="middle" fill="#555" font-family="ui-monospace, monospace" font-size="14">the product is shipped · the flywheel is burning 🛡️</text>
+
+  <!-- CA at bottom -->
+  <text x="600" y="1565" text-anchor="middle" fill="#444" font-family="ui-monospace, monospace" font-size="12">CA: ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump</text>
+</svg>

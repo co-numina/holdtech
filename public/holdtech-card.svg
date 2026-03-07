@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1600" width="1200" height="1600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#080812"/>
+      <stop offset="100%" stop-color="#100e1c"/>
+    </linearGradient>
+    <linearGradient id="solana" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9945FF"/>
+      <stop offset="100%" stop-color="#14F195"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9945FF"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="burnGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ef4444"/>
+      <stop offset="50%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#eab308"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="30" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="roundCard">
+      <rect width="1200" height="1600" rx="32"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#roundCard)">
+    <!-- Background -->
+    <rect width="1200" height="1600" fill="url(#bg)"/>
+    
+    <!-- Subtle grid -->
+    <g opacity="0.03" stroke="#9945FF" stroke-width="1">
+      <line x1="0" y1="200" x2="1200" y2="200"/><line x1="0" y1="400" x2="1200" y2="400"/>
+      <line x1="0" y1="600" x2="1200" y2="600"/><line x1="0" y1="800" x2="1200" y2="800"/>
+      <line x1="0" y1="1000" x2="1200" y2="1000"/><line x1="0" y1="1200" x2="1200" y2="1200"/>
+      <line x1="0" y1="1400" x2="1200" y2="1400"/>
+      <line x1="200" y1="0" x2="200" y2="1600"/><line x1="400" y1="0" x2="400" y2="1600"/>
+      <line x1="600" y1="0" x2="600" y2="1600"/><line x1="800" y1="0" x2="800" y2="1600"/>
+      <line x1="1000" y1="0" x2="1000" y2="1600"/>
+    </g>
+
+    <!-- Ambient glow -->
+    <circle cx="150" cy="250" r="250" fill="#9945FF" opacity="0.05" filter="url(#glow)"/>
+    <circle cx="1050" cy="1350" r="200" fill="#14F195" opacity="0.03" filter="url(#glow)"/>
+
+    <!-- Top accent bar -->
+    <rect y="0" width="1200" height="4" fill="url(#solana)"/>
+
+    <!-- ═══ HEADER — centered ═══ -->
+    <g transform="translate(552, 55)">
+      <path d="M48 6L10 22v29c0 27 16.3 52 38.4 57.6 22-5.6 38.4-30.6 38.4-57.6V22L48 6z" fill="none" stroke="url(#solana)" stroke-width="3.5"/>
+      <path d="M48 16L18 29v21c0 22.4 13.6 43.4 30 48 16.4-4.6 30-25.6 30-48V29L48 16z" fill="#9945FF" opacity="0.12"/>
+      <text x="48" y="66" text-anchor="middle" fill="url(#solana)" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900">H</text>
+    </g>
+
+    <text x="600" y="190" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="60" font-weight="900" letter-spacing="5">$HOLDTECH</text>
+    <text x="600" y="232" text-anchor="middle" fill="#9945FF" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="600" letter-spacing="5">HOLDER QUALITY INTELLIGENCE FOR SOLANA</text>
+
+    <!-- Divider -->
+    <line x1="300" y1="270" x2="900" y2="270" stroke="url(#solana)" stroke-width="1" opacity="0.25"/>
+
+    <!-- ═══ DESCRIPTION — left aligned at x=120 ═══ -->
+    <text x="120" y="330" fill="#e8e8f0" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="500" opacity="0.95">
+      <tspan x="120" dy="0">The utility token powering the holder quality scanner</tspan>
+      <tspan x="120" dy="38">the Solana trenches needed.</tspan>
+    </text>
+
+    <text x="120" y="425" fill="#b0b0c0" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="400">
+      <tspan x="120" dy="0">Paste any CA → wallet age, bundler detection,</tspan>
+      <tspan x="120" dy="30">funding clusters, sybil patterns. The full autopsy.</tspan>
+    </text>
+
+    <!-- ═══ BURN BOX ═══ -->
+    <rect x="120" y="510" width="960" height="95" rx="14" fill="#160e22" stroke="url(#burnGrad)" stroke-width="1.5"/>
+    <text x="170" y="550" fill="url(#burnGrad)" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="800" letter-spacing="2">🔥  BURN-TO-SCAN</text>
+    <text x="170" y="582" fill="#c8c8d4" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="400">Every deep scan burns $HOLDTECH. More usage = less supply.</text>
+
+    <!-- ═══ HOLD TIERS ═══ -->
+    <text x="120" y="670" fill="#14F195" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" letter-spacing="4">HOLD TIERS</text>
+
+    <!-- Tier 1 — Bronze -->
+    <rect x="120" y="695" width="960" height="80" rx="12" fill="#110e1a" stroke="#9945FF" stroke-width="1" opacity="0.6"/>
+    <text x="165" y="742" fill="#cd7f32" font-family="system-ui, -apple-system, sans-serif" font-size="26">🥉</text>
+    <text x="210" y="742" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800">100K</text>
+    <text x="340" y="742" fill="#b0b0c0" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="400">Deep scans + bundle detection + scan history</text>
+
+    <!-- Tier 2 — Silver -->
+    <rect x="120" y="790" width="960" height="80" rx="12" fill="#12101d" stroke="#9945FF" stroke-width="1" opacity="0.7"/>
+    <text x="165" y="837" fill="#C0C0C0" font-family="system-ui, -apple-system, sans-serif" font-size="26">🥈</text>
+    <text x="210" y="837" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800">500K</text>
+    <text x="340" y="837" fill="#b0b0c0" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="400">API access + real-time alerts</text>
+
+    <!-- Tier 3 — Gold -->
+    <rect x="120" y="885" width="960" height="80" rx="12" fill="#141022" stroke="#9945FF" stroke-width="1" opacity="0.8"/>
+    <text x="165" y="932" fill="#FFD700" font-family="system-ui, -apple-system, sans-serif" font-size="26">🥇</text>
+    <text x="210" y="932" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800">1M</text>
+    <text x="340" y="932" fill="#b0b0c0" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="400">Watchlists + Telegram bot + priority scanning</text>
+
+    <!-- ═══ API SECTION ═══ -->
+    <text x="120" y="1035" fill="#14F195" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" letter-spacing="4">PUBLIC API</text>
+
+    <rect x="120" y="1058" width="960" height="85" rx="12" fill="#0a0a14" stroke="#14F195" stroke-width="1" opacity="0.6"/>
+    <text x="160" y="1093" fill="#14F195" font-family="'SF Mono', 'Fira Code', 'Courier New', monospace" font-size="17" font-weight="600">GET  /api/v1/scan/{mint}</text>
+    <text x="160" y="1122" fill="#808090" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="400">Token-gated programmatic access. Build on HoldTech data.</text>
+
+    <!-- ═══ CHROME EXTENSION ═══ -->
+    <text x="120" y="1210" fill="#14F195" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" letter-spacing="4">CHROME EXTENSION — LIVE</text>
+
+    <text x="120" y="1250" fill="#909098" font-family="system-ui, -apple-system, sans-serif" font-size="17" font-weight="400">Injects holder quality scores directly on:</text>
+
+    <g transform="translate(120, 1275)">
+      <rect width="220" height="44" rx="10" fill="#141020" stroke="#9945FF" stroke-width="1" opacity="0.5"/>
+      <text x="110" y="28" text-anchor="middle" fill="#c0c0cc" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600">pump.fun</text>
+    </g>
+    <g transform="translate(360, 1275)">
+      <rect width="220" height="44" rx="10" fill="#141020" stroke="#9945FF" stroke-width="1" opacity="0.5"/>
+      <text x="110" y="28" text-anchor="middle" fill="#c0c0cc" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600">DexScreener</text>
+    </g>
+    <g transform="translate(600, 1275)">
+      <rect width="220" height="44" rx="10" fill="#141020" stroke="#9945FF" stroke-width="1" opacity="0.5"/>
+      <text x="110" y="28" text-anchor="middle" fill="#c0c0cc" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600">Birdeye</text>
+    </g>
+    <g transform="translate(840, 1275)">
+      <rect width="220" height="44" rx="10" fill="#141020" stroke="#9945FF" stroke-width="1" opacity="0.5"/>
+      <text x="110" y="28" text-anchor="middle" fill="#c0c0cc" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="600">Solscan</text>
+    </g>
+
+    <!-- ═══ BOTTOM CTA ═══ -->
+    <line x1="300" y1="1390" x2="900" y2="1390" stroke="url(#solana)" stroke-width="1" opacity="0.2"/>
+
+    <text x="600" y="1445" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="21" font-weight="700" letter-spacing="1.5">THE PRODUCT IS SHIPPED. THE FLYWHEEL IS BURNING.</text>
+
+    <rect x="370" y="1475" width="460" height="54" rx="14" fill="url(#accent)"/>
+    <text x="600" y="1510" text-anchor="middle" fill="white" font-family="system-ui, -apple-system, sans-serif" font-size="19" font-weight="800" letter-spacing="1">holder-quality.vercel.app</text>
+
+    <!-- Bottom accent bar -->
+    <rect y="1596" width="1200" height="4" fill="url(#solana)"/>
+  </g>
+</svg>
