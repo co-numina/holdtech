@@ -1,13 +1,13 @@
 # Chrome Web Store Listing
 
 ## Name
-HolderScope — Solana Token X-Ray
+HoldTech — Solana Token X-Ray
 
 ## Short Description (132 chars max)
 X-ray any Solana token's holder quality. Detect bundles, fresh wallets, and concentration before you ape. Stop being the drillpig.
 
 ## Detailed Description
-HolderScope analyzes Solana token holder bases in seconds — right from your browser.
+HoldTech analyzes Solana token holder bases in seconds — right from your browser.
 
 🔬 WHAT IT DOES
 • Scans the top holders of any Solana token
@@ -31,13 +31,13 @@ HolderScope analyzes Solana token holder bases in seconds — right from your br
 ⚡ FEATURES
 • Works with single-page apps (SPA-aware navigation detection)
 • Results cached for 5 minutes to minimize API calls
-• Click "Full analysis →" to see detailed charts, deep scan, and AI verdict on holderscope.xyz
+• Click "Full analysis →" to see detailed charts, deep scan, and AI verdict on holdtech.xyz
 • Light and dark mode aware
 
 🛡️ PRIVACY
 • No data collected. No tracking. No accounts required.
-• Only calls the HolderScope API when you scan a token or visit a supported page.
-• Open source: github.com/co-numina/holder-scope
+• Only calls the HoldTech API when you scan a token or visit a supported page.
+• Open source: github.com/co-numina/holdtech
 
 Built by degens, for degens. Know before you ape. 🔱
 
@@ -51,4 +51,4 @@ English
 https://holder-quality.vercel.app
 
 ## Privacy Policy
-No personal data is collected, stored, or transmitted. The extension only communicates with the HolderScope API (holder-quality.vercel.app) to fetch token analysis results. No cookies, no tracking, no analytics.
+No personal data is collected, stored, or transmitted. The extension only communicates with the HoldTech API (holder-quality.vercel.app) to fetch token analysis results. No cookies, no tracking, no analytics.

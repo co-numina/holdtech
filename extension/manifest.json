@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "HolderScope",
+  "name": "HoldTech",
   "version": "1.0.0",
   "description": "X-ray any Solana token's holder quality. Stop being the drillpig.",
   "permissions": ["storage"],

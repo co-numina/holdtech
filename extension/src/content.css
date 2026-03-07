@@ -1,4 +1,4 @@
-#holderscope-badge {
+#holdtech-badge {
   position: fixed;
   bottom: 16px;
   right: 16px;
@@ -115,19 +115,19 @@
 }
 
 /* Force dark on known dark sites */
-:root[data-theme="dark"] #holderscope-badge .hs-badge-inner,
-body.dark #holderscope-badge .hs-badge-inner,
-body[data-theme="dark"] #holderscope-badge .hs-badge-inner {
+:root[data-theme="dark"] #holdtech-badge .hs-badge-inner,
+body.dark #holdtech-badge .hs-badge-inner,
+body[data-theme="dark"] #holdtech-badge .hs-badge-inner {
   background: rgba(26, 26, 46, 0.95);
   border-color: rgba(153, 69, 255, 0.25);
 }
-:root[data-theme="dark"] #holderscope-badge .hs-val,
-body.dark #holderscope-badge .hs-val,
-body[data-theme="dark"] #holderscope-badge .hs-val {
+:root[data-theme="dark"] #holdtech-badge .hs-val,
+body.dark #holdtech-badge .hs-val,
+body[data-theme="dark"] #holdtech-badge .hs-val {
   color: #e8e8f0;
 }
-:root[data-theme="dark"] #holderscope-badge .hs-metric,
-body.dark #holderscope-badge .hs-metric,
-body[data-theme="dark"] #holderscope-badge .hs-metric {
+:root[data-theme="dark"] #holdtech-badge .hs-metric,
+body.dark #holdtech-badge .hs-metric,
+body[data-theme="dark"] #holdtech-badge .hs-metric {
   background: rgba(153, 69, 255, 0.08);
 }

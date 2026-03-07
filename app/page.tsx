@@ -124,7 +124,7 @@ const T = {
     problemTitle: "The problem",
     problemDesc: 'Most tokens look organic on the surface. 500 holders, growing chart, active Twitter community. But underneath: <strong style="color: var(--text)">70% are fresh wallets from the same funding source</strong>, bundled in the same slot, holding nothing else. The chart is manufactured. The "community" is one person with 50 wallets. You just became their drillpig.',
     detectTitle: "What we detect",
-    detectDesc: 'HolderScope analyzes every wallet individually. <strong style="color: var(--text)">Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.',
+    detectDesc: 'HoldTech analyzes every wallet individually. <strong style="color: var(--text)">Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.',
     verdictTitle: "Plain-English verdict",
     verdictDesc: 'No jargon, no ambiguous charts. You get a letter grade (A–F), a numerical score, specific red flags, and a written verdict explaining exactly what the holderbase looks like and why. <strong style="color: var(--accent)">Know before you ape.</strong>',
     sybilTitle: "Sybil / Cabal Detection",
@@ -144,8 +144,8 @@ const T = {
     rugcheckDesc: 'Flags supply concentration and LP locks. Doesn\'t analyze individual wallets, wallet age, or funding sources. <strong style="color: var(--red)">Surface-level only.</strong>',
     bubblemaps: "⚠️ Bubblemaps",
     bubblemapsDesc: 'Shows wallet clusters visually. Useful but no scoring, no age analysis, no automated verdict. <strong style="color: var(--yellow)">Manual interpretation required.</strong>',
-    holderscope: "✓ HolderScope",
-    holderscopeDesc: 'Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style="color: var(--accent)">Full picture, plain English.</strong>',
+    holdtech: "✓ HoldTech",
+    holdtechDesc: 'Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style="color: var(--accent)">Full picture, plain English.</strong>',
     emptyTitle: "Paste a Solana token address above to analyze its holderbase",
     emptySub: "Analysis takes ~15-20 seconds · Top 100 holders · Free to use",
     verdictHeader: "Holderbase Verdict",
@@ -165,7 +165,7 @@ const T = {
     footerData: "Data sourced from Helius RPC · Wallet ages from first on-chain transaction · Top 100 holders analyzed · Results are indicative, not definitive",
     scopeTitle: "$SCOPE",
     scopeTagline: "Stop being the drillpig.",
-    scopeDesc: "HolderScope is free. $SCOPE holders get the edge.",
+    scopeDesc: "HoldTech is free. $SCOPE holders get the edge.",
     tierFree: "FREE",
     tierFreeDesc: "Single scans, rate-limited. Prove it works yourself.",
     tierScout: "SCOUT",
@@ -188,7 +188,7 @@ const T = {
     extTagline: "Scan tokens without leaving the page.",
     extDesc: "Auto-injects holder quality scores on pump.fun, DexScreener, Birdeye, and Solscan. Click the icon anywhere to paste a CA and get an instant grade.",
     extHow: "How to install",
-    extStep1: '1. Download the extension from <a href="https://github.com/co-numina/holder-scope/tree/main/extension" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">GitHub</a>',
+    extStep1: '1. Download the extension from <a href="https://github.com/co-numina/holdtech/tree/main/extension" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">GitHub</a>',
     extStep2: "2. Go to chrome://extensions → enable Developer Mode",
     extStep3: '3. Click "Load unpacked" → select the extension folder',
     extFeature1: "POPUP SCANNER",
@@ -235,7 +235,7 @@ const T = {
     problemTitle: "问题所在",
     problemDesc: '大多数代币表面看起来很正常——500个持有者、上涨的图表、活跃的Twitter社区。但实际上：<strong style="color: var(--text)">70%是来自同一资金来源的新钱包</strong>，在同一个区块买入，只持有这一个代币。图表是人为制造的，"社区"不过是一个人操控的50个钱包。你就成了他们的drillpig。',
     detectTitle: "我们检测什么",
-    detectDesc: 'HolderScope 逐个分析每个钱包。<strong style="color: var(--text)">钱包年龄、交易历史、SOL余额、代币多样性、资金来源、买入时间和捆绑模式。</strong>计算集中度指标（基尼系数、HHI），检测同区块买入，追踪资金集群，对整个持币基础进行0-100评分。',
+    detectDesc: 'HoldTech 逐个分析每个钱包。<strong style="color: var(--text)">钱包年龄、交易历史、SOL余额、代币多样性、资金来源、买入时间和捆绑模式。</strong>计算集中度指标（基尼系数、HHI），检测同区块买入，追踪资金集群，对整个持币基础进行0-100评分。',
     verdictTitle: "中文评估报告",
     verdictDesc: '没有行话，没有模糊的图表。你会得到一个字母等级（A–F）、一个数字分数、具体的危险信号，以及一份详细解释持币结构的评估报告。<strong style="color: var(--accent)">入场前先了解。</strong>',
     sybilTitle: "女巫 / 庄家检测",
@@ -255,8 +255,8 @@ const T = {
     rugcheckDesc: '标记供应集中度和LP锁定。不分析单个钱包、钱包年龄或资金来源。<strong style="color: var(--red)">仅表面层级。</strong>',
     bubblemaps: "⚠️ Bubblemaps",
     bubblemapsDesc: '可视化钱包集群。有用但无评分、无年龄分析、无自动评估。<strong style="color: var(--yellow)">需人工解读。</strong>',
-    holderscope: "✓ HolderScope",
-    holderscopeDesc: '单个钱包分析、资金追踪、捆绑检测、买入时间、集中度指标和AI评分。<strong style="color: var(--accent)">全景分析，中文报告。</strong>',
+    holdtech: "✓ HoldTech",
+    holdtechDesc: '单个钱包分析、资金追踪、捆绑检测、买入时间、集中度指标和AI评分。<strong style="color: var(--accent)">全景分析，中文报告。</strong>',
     emptyTitle: "在上方粘贴 Solana 代币地址以分析其持币结构",
     emptySub: "分析耗时约15-20秒 · 前100名持有者 · 免费使用",
     verdictHeader: "持币基础评估",
@@ -276,7 +276,7 @@ const T = {
     footerData: "数据来源：Helius RPC · 钱包年龄基于首笔链上交易 · 前100名持有者 · 结果仅供参考",
     scopeTitle: "$SCOPE",
     scopeTagline: "别再当drillpig了。",
-    scopeDesc: "HolderScope免费使用。持有$SCOPE获得优势。",
+    scopeDesc: "HoldTech免费使用。持有$SCOPE获得优势。",
     tierFree: "免费",
     tierFreeDesc: "单次扫描，有频率限制。自己验证效果。",
     tierScout: "侦察兵",
@@ -299,7 +299,7 @@ const T = {
     extTagline: "不离开页面即可扫描代币。",
     extDesc: "在pump.fun、DexScreener、Birdeye和Solscan上自动注入持有者质量评分。点击图标随时粘贴CA获取即时评级。",
     extHow: "安装方法",
-    extStep1: '1. 从 <a href="https://github.com/co-numina/holder-scope/tree/main/extension" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">GitHub</a> 下载插件',
+    extStep1: '1. 从 <a href="https://github.com/co-numina/holdtech/tree/main/extension" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">GitHub</a> 下载插件',
     extStep2: "2. 打开 chrome://extensions → 开启开发者模式",
     extStep3: '3. 点击"加载已解压的扩展程序" → 选择 extension 文件夹',
     extFeature1: "弹窗扫描",
@@ -770,11 +770,11 @@ export default function Home() {
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("holderscope-theme");
+    const saved = localStorage.getItem("holdtech-theme");
     const isDark = saved === "dark";
     setDarkMode(isDark);
     document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-    const savedLang = localStorage.getItem("holderscope-lang");
+    const savedLang = localStorage.getItem("holdtech-lang");
     if (savedLang === "zh") setLang("zh");
   }, []);
 
@@ -782,7 +782,7 @@ export default function Home() {
     const next = !darkMode;
     setDarkMode(next);
     document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
-    localStorage.setItem("holderscope-theme", next ? "dark" : "light");
+    localStorage.setItem("holdtech-theme", next ? "dark" : "light");
   };
 
   const analyze = useCallback(async (limit?: number) => {
@@ -887,7 +887,7 @@ export default function Home() {
         <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <button onClick={() => { setResult(null); setVerdict(null); setDeepScan(null); setTokenInfo(null); setMint(""); setError(""); setDeepScanError(""); }} style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-              <img src="/logo.png" alt="HolderScope" width={28} height={28} style={{ objectFit: "contain" }} />
+              <img src="/logo.png" alt="HoldTech" width={28} height={28} style={{ objectFit: "contain" }} />
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
             </button>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
@@ -898,7 +898,7 @@ export default function Home() {
             </a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holderscope-lang", next); }}
+            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holdtech-lang", next); }}
               className="font-mono"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "12px", fontWeight: 700, transition: "all 0.15s" }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
@@ -955,7 +955,7 @@ export default function Home() {
             </p>
           </div>
           <div style={{ flexShrink: 0 }}>
-            <img src="/logo.png" alt="HolderScope" width={160} height={160} style={{ objectFit: "contain", opacity: 0.9, filter: "drop-shadow(0 8px 32px rgba(153,69,255,0.2))" }} />
+            <img src="/logo.png" alt="HoldTech" width={160} height={160} style={{ objectFit: "contain", opacity: 0.9, filter: "drop-shadow(0 8px 32px rgba(153,69,255,0.2))" }} />
           </div>
         </div>
 
@@ -1088,8 +1088,8 @@ export default function Home() {
                 <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.bubblemapsDesc }} />
               </div>
               <div style={{ background: "rgba(153,69,255,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>{t.holderscope}</div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.holderscopeDesc }} />
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>{t.holdtech}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.holdtechDesc }} />
               </div>
             </div>
 
@@ -1408,7 +1408,7 @@ export default function Home() {
         <div style={{ padding: "16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "2px solid var(--border)", marginTop: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12px", color: "var(--text-muted)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--accent-dark)" }}>
-              <img src="/logo.png" alt="" width={16} height={16} style={{ objectFit: "contain" }} /> HOLDERSCOPE
+              <img src="/logo.png" alt="" width={16} height={16} style={{ objectFit: "contain" }} /> HOLDTECH
             </span>
             <a href="https://github.com/co-numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
               <GitHubIcon size={14} /> github

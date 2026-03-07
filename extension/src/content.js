@@ -1,4 +1,4 @@
-// HolderScope Content Script
+// HoldTech Content Script
 // Detects Solana token addresses on supported pages and injects quality badges
 
 const API = "https://holder-quality.vercel.app/api";
@@ -66,11 +66,11 @@ function gradeBg(grade) {
 function createBadge(data) {
   const { grade, score, holderCount, top5Pct, freshPct } = data;
   const badge = document.createElement("div");
-  badge.id = "holderscope-badge";
+  badge.id = "holdtech-badge";
   badge.innerHTML = `
     <div class="hs-badge-inner">
       <div class="hs-badge-header">
-        <span class="hs-logo">🔬 HOLDERSCOPE</span>
+        <span class="hs-logo">🔬 HOLDTECH</span>
         <span class="hs-grade" style="background:${gradeBg(grade)};color:${gradeColor(grade)}">${grade || "?"}</span>
       </div>
       <div class="hs-metrics">
@@ -87,11 +87,11 @@ function createBadge(data) {
 
 function createLoading() {
   const el = document.createElement("div");
-  el.id = "holderscope-badge";
+  el.id = "holdtech-badge";
   el.innerHTML = `
     <div class="hs-badge-inner">
       <div class="hs-badge-header">
-        <span class="hs-logo">🔬 HOLDERSCOPE</span>
+        <span class="hs-logo">🔬 HOLDTECH</span>
         <span class="hs-scanning">scanning...</span>
       </div>
     </div>
@@ -154,21 +154,21 @@ async function inject() {
   if (!mint) return;
 
   // Don't double-inject
-  if (document.getElementById("holderscope-badge")) return;
+  if (document.getElementById("holdtech-badge")) return;
 
   // Show loading badge
   document.body.appendChild(createLoading());
 
   try {
     const data = await scanToken(mint);
-    const existing = document.getElementById("holderscope-badge");
+    const existing = document.getElementById("holdtech-badge");
     if (existing) existing.remove();
     document.body.appendChild(createBadge(data));
   } catch (err) {
-    const existing = document.getElementById("holderscope-badge");
+    const existing = document.getElementById("holdtech-badge");
     if (existing) existing.remove();
     // Silent fail — don't annoy the user
-    console.log("[HolderScope] scan failed:", err.message);
+    console.log("[HoldTech] scan failed:", err.message);
   }
 }
 
@@ -180,7 +180,7 @@ let lastUrl = location.href;
 const observer = new MutationObserver(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
-    const existing = document.getElementById("holderscope-badge");
+    const existing = document.getElementById("holdtech-badge");
     if (existing) existing.remove();
     setTimeout(inject, 1500); // wait for page to settle
   }
