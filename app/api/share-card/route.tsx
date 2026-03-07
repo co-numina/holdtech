@@ -108,81 +108,22 @@ export async function GET(req: NextRequest) {
     (
       <div style={{
         width: 1200, height: 630, display: "flex", flexDirection: "column",
-        background: "#0a0e12", fontFamily: "monospace", color: "#e0e0f0",
+        background: "#050508", fontFamily: "monospace", color: "#e0e0f0",
         position: "relative", overflow: "hidden",
       }}>
-        {/* Background depth layers */}
-
-        {/* Large geometric diamond - rotated square, bottom-right */}
-        <div style={{
-          position: "absolute", right: "-80px", bottom: "-120px", width: "500px", height: "500px",
-          transform: "rotate(45deg)",
-          background: `linear-gradient(135deg, ${color}06, ${color}02, transparent)`,
-          border: `1px solid ${color}08`,
-          display: "flex",
-        }} />
-        {/* Second diamond - smaller, overlapping */}
-        <div style={{
-          position: "absolute", right: "60px", bottom: "-40px", width: "320px", height: "320px",
-          transform: "rotate(45deg)",
-          background: `linear-gradient(135deg, ${color}04, transparent)`,
-          border: `1px solid ${color}06`,
-          display: "flex",
-        }} />
-        {/* Third diamond - top area accent */}
-        <div style={{
-          position: "absolute", right: "200px", top: "-160px", width: "280px", height: "280px",
-          transform: "rotate(45deg)",
-          background: `linear-gradient(180deg, rgba(153,69,255,0.03), transparent)`,
-          border: `1px solid rgba(153,69,255,0.04)`,
-          display: "flex",
-        }} />
-
-        {/* Diagonal accent lines */}
-        <div style={{
-          position: "absolute", right: "180px", top: "0px", width: "1px", height: "900px",
-          transform: "rotate(35deg)", transformOrigin: "top right",
-          background: `linear-gradient(180deg, transparent, ${color}08, transparent)`,
-          display: "flex",
-        }} />
-        <div style={{
-          position: "absolute", right: "320px", top: "0px", width: "1px", height: "900px",
-          transform: "rotate(35deg)", transformOrigin: "top right",
-          background: "linear-gradient(180deg, transparent, rgba(153,69,255,0.06), transparent)",
-          display: "flex",
-        }} />
-
-        {/* Radial glow - brand color, offset */}
-        <div style={{
-          position: "absolute", left: "50px", top: "80px", width: "500px", height: "500px",
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${color}0c, transparent 70%)`,
-          display: "flex",
-        }} />
-        {/* Secondary glow top-right */}
-        <div style={{
-          position: "absolute", right: "-100px", top: "-100px", width: "500px", height: "500px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(153,69,255,0.04), transparent 70%)",
-          display: "flex",
-        }} />
-        {/* Score glow - intense, behind the circle */}
-        <div style={{
-          position: "absolute", left: "160px", top: "220px", width: "200px", height: "200px",
-          borderRadius: "50%",
-          background: `radial-gradient(circle, ${color}12, transparent 70%)`,
-          display: "flex",
-        }} />
-        {/* Vignette */}
+        {/* Background image */}
+        <img src="https://holdtech.fun/card-bg.png" width={1200} height={630} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
+        {/* Dark overlay to ensure text readability */}
         <div style={{
           position: "absolute", inset: 0, display: "flex",
-          background: "radial-gradient(ellipse at 35% 50%, transparent 30%, rgba(0,0,0,0.4) 100%)",
+          background: "linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.5) 100%)",
         }} />
-        {/* Subtle grid */}
+        {/* Score glow */}
         <div style={{
-          position: "absolute", inset: 0, display: "flex", opacity: 0.35,
-          backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
+          position: "absolute", left: "140px", top: "200px", width: "240px", height: "240px",
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${color}18, transparent 70%)`,
+          display: "flex",
         }} />
 
         {/* ═══ HEADER ═══ */}
