@@ -998,6 +998,23 @@ export default function Home() {
           </div>
         </div>
 
+        {/* ═══ POWERED BY ═══ */}
+        {!result && !loading && (
+          <div className="reveal" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "32px", padding: "16px 0 20px", opacity: 0.45 }}>
+            {[
+              { src: "/logos/solana.png", alt: "Solana", h: 22 },
+              { src: "/logos/helius.png", alt: "Helius", h: 20 },
+              { src: "/logos/jupiter.png", alt: "Jupiter", h: 22 },
+              { src: "/logos/dexscreener.png", alt: "DexScreener", h: 20 },
+              { src: "/logos/pump.png", alt: "pump.fun", h: 22 },
+              { src: "/logos/vercel.png", alt: "Vercel", h: 18 },
+              { src: "/logos/chrome.svg", alt: "Chrome", h: 22 },
+            ].map((logo) => (
+              <img key={logo.alt} src={logo.src} alt={logo.alt} height={logo.h} style={{ height: logo.h, width: "auto", filter: "grayscale(1)", transition: "filter 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.filter = "grayscale(0)")} onMouseLeave={(e) => (e.currentTarget.style.filter = "grayscale(1)")} />
+            ))}
+          </div>
+        )}
+
         {/* ═══ THESIS ═══ */}
         {!result && !loading && (
           <>
