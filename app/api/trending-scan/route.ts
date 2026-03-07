@@ -11,7 +11,7 @@ interface TrendingToken {
   symbol: string;
   image: string | null;
   marketCap: number;
-  source: "pump_hot" | "pump_live" | "dex_boosted";
+  source: "pump_hot" | "pump_live" | "pump_graduated" | "pump_active" | "dex_boosted";
   boostAmount?: number;
 }
 
@@ -55,6 +55,42 @@ async function getPumpLive(): Promise<TrendingToken[]> {
       image: c.image_uri || null,
       marketCap: Math.round(c.usd_market_cap || 0),
       source: "pump_live" as const,
+    }));
+  } catch { return []; }
+}
+
+async function getPumpGraduated(): Promise<TrendingToken[]> {
+  try {
+    const res = await fetch("https://frontend-api-v3.pump.fun/coins?limit=10&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true", {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data || []).slice(0, 10).map((c: any) => ({
+      mint: c.mint,
+      name: c.name || "Unknown",
+      symbol: c.symbol || "???",
+      image: c.image_uri || null,
+      marketCap: Math.round(c.usd_market_cap || 0),
+      source: "pump_graduated" as const,
+    }));
+  } catch { return []; }
+}
+
+async function getPumpMostTraded(): Promise<TrendingToken[]> {
+  try {
+    const res = await fetch("https://frontend-api-v3.pump.fun/coins?limit=10&sort=last_trade_timestamp&order=DESC&includeNsfw=false&complete=true", {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data || []).slice(0, 10).map((c: any) => ({
+      mint: c.mint,
+      name: c.name || "Unknown",
+      symbol: c.symbol || "???",
+      image: c.image_uri || null,
+      marketCap: Math.round(c.usd_market_cap || 0),
+      source: "pump_active" as const,
     }));
   } catch { return []; }
 }
@@ -181,6 +217,12 @@ export async function GET(req: NextRequest) {
     }
     if (source === "all" || source === "pump_live") {
       tokens.push(...await getPumpLive());
+    }
+    if (source === "all" || source === "pump_graduated") {
+      tokens.push(...await getPumpGraduated());
+    }
+    if (source === "all" || source === "pump_active") {
+      tokens.push(...await getPumpMostTraded());
     }
     if (source === "all" || source === "dex_boosted") {
       tokens.push(...await getDexBoosted());
