@@ -1593,12 +1593,41 @@ export default function Home() {
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     <span style={{ fontSize: "18px" }}>👤</span>
                     <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>DEPLOYER PROFILE</span>
+                    {(!tierInfo || tierInfo.tier === "FREE") && <span style={{ fontSize: "11px", color: "rgba(255,255,255,0.5)", fontWeight: 600 }}>🔒 SCOUT+</span>}
                   </div>
                   <span className="font-mono" style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)" }}>
                     {deployerProfile.deployer.slice(0, 6)}...{deployerProfile.deployer.slice(-4)}
                   </span>
                 </div>
-                <div style={{ padding: "20px 28px" }}>
+                <div style={{ position: "relative" }}>
+                {(!tierInfo || tierInfo.tier === "FREE") && (
+                  <div style={{
+                    position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10,
+                  }}>
+                    <div style={{
+                      padding: "24px 32px", borderRadius: "14px",
+                      background: "var(--bg-card)", border: "1px solid var(--border-accent)",
+                      textAlign: "center", maxWidth: "320px", boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                    }}>
+                      <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--text)", marginBottom: "6px" }}>🔒 Deployer Intel Locked</div>
+                      <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "12px" }}>
+                        Hold <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 700 }}>5M $HOLDTECH</span> to unlock deployer history, rug rate, graduation stats, and holder overlap.
+                      </div>
+                      {!tierInfo ? (
+                        <button onClick={() => setVisible(true)} style={{
+                          padding: "8px 20px", borderRadius: "8px", border: "none",
+                          background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+                          color: "white", cursor: "pointer", fontSize: "12px", fontWeight: 700, width: "100%",
+                        }}>Connect Wallet</button>
+                      ) : (
+                        <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+                          {tierInfo.balance.toLocaleString()} / 5,000,000 $HOLDTECH
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div style={{ padding: "20px 28px", ...( (!tierInfo || tierInfo.tier === "FREE") ? { filter: "blur(8px)", pointerEvents: "none" as const, userSelect: "none" as const, opacity: 0.5 } : {}) }}>
                   {/* Stats row */}
                   <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
                     <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
@@ -1749,6 +1778,7 @@ export default function Home() {
                       ))}
                     </div>
                   )}
+                </div>
                 </div>
               </div>
             )}
