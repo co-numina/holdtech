@@ -547,16 +547,16 @@ export default function Home() {
     if (!addr) return;
     const useLimit = limit || analyzeLimit;
     setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress(`Fetching top ${useLimit} holders...`);
-    if (!limit) setTokenInfo(null); // Reset token info for new searches, keep for "scan more"
+    setTokenInfo(null);
 
     try {
-      // Fetch token info in parallel with analysis
+      // Fetch token info in parallel with analysis — always fetch fresh
       const [res, infoRes] = await Promise.all([
         fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr, limit: useLimit }) }),
-        !tokenInfo ? fetch("/api/token-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) }) : Promise.resolve(null),
+        fetch("/api/token-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) }),
       ]);
 
-      if (infoRes && infoRes.ok) {
+      if (infoRes.ok) {
         const infoData = await infoRes.json();
         setTokenInfo(infoData);
       }
@@ -587,7 +587,7 @@ export default function Home() {
       setError(err instanceof Error ? err.message : "Unknown error");
       setLoading(false); setProgress("");
     }
-  }, [mint, analyzeLimit, tokenInfo]);
+  }, [mint, analyzeLimit]);
 
   const totalSupply = result ? result.totalSupply : 0;
 
