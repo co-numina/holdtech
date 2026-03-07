@@ -236,5 +236,5 @@ MIT
 
 <p align="center">
   <strong>Stop being the drillpig.</strong><br>
-  <a href="https://holdtech.fun">holdtech.fun</a> · <a href="https://x.com/latebuild">@latebuild</a> · <a href="https://github.com/co-numina/holdtech">GitHub</a>
+  <a href="https://holdtech.fun">holdtech.fun</a> · <a href="https://x.com/latebuild">@co_numina</a> · <a href="https://github.com/co-numina/holdtech">GitHub</a>
 </p>
