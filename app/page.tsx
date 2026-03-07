@@ -1000,10 +1000,10 @@ export default function Home() {
                 data-form-type="other"
                 className="font-mono"
                 style={{
-                  width: "100%", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-                  border: "2px solid rgba(255,255,255,0.5)", borderRadius: "14px",
+                  width: "100%", background: "var(--bg-card)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                  border: "2px solid var(--border)", borderRadius: "14px",
                   padding: "14px 16px 14px 42px", fontSize: "13px", color: "var(--text)", outline: "none",
-                  boxShadow: "0 4px 16px rgba(153,69,255,0.04), inset 0 1px 0 rgba(255,255,255,0.4)",
+                  boxShadow: "0 4px 16px rgba(153,69,255,0.04)",
                 }}
                 onFocus={e => { e.currentTarget.style.borderColor = "var(--accent-dark)"; }}
                 onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; }}
