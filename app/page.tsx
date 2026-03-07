@@ -921,8 +921,8 @@ export default function Home() {
               <MetricCard label="Diamond Hands (>2d)" value={`${result.metrics.diamondHandsPct}%`} sub="holding for 2+ days" />
             </div>
 
-            {/* Distributions */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            {/* Distributions + Radar */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
               <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Wallet Age Distribution</div>
                 <BarChart data={result.distribution.walletAge} color="bg-cyan-500" />
@@ -931,10 +931,8 @@ export default function Home() {
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Hold Duration Distribution</div>
                 <BarChart data={result.distribution.holdDuration} color="bg-emerald-500" />
               </div>
+              <RadarChart metrics={result.metrics} />
             </div>
-
-            {/* Radar */}
-            <RadarChart metrics={result.metrics} />
 
             {/* Top Holders Table */}
             <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
