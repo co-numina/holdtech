@@ -60,6 +60,252 @@ function gradeColor(g: string) {
   return "#ef4444";
 }
 
+interface FeedEvent {
+  wallet: string; walletName: string; walletEmoji: string; walletGroup: string;
+  type: "buy" | "sell" | "transfer"; tokenMint: string; tokenSymbol: string;
+  tokenImage: string; amount: number; solAmount: number; signature: string; timestamp: number;
+}
+
+function BundlerPanel({ bundlers, setBundlers, bundlerInput, setBundlerInput, bundlerLabel, setBundlerLabel, S }: any) {
+  const [feedEvents, setFeedEvents] = useState<FeedEvent[]>([]);
+  const [feedLoading, setFeedLoading] = useState(false);
+  const [feedError, setFeedError] = useState("");
+  const [showManage, setShowManage] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const intervalRef = useRef<any>(null);
+
+  const fetchFeed = useCallback(async () => {
+    if (bundlers.length === 0) return;
+    setFeedLoading(true);
+    setFeedError("");
+    try {
+      // Fetch in batches of 10
+      const allEvents: FeedEvent[] = [];
+      for (let i = 0; i < bundlers.length; i += 10) {
+        const batch = bundlers.slice(i, i + 10).map((b: any) => ({
+          address: b.address, name: b.label || b.address.slice(0, 8),
+          emoji: b.emoji || "🚩", group: b.group || "tracked",
+        }));
+        const res = await fetch("/api/bundler-feed", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallets: batch }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          allEvents.push(...(data.events || []));
+        }
+      }
+      allEvents.sort((a, b) => b.timestamp - a.timestamp);
+      setFeedEvents(allEvents.slice(0, 200));
+    } catch (e: any) {
+      setFeedError(e.message || "Failed to fetch");
+    }
+    setFeedLoading(false);
+  }, [bundlers]);
+
+  useEffect(() => {
+    if (bundlers.length > 0 && feedEvents.length === 0) fetchFeed();
+  }, [bundlers.length]);
+
+  useEffect(() => {
+    if (autoRefresh) {
+      intervalRef.current = setInterval(fetchFeed, 30000);
+      return () => clearInterval(intervalRef.current);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+  }, [autoRefresh, fetchFeed]);
+
+  const loadDefaults = async () => {
+    try {
+      const res = await fetch("/bundlers-default.json");
+      const data = await res.json();
+      const existing = new Set(bundlers.map((b: any) => b.address));
+      const newOnes = data.filter((d: any) => !existing.has(d.address)).map((d: any) => ({
+        address: d.address, label: d.name, emoji: d.emoji, group: d.group,
+        addedAt: Date.now(), seenIn: [],
+      }));
+      const newB = [...bundlers, ...newOnes];
+      setBundlers(newB);
+      localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+    } catch {}
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      {/* Header bar */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <span style={{ fontSize: "16px" }}>🔩</span>
+          <span style={{ ...S.mono, fontSize: "13px", fontWeight: 700, color: "#1a1a2e" }}>BUNDLER FEED</span>
+          <span style={{ fontSize: "11px", color: "#888" }}>{bundlers.length} wallets tracked</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button onClick={() => setAutoRefresh(!autoRefresh)} style={{ ...S.btnOutline, fontSize: "9px", color: autoRefresh ? "#14F195" : "#888", borderColor: autoRefresh ? "rgba(20,241,149,0.3)" : "rgba(0,0,0,0.1)" }}>
+            {autoRefresh ? "● LIVE" : "○ AUTO"}
+          </button>
+          <button onClick={fetchFeed} disabled={feedLoading} style={{ ...S.btnOutline, fontSize: "9px", opacity: feedLoading ? 0.5 : 1 }}>
+            {feedLoading ? "Loading..." : "Refresh"}
+          </button>
+          <button onClick={() => setShowManage(!showManage)} style={{ ...S.btnOutline, fontSize: "9px" }}>
+            {showManage ? "Hide" : "Manage"} Wallets
+          </button>
+        </div>
+      </div>
+
+      {/* Manage panel (collapsible) */}
+      {showManage && (
+        <div style={S.card}>
+          <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
+            <input value={bundlerInput} onChange={(e: any) => setBundlerInput(e.target.value)} placeholder="Wallet address..." style={{ ...S.input, flex: 2 }} spellCheck={false} />
+            <input value={bundlerLabel} onChange={(e: any) => setBundlerLabel(e.target.value)} placeholder="Label" style={{ ...S.input, flex: 1 }} />
+            <button onClick={() => {
+              const addr = bundlerInput.trim();
+              if (!addr || addr.length < 32 || bundlers.find((b: any) => b.address === addr)) return;
+              const newB = [...bundlers, { address: addr, label: bundlerLabel.trim() || addr.slice(0, 8), emoji: "🚩", group: "custom", addedAt: Date.now(), seenIn: [] }];
+              setBundlers(newB);
+              localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+              setBundlerInput(""); setBundlerLabel("");
+            }} style={S.btn}>ADD</button>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+            <button onClick={loadDefaults} style={{ ...S.btnOutline, fontSize: "10px" }}>Load Default Rugger List ({bundlers.length > 0 ? "merge" : "42 wallets"})</button>
+            <button onClick={() => {
+              const json = JSON.stringify(bundlers.map((b: any) => ({ address: b.address, label: b.label, emoji: b.emoji, group: b.group })), null, 2);
+              navigator.clipboard.writeText(json);
+            }} style={{ ...S.btnOutline, fontSize: "10px" }}>Export JSON</button>
+          </div>
+
+          {/* Import JSON */}
+          <div style={{ marginBottom: "10px" }}>
+            <textarea id="import-json" placeholder='Paste JSON array or wallet addresses (one per line)...' style={{ ...S.input, minHeight: "60px", resize: "vertical", fontSize: "10px" }} spellCheck={false} />
+            <button onClick={() => {
+              const el = document.getElementById("import-json") as HTMLTextAreaElement;
+              if (!el || !el.value.trim()) return;
+              const existing = new Set(bundlers.map((b: any) => b.address));
+              let newOnes: any[] = [];
+              try {
+                const parsed = JSON.parse(el.value);
+                if (Array.isArray(parsed)) {
+                  newOnes = parsed.filter((d: any) => {
+                    const addr = d.trackedWalletAddress || d.address;
+                    return addr && !existing.has(addr);
+                  }).map((d: any) => ({
+                    address: d.trackedWalletAddress || d.address,
+                    label: d.name || d.label || (d.trackedWalletAddress || d.address).slice(0, 8),
+                    emoji: d.emoji || "🚩",
+                    group: d.groups?.[0] || d.group || "imported",
+                    addedAt: Date.now(), seenIn: [],
+                  }));
+                }
+              } catch {
+                // Try as plain addresses
+                const lines = el.value.split(/[\n,]+/).map((s: string) => s.trim()).filter((s: string) => s.length >= 32);
+                newOnes = lines.filter((a: string) => !existing.has(a)).map((a: string) => ({
+                  address: a, label: a.slice(0, 8), emoji: "🚩", group: "imported", addedAt: Date.now(), seenIn: [],
+                }));
+              }
+              if (newOnes.length > 0) {
+                const newB = [...bundlers, ...newOnes];
+                setBundlers(newB);
+                localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+                el.value = "";
+              }
+            }} style={{ ...S.btn, marginTop: "6px", fontSize: "10px" }}>IMPORT</button>
+          </div>
+
+          {/* Wallet list */}
+          <div style={{ maxHeight: "200px", overflow: "auto" }}>
+            {bundlers.map((b: any, i: number) => (
+              <div key={b.address} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0", borderTop: i > 0 ? "1px solid rgba(0,0,0,0.04)" : "none", fontSize: "11px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span>{b.emoji || "🚩"}</span>
+                  <span style={{ fontWeight: 600, color: "#1a1a2e" }}>{b.label}</span>
+                  <span style={{ ...S.mono, fontSize: "9px", color: "#aaa" }}>{b.address.slice(0, 8)}...{b.address.slice(-4)}</span>
+                  <span style={{ fontSize: "8px", color: "#9945FF", background: "rgba(153,69,255,0.06)", padding: "1px 4px", borderRadius: "3px" }}>{b.group}</span>
+                </div>
+                <button onClick={() => {
+                  const newB = bundlers.filter((x: any) => x.address !== b.address);
+                  setBundlers(newB);
+                  localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+                }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", fontSize: "14px" }}>×</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {bundlers.length === 0 && (
+        <div style={{ ...S.card, textAlign: "center", padding: "48px" }}>
+          <div style={{ fontSize: "32px", marginBottom: "12px", opacity: 0.5 }}>🔩</div>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#1a1a2e", marginBottom: "6px" }}>No bundler wallets tracked</div>
+          <div style={{ fontSize: "12px", color: "#888", marginBottom: "16px" }}>Load the default rugger list or add your own wallets to start tracking.</div>
+          <button onClick={loadDefaults} style={S.btn}>Load Default Rugger List (42 wallets)</button>
+        </div>
+      )}
+
+      {/* Feed */}
+      {feedError && <div style={{ fontSize: "12px", color: "#ef4444", textAlign: "center" }}>❌ {feedError}</div>}
+
+      {feedLoading && feedEvents.length === 0 && (
+        <div style={{ textAlign: "center", padding: "32px", color: "#888", fontSize: "13px" }}>
+          <div style={{ display: "inline-block", width: 20, height: 20, border: "2px solid rgba(153,69,255,0.2)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "8px" }} /><br/>
+          Loading transactions...
+        </div>
+      )}
+
+      {feedEvents.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+          {feedEvents.map((ev, i) => (
+            <div key={`${ev.signature}-${i}`} style={{ ...S.card, display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px" }}>
+              {/* Token image */}
+              <div style={{ width: 36, height: 36, borderRadius: "8px", overflow: "hidden", flexShrink: 0, background: "rgba(153,69,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {ev.tokenImage ? (
+                  <img src={ev.tokenImage} alt="" width={36} height={36} style={{ objectFit: "cover" }} onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                ) : (
+                  <span style={{ fontSize: "16px", opacity: 0.4 }}>🪙</span>
+                )}
+              </div>
+
+              {/* Buy/Sell indicator */}
+              <div style={{ ...S.mono, fontSize: "9px", fontWeight: 800, color: ev.type === "buy" ? "#14F195" : "#ef4444", background: ev.type === "buy" ? "rgba(20,241,149,0.1)" : "rgba(239,68,68,0.1)", padding: "3px 6px", borderRadius: "4px", minWidth: "30px", textAlign: "center" }}>
+                {ev.type === "buy" ? "BUY" : "SELL"}
+              </div>
+
+              {/* Token info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <span style={{ fontSize: "13px", fontWeight: 700, color: "#1a1a2e" }}>${ev.tokenSymbol}</span>
+                  {ev.solAmount > 0 && <span style={{ ...S.mono, fontSize: "11px", color: "#888" }}>{ev.solAmount.toFixed(2)} SOL</span>}
+                </div>
+                <div style={{ ...S.mono, fontSize: "9px", color: "#aaa", marginTop: "1px" }}>
+                  {ev.tokenMint.slice(0, 8)}...{ev.tokenMint.slice(-4)}
+                </div>
+              </div>
+
+              {/* Wallet */}
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "flex-end" }}>
+                  <span style={{ fontSize: "12px" }}>{ev.walletEmoji}</span>
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: "#1a1a2e" }}>{ev.walletName}</span>
+                </div>
+                <div style={{ fontSize: "9px", color: "#aaa" }}>
+                  {new Date(ev.timestamp).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
+
+              {/* Solscan link */}
+              <a href={`https://solscan.io/tx/${ev.signature}`} target="_blank" rel="noopener" style={{ fontSize: "10px", color: "#9945FF", textDecoration: "none", flexShrink: 0 }}>↗</a>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
@@ -74,7 +320,7 @@ export default function Dashboard() {
   const [history, setHistory] = useState<ScanResult[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [progress, setProgress] = useState("");
-  const [bundlers, setBundlers] = useState<{ address: string; label: string; addedAt: number; seenIn: string[] }[]>([]);
+  const [bundlers, setBundlers] = useState<{ address: string; label: string; emoji?: string; group?: string; addedAt: number; seenIn: string[] }[]>([]);
   const [bundlerInput, setBundlerInput] = useState("");
   const [bundlerLabel, setBundlerLabel] = useState("");
   const historyRef = useRef(history);
@@ -423,85 +669,7 @@ export default function Dashboard() {
         )}
 
         {/* ── BUNDLERS TAB ── */}
-        {tab === "bundlers" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={S.card}>
-              <div style={{ ...S.mono, fontSize: "11px", fontWeight: 700, color: "#1a1a2e", marginBottom: "4px" }}>TRACK BUNDLER WALLETS</div>
-              <div style={{ fontSize: "11px", color: "#888", marginBottom: "12px" }}>
-                Add known bundler/cabal wallet addresses. When you scan a token, these will be cross-referenced against the holder list.
-              </div>
-              <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-                <input value={bundlerInput} onChange={e => setBundlerInput(e.target.value)} placeholder="Wallet address..." style={{ ...S.input, flex: 2 }} spellCheck={false} />
-                <input value={bundlerLabel} onChange={e => setBundlerLabel(e.target.value)} placeholder="Label (optional)" style={{ ...S.input, flex: 1 }} />
-                <button onClick={() => {
-                  const addr = bundlerInput.trim();
-                  if (!addr || addr.length < 32 || bundlers.find(b => b.address === addr)) return;
-                  const newB = [...bundlers, { address: addr, label: bundlerLabel.trim() || addr.slice(0, 8), addedAt: Date.now(), seenIn: [] }];
-                  setBundlers(newB);
-                  localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
-                  setBundlerInput("");
-                  setBundlerLabel("");
-                }} style={S.btn}>ADD</button>
-              </div>
-              <div style={{ fontSize: "10px", color: "#aaa" }}>
-                Tip: Deep scan results show funding wallets — add those here to track them across tokens.
-              </div>
-            </div>
-
-            {bundlers.length === 0 && (
-              <div style={{ textAlign: "center", padding: "48px", color: "#aaa", fontSize: "13px" }}>
-                <div style={{ fontSize: "32px", marginBottom: "8px", opacity: 0.5 }}>🔩</div>
-                No bundler wallets tracked yet.
-              </div>
-            )}
-
-            {bundlers.length > 0 && (
-              <div style={S.card}>
-                <div style={{ ...S.mono, fontSize: "11px", fontWeight: 700, color: "#1a1a2e", marginBottom: "12px" }}>TRACKED WALLETS ({bundlers.length})</div>
-                {bundlers.map((b, i) => (
-                  <div key={b.address} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderTop: i > 0 ? "1px solid rgba(153,69,255,0.06)" : "none" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#1a1a2e" }}>{b.label}</div>
-                        <div style={{ ...S.mono, fontSize: "10px", color: "#888" }}>{b.address.slice(0, 12)}...{b.address.slice(-8)}</div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span style={{ fontSize: "10px", color: "#aaa" }}>{timeAgo(b.addedAt)}</span>
-                      <a href={`https://solscan.io/account/${b.address}`} target="_blank" style={{ ...S.btnOutline, textDecoration: "none", fontSize: "9px" }}>Solscan ↗</a>
-                      <button onClick={() => {
-                        const newB = bundlers.filter(x => x.address !== b.address);
-                        setBundlers(newB);
-                        localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
-                      }} style={{ ...S.btnOutline, color: "#ef4444", borderColor: "rgba(239,68,68,0.25)", fontSize: "9px" }}>Remove</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {bundlers.length > 0 && (
-              <div style={S.card}>
-                <div style={{ ...S.mono, fontSize: "11px", fontWeight: 700, color: "#1a1a2e", marginBottom: "8px" }}>BULK IMPORT</div>
-                <div style={{ fontSize: "11px", color: "#888", marginBottom: "8px" }}>Paste multiple wallet addresses (one per line)</div>
-                <textarea id="bulk-bundlers" placeholder={"Wallet addresses...\nOne per line"} style={{ ...S.input, minHeight: "80px", resize: "vertical" }} spellCheck={false} />
-                <button onClick={() => {
-                  const el = document.getElementById("bulk-bundlers") as HTMLTextAreaElement;
-                  if (!el) return;
-                  const addrs = el.value.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length >= 32);
-                  const existing = new Set(bundlers.map(b => b.address));
-                  const newOnes = addrs.filter(a => !existing.has(a)).map(a => ({ address: a, label: a.slice(0, 8), addedAt: Date.now(), seenIn: [] as string[] }));
-                  if (!newOnes.length) return;
-                  const newB = [...bundlers, ...newOnes];
-                  setBundlers(newB);
-                  localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
-                  el.value = "";
-                }} style={{ ...S.btn, marginTop: "8px" }}>IMPORT {bundlers.length > 0 ? "MORE" : "ALL"}</button>
-              </div>
-            )}
-          </div>
-        )}
+        {tab === "bundlers" && <BundlerPanel bundlers={bundlers} setBundlers={setBundlers} bundlerInput={bundlerInput} setBundlerInput={setBundlerInput} bundlerLabel={bundlerLabel} setBundlerLabel={setBundlerLabel} S={S} />}
 
         {/* FOOTER */}
         <div style={{ padding: "24px 0", textAlign: "center", fontSize: "10px", color: "#aaa", marginTop: "32px", borderTop: "1px solid rgba(153,69,255,0.06)" }}>
