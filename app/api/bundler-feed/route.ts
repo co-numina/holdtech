@@ -40,28 +40,46 @@ export async function POST(req: NextRequest) {
 
         return txs.map((tx: any) => {
           // Parse Helius enriched transaction
+          // Calculate SOL amount from nativeTransfers
+          const SOL_MINT = "So11111111111111111111111111111111111111112";
+          const nativeTransfers = tx.nativeTransfers || [];
+          const solSent = nativeTransfers.filter((t: any) => t.fromUserAccount === w.address).reduce((s: number, t: any) => s + (t.amount || 0), 0);
+          const solReceived = nativeTransfers.filter((t: any) => t.toUserAccount === w.address).reduce((s: number, t: any) => s + (t.amount || 0), 0);
+          const netSolLamports = Math.abs(solSent - solReceived);
+          const netSol = netSolLamports / 1e9;
+
+          // Find non-SOL token transfer
+          const tokenTransfers = tx.tokenTransfers || [];
+          const nonSolTransfer = tokenTransfers.find((t: any) => t.mint && t.mint !== SOL_MINT);
+
           const swap = tx.events?.swap;
-          if (!swap) {
-            // Try to parse from token transfers
-            const transfers = tx.tokenTransfers || [];
-            if (transfers.length === 0) return null;
-
-            const transfer = transfers[0];
+          if (!swap && !nonSolTransfer) {
+            // No swap event and no token transfer — skip
+            if (tokenTransfers.length === 0) return null;
+            const transfer = tokenTransfers[0];
+            if (transfer.mint === SOL_MINT) return null;
             const isSell = transfer.fromUserAccount === w.address;
-
             return {
-              wallet: w.address,
-              walletName: w.name,
-              walletEmoji: w.emoji,
-              walletGroup: w.group,
+              wallet: w.address, walletName: w.name, walletEmoji: w.emoji, walletGroup: w.group,
               type: isSell ? "sell" : "buy",
-              tokenMint: transfer.mint || "",
-              tokenSymbol: "",
-              tokenImage: "",
+              tokenMint: transfer.mint || "", tokenSymbol: "", tokenImage: "",
               amount: transfer.tokenAmount || 0,
-              solAmount: 0,
-              signature: tx.signature,
-              timestamp: tx.timestamp * 1000,
+              solAmount: netSol,
+              signature: tx.signature, timestamp: tx.timestamp * 1000,
+            } as TxEvent;
+          }
+
+          if (!swap) {
+            // Use token transfer + native transfer for SOL amount
+            const transfer = nonSolTransfer || tokenTransfers[0];
+            const isSell = transfer.fromUserAccount === w.address;
+            return {
+              wallet: w.address, walletName: w.name, walletEmoji: w.emoji, walletGroup: w.group,
+              type: isSell ? "sell" : "buy",
+              tokenMint: transfer.mint || "", tokenSymbol: "", tokenImage: "",
+              amount: transfer.tokenAmount || 0,
+              solAmount: netSol,
+              signature: tx.signature, timestamp: tx.timestamp * 1000,
             } as TxEvent;
           }
 
@@ -73,20 +91,16 @@ export async function POST(req: NextRequest) {
 
           const isBuy = nativeIn && nativeIn.amount > 0;
           const tokenInfo = isBuy ? tokenOut : tokenIn;
+          // Use swap native amounts if available, fall back to nativeTransfers
+          const swapSol = ((isBuy ? nativeIn?.amount : nativeOut?.amount) || 0) / 1e9;
 
           return {
-            wallet: w.address,
-            walletName: w.name,
-            walletEmoji: w.emoji,
-            walletGroup: w.group,
+            wallet: w.address, walletName: w.name, walletEmoji: w.emoji, walletGroup: w.group,
             type: isBuy ? "buy" : "sell",
-            tokenMint: tokenInfo?.mint || "",
-            tokenSymbol: "",
-            tokenImage: "",
+            tokenMint: tokenInfo?.mint || "", tokenSymbol: "", tokenImage: "",
             amount: tokenInfo?.rawTokenAmount?.tokenAmount ? parseFloat(tokenInfo.rawTokenAmount.tokenAmount) / Math.pow(10, tokenInfo.rawTokenAmount.decimals || 6) : 0,
-            solAmount: ((isBuy ? nativeIn?.amount : nativeOut?.amount) || 0) / 1e9,
-            signature: tx.signature,
-            timestamp: tx.timestamp * 1000,
+            solAmount: swapSol > 0 ? swapSol : netSol,
+            signature: tx.signature, timestamp: tx.timestamp * 1000,
           } as TxEvent;
         }).filter(Boolean);
       } catch {
