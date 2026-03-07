@@ -213,13 +213,58 @@ async function getDeployedTokens(deployer: string): Promise<DeployedToken[]> {
   return tokens;
 }
 
+// Cache graduated tokens from advanced API (fetched once per request)
+let _graduatedCache: Map<string, any> | null = null;
+
+async function loadGraduatedCache(): Promise<Map<string, any>> {
+  if (_graduatedCache) return _graduatedCache;
+  _graduatedCache = new Map();
+  try {
+    // Fetch up to 100 graduated tokens — covers most deployer portfolios
+    const res = await fetch("https://advanced-api-v2.pump.fun/coins/graduated?limit=100", {
+      headers: { "Accept": "application/json", "Origin": "https://pump.fun" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const coins = data.coins || data || [];
+      if (Array.isArray(coins)) {
+        for (const c of coins) {
+          const mint = c.coinMint || c.mint;
+          if (mint) _graduatedCache.set(mint, c);
+        }
+      }
+    }
+  } catch {}
+  return _graduatedCache;
+}
+
 async function checkTokenStatus(mint: string): Promise<{
   alive: boolean;
   holderCount: number;
   liquidity: number | null;
+  sniperCount?: number;
+  topHoldersPct?: number;
+  devHoldingsPct?: number;
+  volume?: number;
 }> {
+  // Check advanced API cache first
+  const cache = await loadGraduatedCache();
+  const adv = cache.get(mint);
+  if (adv) {
+    return {
+      alive: true, // graduated tokens in the list are alive
+      holderCount: adv.numHolders || 0,
+      liquidity: adv.volume || null,
+      sniperCount: adv.sniperCount || 0,
+      topHoldersPct: Math.round((adv.topHoldersPercentage || 0) * 100),
+      devHoldingsPct: Math.round((adv.devHoldingsPercentage || 0) * 100),
+      volume: adv.volume || 0,
+    };
+  }
+
+  // Fallback to DexScreener
   try {
-    // Quick check via DexScreener
     const res = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`, {
       signal: AbortSignal.timeout(5000),
     });
@@ -229,7 +274,7 @@ async function checkTokenStatus(mint: string): Promise<{
       if (pair) {
         return {
           alive: parseFloat(pair.liquidity?.usd || "0") > 100,
-          holderCount: 0, // DexScreener doesn't give holder count
+          holderCount: 0,
           liquidity: parseFloat(pair.liquidity?.usd || "0"),
         };
       }
@@ -247,6 +292,9 @@ export async function POST(req: NextRequest) {
 
     // Step 1: Find the deployer
     const deployer: string = (await getDeployerFromMint(mint)) || mint;
+
+    // Reset graduated cache for this request
+    _graduatedCache = null;
 
     // Step 2: Get all tokens they've deployed
     const deployedTokens = await getDeployedTokens(deployer);
