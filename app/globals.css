@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #0e0e1a;
-  --bg-card: #16162a;
-  --bg-card-alt: #1c1c34;
+  --bg: #13132b;
+  --bg-card: #1a1a38;
+  --bg-card-alt: #212145;
   --bg-deep: #0a0a14;
   --text: #e8eaf0;
   --text-secondary: #9a9ab8;
@@ -37,11 +37,11 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(153, 69, 255, 0.12) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(153, 69, 255, 0.12) 1px, transparent 1px);
+    linear-gradient(rgba(153, 69, 255, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(153, 69, 255, 0.18) 1px, transparent 1px);
   background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 0%, transparent 70%);
+  mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, black 10%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, black 10%, transparent 75%);
 }
 
 * { box-sizing: border-box; }
