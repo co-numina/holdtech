@@ -40,13 +40,14 @@ export async function POST(req: NextRequest) {
 
         return txs.map((tx: any) => {
           // Parse Helius enriched transaction
-          // Calculate SOL amount from nativeTransfers
+          // Calculate SOL amount from accountData nativeBalanceChange (most reliable)
           const SOL_MINT = "So11111111111111111111111111111111111111112";
-          const nativeTransfers = tx.nativeTransfers || [];
-          const solSent = nativeTransfers.filter((t: any) => t.fromUserAccount === w.address).reduce((s: number, t: any) => s + (t.amount || 0), 0);
-          const solReceived = nativeTransfers.filter((t: any) => t.toUserAccount === w.address).reduce((s: number, t: any) => s + (t.amount || 0), 0);
-          const netSolLamports = Math.abs(solSent - solReceived);
-          const netSol = netSolLamports / 1e9;
+          const accountData = tx.accountData || [];
+          const walletAccount = accountData.find((a: any) => a.account === w.address);
+          const balanceChange = walletAccount?.nativeBalanceChange || 0;
+          // Absolute value, subtract fee for accuracy
+          const fee = tx.fee || 0;
+          const netSol = Math.abs(balanceChange + (balanceChange < 0 ? fee : -fee)) / 1e9;
 
           // Find non-SOL token transfer
           const tokenTransfers = tx.tokenTransfers || [];
