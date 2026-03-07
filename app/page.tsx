@@ -929,35 +929,29 @@ export default function Home() {
             <div className="reveal glass" style={{ marginBottom: "24px", borderRadius: "20px", overflow: "hidden" }}>
               <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                 <EyeIcon size={20} color="white" />
-                <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Why holderbase quality matters</span>
+                <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>{t.whyTitle}</span>
               </div>
               <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
                     <AlertIcon size={20} color="var(--red)" />
-                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>The problem</span>
+                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>{t.problemTitle}</span>
                   </div>
-                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }}>
-                    Most tokens look organic on the surface. 500 holders, growing chart, active Telegram. But underneath: <strong style={{ color: "var(--text)" }}>70% are fresh wallets from the same funding source</strong>, bundled in the same slot, holding nothing else. The chart is manufactured. The "community" is one person with 50 wallets.
-                  </p>
+                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }} dangerouslySetInnerHTML={{ __html: t.problemDesc }} />
                 </div>
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
                     <TargetIcon size={20} color="var(--accent-dark)" />
-                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>What we detect</span>
+                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>{t.detectTitle}</span>
                   </div>
-                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }}>
-                    HolderScope analyzes every wallet individually. <strong style={{ color: "var(--text)" }}>Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.
-                  </p>
+                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }} dangerouslySetInnerHTML={{ __html: t.detectDesc }} />
                 </div>
                 <div style={{ background: "linear-gradient(135deg, rgba(153,69,255,0.05), rgba(8,145,178,0.06))", borderRadius: "14px", padding: "24px", border: "1px solid var(--border-accent)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
                     <ShieldIcon size={20} color="var(--accent)" />
-                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent)" }}>Plain-English verdict</span>
+                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent)" }}>{t.verdictTitle}</span>
                   </div>
-                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }}>
-                    No jargon, no ambiguous charts. You get a letter grade (A–F), a numerical score, specific red flags, and a written verdict explaining exactly what the holderbase looks like and why. <strong style={{ color: "var(--accent)" }}>Know before you ape.</strong>
-                  </p>
+                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }} dangerouslySetInnerHTML={{ __html: t.verdictDesc }} />
                 </div>
               </div>
             </div>
@@ -965,9 +959,9 @@ export default function Home() {
             {/* ═══ WHAT IT DETECTS ═══ */}
             <div className="reveal stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
               {[
-                { icon: <TargetIcon size={20} color="var(--red)" />, title: "Sybil / Cabal Detection", desc: "Fresh wallets, single-token holders, same-slot buys, funding cluster analysis. Spots manufactured holderbases." },
-                { icon: <LayersIcon size={20} color="var(--accent)" />, title: "Wallet Quality Scoring", desc: "Age, tx count, SOL balance, token diversity. Each wallet profiled individually. Aggregated into holderbase metrics." },
-                { icon: <TrendIcon size={20} color="var(--green)" />, title: "Concentration Analysis", desc: "Top 5/10/20 holder dominance, Gini coefficient, HHI index. Detects whale risk and distribution health." },
+                { icon: <TargetIcon size={20} color="var(--red)" />, title: t.sybilTitle, desc: t.sybilDesc },
+                { icon: <LayersIcon size={20} color="var(--accent)" />, title: t.qualityTitle, desc: t.qualityDesc },
+                { icon: <TrendIcon size={20} color="var(--green)" />, title: t.concTitle, desc: t.concDesc },
               ].map((card, i) => (
                 <div key={i} className="glass" style={{
                   padding: "24px", borderRadius: "16px",
@@ -988,14 +982,14 @@ export default function Home() {
             {/* ═══ HOW IT WORKS ═══ */}
             <div className="reveal glass" style={{ marginBottom: "24px", borderRadius: "20px", padding: "24px 28px" }}>
               <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "16px" }}>
-                How it works
+                {t.howTitle}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {[
-                  { step: "1", text: "Paste any Solana token mint address" },
-                  { step: "2", text: "We fetch top 100 holders via Helius DAS and analyze each wallet in parallel" },
-                  { step: "3", text: "Deep scan runs bundle detection, funding cluster tracing, and buy timing analysis" },
-                  { step: "4", text: "Get a scored verdict — letter grade, red flags, and plain-English assessment" },
+                  { step: "1", text: t.step1 },
+                  { step: "2", text: t.step2 },
+                  { step: "3", text: t.step3 },
+                  { step: "4", text: t.step4 },
                 ].map(s => (
                   <div key={s.step} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)" }}>
                     <span className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", minWidth: "18px" }}>{s.step}</span>
@@ -1004,29 +998,23 @@ export default function Home() {
                 ))}
               </div>
               <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(153,69,255,0.04)", border: "1px solid var(--border-accent)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                <strong style={{ color: "var(--accent-dark)" }}>Data source:</strong> Helius RPC (enhanced transactions, DAS). No third-party APIs that can be gamed. All analysis runs on raw on-chain data.
+                <strong style={{ color: "var(--accent-dark)" }}>{t.dataSource}</strong> {t.dataSourceDesc}
               </div>
             </div>
 
             {/* ═══ VS COMPARISON ═══ */}
             <div className="reveal stagger" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "24px" }}>
               <div style={{ background: "rgba(239,68,68,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid rgba(239,68,68,0.12)" }}>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--red)", marginBottom: "10px" }}>❌ Rugcheck</div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
-                  Flags supply concentration and LP locks. Doesn't analyze individual wallets, wallet age, or funding sources. <strong style={{ color: "var(--red)" }}>Surface-level only.</strong>
-                </div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--red)", marginBottom: "10px" }}>{t.rugcheck}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.rugcheckDesc }} />
               </div>
               <div style={{ background: "rgba(234,179,8,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid rgba(234,179,8,0.12)" }}>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--yellow)", marginBottom: "10px" }}>⚠️ Bubblemaps</div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
-                  Shows wallet clusters visually. Useful but no scoring, no age analysis, no automated verdict. <strong style={{ color: "var(--yellow)" }}>Manual interpretation required.</strong>
-                </div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--yellow)", marginBottom: "10px" }}>{t.bubblemaps}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.bubblemapsDesc }} />
               </div>
               <div style={{ background: "rgba(153,69,255,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
-                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>✓ HolderScope</div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
-                  Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style={{ color: "var(--accent)" }}>Full picture, plain English.</strong>
-                </div>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>{t.holderscope}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.holderscopeDesc }} />
               </div>
             </div>
 
