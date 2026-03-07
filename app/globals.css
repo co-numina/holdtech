@@ -21,6 +21,7 @@
   --gradient-solana: linear-gradient(135deg, #9945FF, #14F195);
   --gradient-solana-soft: linear-gradient(135deg, rgba(153,69,255,0.08), rgba(20,241,149,0.08));
   --glass-blur: 16px;
+  --card-bg: rgba(255, 255, 255, 0.6);
   --glass-card: rgba(255, 255, 255, 0.45);
   --glass-card-alt: rgba(255, 255, 255, 0.3);
   --glass-border: rgba(255, 255, 255, 0.5);
@@ -36,8 +37,9 @@
   --bg-card-alt: rgba(28, 28, 52, 0.7);
   --bg-deep: rgba(10, 10, 20, 0.5);
   --text: #e8eaf0;
-  --text-secondary: #9a9ab8;
-  --text-muted: #5c5c7a;
+  --text-secondary: #b0b0cc;
+  --text-muted: #8888a8;
+  --card-bg: rgba(22, 22, 42, 0.7);
   --accent: #9945FF;
   --accent-dark: #b06aff;
   --accent-bright: #c88aff;
@@ -51,9 +53,9 @@
   --gradient-solana: linear-gradient(135deg, #9945FF, #14F195);
   --gradient-solana-soft: linear-gradient(135deg, rgba(153,69,255,0.1), rgba(20,241,149,0.1));
   --glass-blur: 16px;
-  --glass-card: rgba(30, 30, 55, 0.6);
-  --glass-card-alt: rgba(25, 25, 48, 0.5);
-  --glass-border: rgba(153, 69, 255, 0.15);
+  --glass-card: rgba(35, 35, 65, 0.7);
+  --glass-card-alt: rgba(30, 30, 55, 0.6);
+  --glass-border: rgba(153, 69, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   --grid-color: rgba(153, 69, 255, 0.12);
   --bar-bg: rgba(255, 255, 255, 0.04);
