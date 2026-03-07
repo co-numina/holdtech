@@ -167,10 +167,12 @@ function bucketize(values: number[], buckets: { label: string; max: number }[]) 
 
 export async function POST(req: NextRequest) {
   try {
-    const { mint } = await req.json();
+    const { mint, limit: reqLimit } = await req.json();
     if (!mint || typeof mint !== "string") {
       return NextResponse.json({ error: "Missing mint address" }, { status: 400 });
     }
+
+    const analyzeLimit = Math.min(Math.max(reqLimit || 20, 10), 100);
 
     // Step 1: Get token metadata (1 call, or 0 if pump.fun works)
     const meta = await getTokenMetadata(mint);
@@ -185,10 +187,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No holders found" }, { status: 404 });
     }
 
+    // Get real holder count via Helius DAS
+    let realHolderCount = topAccounts.length;
+    try {
+      const dasRes = await fetch(HELIUS_RPC, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0", id: "hc", method: "getTokenAccounts",
+          params: { mint, limit: 1, page: 1 },
+        }),
+      });
+      const dasData = await dasRes.json();
+      if (dasData.result?.total) realHolderCount = dasData.result.total;
+    } catch { /* keep topAccounts.length */ }
+    
+    // If pump.fun has holder count, prefer it (more accurate for pump tokens)
+    try {
+      const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`);
+      if (pumpRes.ok) {
+        const pumpData = await pumpRes.json();
+        if (pumpData.holder_count && pumpData.holder_count > realHolderCount) {
+          realHolderCount = pumpData.holder_count;
+        }
+      }
+    } catch { /* skip */ }
+
     // Step 3: Resolve owners — do sequentially to avoid rate limit
     // getTokenLargestAccounts returns token accounts, need to resolve owners
     const holders: { owner: string; amount: number; decimals: number }[] = [];
     
+    // First use top 20 from getTokenLargestAccounts (sorted by balance)
     for (const acc of topAccounts) {
       try {
         const info = await getTokenAccountOwner(acc.address);
@@ -199,9 +228,41 @@ export async function POST(req: NextRequest) {
             decimals: acc.decimals || 6,
           });
         }
-        // Small delay between each
         await new Promise((r) => setTimeout(r, 100));
       } catch { /* skip */ }
+    }
+
+    // If limit > 20, fetch more via DAS getTokenAccounts
+    if (analyzeLimit > holders.length) {
+      try {
+        const existingOwners = new Set(holders.map(h => h.owner));
+        let page = 1;
+        while (holders.length < analyzeLimit) {
+          const dasRes = await fetch(HELIUS_RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0", id: `das-${page}`, method: "getTokenAccounts",
+              params: { mint, limit: 100, page },
+            }),
+          });
+          const dasData = await dasRes.json();
+          const accounts = dasData.result?.token_accounts || [];
+          if (accounts.length === 0) break;
+
+          for (const acc of accounts) {
+            if (holders.length >= analyzeLimit) break;
+            const owner = acc.owner;
+            if (!owner || existingOwners.has(owner)) continue;
+            existingOwners.add(owner);
+            const amount = acc.amount ? parseFloat(acc.amount) / Math.pow(10, acc.decimals || 6) : 0;
+            holders.push({ owner, amount, decimals: acc.decimals || 6 });
+          }
+          page++;
+          if (accounts.length < 100) break;
+          await new Promise(r => setTimeout(r, 200));
+        }
+      } catch { /* keep what we have from top 20 */ }
     }
 
     if (holders.length === 0) {
@@ -350,7 +411,7 @@ export async function POST(req: NextRequest) {
       mint,
       tokenName: meta.name,
       tokenSymbol: meta.symbol,
-      totalHolders: topAccounts.length,
+      totalHolders: realHolderCount,
       analyzedHolders: wallets.length,
       metrics,
       distribution: {

@@ -95,9 +95,11 @@ function generateVerdict(metrics: Metrics, totalHolders: number, tokenSymbol: st
 
   // Holder count context
   if (totalHolders < 50) {
-    flags.push(`ℹ️ Only ${totalHolders} total holders — very early stage, metrics may be volatile`);
+    flags.push(`ℹ️ ${totalHolders} total holders — very early stage, metrics may shift as more wallets enter`);
+  } else if (totalHolders > 5000) {
+    flags.push(`ℹ️ ${totalHolders.toLocaleString()} total holders — widely distributed token`);
   } else if (totalHolders > 1000) {
-    flags.push(`ℹ️ ${totalHolders} total holders — well-distributed`);
+    flags.push(`ℹ️ ${totalHolders.toLocaleString()} total holders — well-distributed`);
   }
 
   // Clamp score
@@ -131,7 +133,7 @@ function generateVerdict(metrics: Metrics, totalHolders: number, tokenSymbol: st
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const { metrics, totalHolders, tokenSymbol } = data;
+    const { metrics, totalHolders, analyzedHolders, tokenSymbol } = data;
     
     if (!metrics) {
       return NextResponse.json({ error: "Missing metrics" }, { status: 400 });

@@ -45,6 +45,25 @@ interface AnalysisResult {
 
 interface Verdict { score: number; grade: string; verdict: string; flags: string[]; }
 
+interface TokenInfo {
+  name: string;
+  symbol: string;
+  image: string | null;
+  description: string | null;
+  website: string | null;
+  twitter: string | null;
+  price: number | null;
+  priceNative: number | null;
+  mcap: number | null;
+  volume24h: number | null;
+  liquidity: number | null;
+  priceChange: { m5: number | null; h1: number | null; h6: number | null; h24: number | null };
+  holderCount: number | null;
+  pairAddress: string | null;
+  dexId: string | null;
+  sparkline: number[];
+}
+
 interface DeepScanResult {
   txHistoryCount: number;
   bundles: { slot: number; timestamp: number; wallets: string[]; txCount: number }[];
@@ -87,6 +106,133 @@ function shortenAddr(addr: string) { return addr.slice(0, 4) + "..." + addr.slic
 function gradeColor(g: string) { return g === "A" ? "text-emerald-400" : g === "B" ? "text-cyan-400" : g === "C" ? "text-yellow-400" : g === "D" ? "text-orange-400" : "text-red-400"; }
 function scoreColor(s: number) { return s >= 80 ? "bg-emerald-500" : s >= 65 ? "bg-cyan-500" : s >= 50 ? "bg-yellow-500" : s >= 35 ? "bg-orange-500" : "bg-red-500"; }
 function scoreBorderColor(s: number) { return s >= 80 ? "border-emerald-500/30" : s >= 65 ? "border-cyan-500/30" : s >= 50 ? "border-yellow-500/30" : s >= 35 ? "border-orange-500/30" : "border-red-500/30"; }
+
+// ============================================================
+// SPARKLINE + TOKEN CARD
+// ============================================================
+function Sparkline({ data, width = 120, height = 40, color }: { data: number[]; width?: number; height?: number; color?: string }) {
+  if (!data.length || data.length < 2) return null;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const lineColor = color || (data[data.length - 1] >= data[0] ? "var(--green)" : "var(--red)");
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * (height - 4) - 2;
+    return `${x},${y}`;
+  }).join(" ");
+  const fillPoints = `0,${height} ${points} ${width},${height}`;
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: "block" }}>
+      <defs>
+        <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={lineColor} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={lineColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillPoints} fill="url(#spark-fill)" />
+      <polyline points={points} fill="none" stroke={lineColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function TokenCard({ info }: { info: TokenInfo }) {
+  const fmt = (n: number | null, prefix = "$") => {
+    if (n === null) return "—";
+    if (n >= 1e9) return `${prefix}${(n / 1e9).toFixed(2)}B`;
+    if (n >= 1e6) return `${prefix}${(n / 1e6).toFixed(2)}M`;
+    if (n >= 1e3) return `${prefix}${(n / 1e3).toFixed(1)}K`;
+    return `${prefix}${n.toFixed(2)}`;
+  };
+  const pctColor = (v: number | null) => !v ? "var(--text-muted)" : v > 0 ? "var(--green)" : "var(--red)";
+  const pctStr = (v: number | null) => v === null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
+
+  return (
+    <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
+      <div style={{ padding: "20px 24px", display: "flex", gap: "20px", alignItems: "center" }}>
+        {/* Token image */}
+        {info.image ? (
+          <img src={info.image} alt={info.symbol} style={{ width: 56, height: 56, borderRadius: "14px", objectFit: "cover", border: "2px solid var(--border)", flexShrink: 0 }} />
+        ) : (
+          <div style={{ width: 56, height: 56, borderRadius: "14px", background: "var(--bg-card-alt)", border: "2px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>🪙</div>
+        )}
+
+        {/* Name + price */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "4px" }}>
+            <span style={{ fontSize: "20px", fontWeight: 800, color: "var(--text)" }}>${info.symbol}</span>
+            <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>{info.name}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            {info.price !== null && (
+              <span className="font-mono" style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>
+                ${info.price < 0.01 ? info.price.toExponential(2) : info.price.toFixed(4)}
+              </span>
+            )}
+            {info.priceChange.h24 !== null && (
+              <span className="font-mono" style={{ fontSize: "12px", fontWeight: 600, color: pctColor(info.priceChange.h24) }}>
+                {pctStr(info.priceChange.h24)} 24h
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Sparkline */}
+        {info.sparkline.length > 2 && (
+          <div style={{ flexShrink: 0 }}>
+            <Sparkline data={info.sparkline} width={140} height={48} />
+          </div>
+        )}
+      </div>
+
+      {/* Stats row */}
+      <div style={{ padding: "0 24px 16px", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+        {[
+          { label: "MCap", value: fmt(info.mcap) },
+          { label: "24h Vol", value: fmt(info.volume24h) },
+          { label: "Liquidity", value: fmt(info.liquidity) },
+          { label: "Holders", value: info.holderCount ? info.holderCount.toLocaleString() : "—" },
+          { label: "DEX", value: info.dexId || "—" },
+        ].map(s => (
+          <div key={s.label} style={{ textAlign: "center", padding: "8px", borderRadius: "10px", background: "var(--bg-card-alt)", border: "1px solid var(--border)" }}>
+            <div className="font-mono" style={{ fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: "2px" }}>{s.label}</div>
+            <div className="font-mono" style={{ fontSize: "13px", fontWeight: 700, color: "var(--text)" }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Price changes */}
+      <div style={{ padding: "0 24px 16px", display: "flex", gap: "8px" }}>
+        {[
+          { label: "5m", value: info.priceChange.m5 },
+          { label: "1h", value: info.priceChange.h1 },
+          { label: "6h", value: info.priceChange.h6 },
+          { label: "24h", value: info.priceChange.h24 },
+        ].map(p => (
+          <div key={p.label} className="font-mono" style={{ flex: 1, textAlign: "center", padding: "6px", borderRadius: "8px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", fontSize: "11px" }}>
+            <span style={{ color: "var(--text-muted)" }}>{p.label} </span>
+            <span style={{ fontWeight: 700, color: pctColor(p.value) }}>{pctStr(p.value)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Links */}
+      {(info.website || info.twitter || info.pairAddress) && (
+        <div style={{ padding: "0 24px 16px", display: "flex", gap: "8px" }}>
+          {info.pairAddress && (
+            <a href={`https://dexscreener.com/solana/${info.pairAddress}`} target="_blank" rel="noopener" style={{ fontSize: "11px", color: "var(--accent-dark)", textDecoration: "none" }}>DexScreener ↗</a>
+          )}
+          {info.website && (
+            <a href={info.website} target="_blank" rel="noopener" style={{ fontSize: "11px", color: "var(--accent-dark)", textDecoration: "none" }}>Website ↗</a>
+          )}
+          {info.twitter && (
+            <a href={info.twitter} target="_blank" rel="noopener" style={{ fontSize: "11px", color: "var(--accent-dark)", textDecoration: "none" }}>Twitter ↗</a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ============================================================
 // SUB-COMPONENTS
@@ -306,30 +452,52 @@ function RadarChart({ metrics }: { metrics: AnalysisResult["metrics"] }) {
 }
 
 function BubbleScatter({ wallets, totalSupply }: { wallets: WalletAnalysis[]; totalSupply: number }) {
+  if (!wallets.length) return null;
   const maxAge = Math.max(...wallets.map(w => w.walletAgeDays), 1);
   const logMax = Math.log10(maxAge + 1);
+  const maxPct = Math.max(...wallets.map(w => totalSupply > 0 ? (w.balance / totalSupply) * 100 : 0), 0.1);
+
+  // Render as SVG for clean scaling
+  const W = 600, H = 300, PAD = 40;
+  const plotW = W - PAD * 2, plotH = H - PAD * 2;
+
   return (
     <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Wallet Scatter (Age vs Holdings)</div>
-      <div style={{ overflowX: "auto" }}>
-        <div style={{ position: "relative", width: 600, height: 400, margin: "0 auto" }}>
-          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.08)" }} />
-          <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 1, background: "rgba(255,255,255,0.08)" }} />
-          {wallets.map(w => {
-            const xPct = totalSupply > 0 ? (Math.log10(w.walletAgeDays + 1) / logMax) * 100 : 0;
-            const yPct = totalSupply > 0 ? Math.min(((w.balance / totalSupply) * 100), 100) : 0;
-            const size = Math.min(Math.sqrt(w.totalTxCount) * 2, 40);
-            const bg = w.walletAgeDays < 7 ? "var(--red)" : w.walletAgeDays >= 180 ? "var(--green)" : "var(--accent)";
-            return <div key={w.address} style={{ position: "absolute", left: `${Math.max(1, Math.min(xPct, 98))}%`, bottom: `${Math.max(1, Math.min(yPct * 5, 95))}%`, width: Math.max(6, size), height: Math.max(6, size), borderRadius: "50%", background: bg, opacity: 0.6, transform: "translate(-50%, 50%)", cursor: "pointer" }} title={`${shortenAddr(w.address)} — Age: ${w.walletAgeDays.toFixed(0)}d | ${(w.balance / (totalSupply || 1) * 100).toFixed(2)}% | Txs: ${w.totalTxCount}`} />;
-          })}
-          <div style={{ position: "absolute", bottom: -16, left: 0, fontSize: 10, color: "var(--text-muted)" }}>0d</div>
-          <div style={{ position: "absolute", bottom: -16, right: 0, fontSize: 10, color: "var(--text-muted)" }}>{maxAge.toFixed(0)}d</div>
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: "16px", marginTop: "20px", fontSize: "10px", color: "var(--text-muted)", justifyContent: "center" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map(p => (
+          <line key={`h${p}`} x1={PAD} y1={PAD + plotH * (1 - p)} x2={PAD + plotW} y2={PAD + plotH * (1 - p)} stroke="white" strokeOpacity={0.06} />
+        ))}
+        {[0, 0.25, 0.5, 0.75, 1].map(p => (
+          <line key={`v${p}`} x1={PAD + plotW * p} y1={PAD} x2={PAD + plotW * p} y2={PAD + plotH} stroke="white" strokeOpacity={0.06} />
+        ))}
+        {/* Axes */}
+        <line x1={PAD} y1={PAD + plotH} x2={PAD + plotW} y2={PAD + plotH} stroke="white" strokeOpacity={0.15} />
+        <line x1={PAD} y1={PAD} x2={PAD} y2={PAD + plotH} stroke="white" strokeOpacity={0.15} />
+        {/* Dots */}
+        {wallets.map(w => {
+          const xNorm = logMax > 0 ? Math.log10(w.walletAgeDays + 1) / logMax : 0;
+          const yNorm = totalSupply > 0 ? Math.min((w.balance / totalSupply) * 100 / maxPct, 1) : 0;
+          const cx = PAD + xNorm * plotW;
+          const cy = PAD + plotH - yNorm * plotH;
+          const r = Math.max(3, Math.min(Math.sqrt(w.totalTxCount) * 0.8, 16));
+          const fill = w.walletAgeDays < 7 ? "#ef4444" : w.walletAgeDays >= 180 ? "#10b981" : "#22d3ee";
+          return <circle key={w.address} cx={cx} cy={cy} r={r} fill={fill} fillOpacity={0.6} stroke={fill} strokeOpacity={0.3} strokeWidth={1}>
+            <title>{`${shortenAddr(w.address)} — Age: ${w.walletAgeDays.toFixed(0)}d | ${(w.balance / (totalSupply || 1) * 100).toFixed(2)}% | Txs: ${w.totalTxCount}`}</title>
+          </circle>;
+        })}
+        {/* Axis labels */}
+        <text x={PAD} y={H - 4} fill="white" fillOpacity={0.3} fontSize={10}>0d</text>
+        <text x={PAD + plotW} y={H - 4} fill="white" fillOpacity={0.3} fontSize={10} textAnchor="end">{maxAge.toFixed(0)}d</text>
+        <text x={PAD + plotW / 2} y={H - 4} fill="white" fillOpacity={0.2} fontSize={9} textAnchor="middle">wallet age →</text>
+        <text x={8} y={PAD + plotH / 2} fill="white" fillOpacity={0.2} fontSize={9} textAnchor="middle" transform={`rotate(-90, 8, ${PAD + plotH / 2})`}>holdings % →</text>
+      </svg>
+      <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)", justifyContent: "center" }}>
         <span>🔴 Fresh (&lt;7d)</span>
         <span>🔵 Veteran</span>
         <span>🟢 OG (180d+)</span>
+        <span style={{ color: "var(--text-muted)", opacity: 0.5 }}>· dot size = tx count</span>
       </div>
     </div>
   );
@@ -358,26 +526,40 @@ export default function Home() {
   const [progress, setProgress] = useState("");
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const [deepScan, setDeepScan] = useState<DeepScanResult | null>(null);
   const [deepScanLoading, setDeepScanLoading] = useState(false);
   const [deepScanError, setDeepScanError] = useState("");
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
+  const [analyzeLimit, setAnalyzeLimit] = useState(20);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  const analyze = useCallback(async () => {
+  const analyze = useCallback(async (limit?: number) => {
     const addr = mint.trim();
     if (!addr) return;
-    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress("Fetching holders and analyzing wallets...");
+    const useLimit = limit || analyzeLimit;
+    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress(`Fetching top ${useLimit} holders...`);
+    if (!limit) setTokenInfo(null); // Reset token info for new searches, keep for "scan more"
 
     try {
-      const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) });
+      // Fetch token info in parallel with analysis
+      const [res, infoRes] = await Promise.all([
+        fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr, limit: useLimit }) }),
+        !tokenInfo ? fetch("/api/token-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) }) : Promise.resolve(null),
+      ]);
+
+      if (infoRes && infoRes.ok) {
+        const infoData = await infoRes.json();
+        setTokenInfo(infoData);
+      }
+
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
       const data: AnalysisResult = await res.json();
       setResult(data);
       setProgress("Generating verdict...");
 
-      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: data.totalHolders, tokenSymbol: data.tokenSymbol }) });
+      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: data.totalHolders, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
       if (vRes.ok) setVerdict(await vRes.json());
 
       setLoading(false); setProgress("");
@@ -392,13 +574,12 @@ export default function Home() {
       } catch { setDeepScanError("Deep scan incomplete"); }
       finally { setDeepScanLoading(false); }
 
-      // Scroll to results
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       setLoading(false); setProgress("");
     }
-  }, [mint]);
+  }, [mint, analyzeLimit, tokenInfo]);
 
   const totalSupply = result ? result.wallets.reduce((s, w) => s + w.balance, 0) : 0;
 
@@ -489,7 +670,7 @@ export default function Home() {
               />
             </div>
             <button
-              onClick={analyze} disabled={loading || !mint.trim()}
+              onClick={() => analyze()} disabled={loading || !mint.trim()}
               style={{
                 padding: "14px 28px", borderRadius: "14px", fontWeight: 700, fontSize: "14px", border: "none", cursor: loading || !mint.trim() ? "default" : "pointer",
                 background: loading || !mint.trim() ? "var(--bg-card-alt)" : "linear-gradient(135deg, var(--accent-bright), var(--accent-dark))",
@@ -640,13 +821,41 @@ export default function Home() {
         {result && (
           <div ref={resultsRef} style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "40px" }}>
 
-            {/* Token header */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-              <span style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)" }}>${result.tokenSymbol}</span>
-              <span style={{ fontSize: "14px", color: "var(--text-muted)" }}>{result.tokenName}</span>
-              <CopyButton text={result.mint} />
-              <div style={{ flex: 1 }} />
-              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{result.totalHolders} total holders · {result.analyzedHolders} analyzed</span>
+            {/* Token Card */}
+            {tokenInfo && <TokenCard info={tokenInfo} />}
+
+            {/* Token header (fallback if no tokenInfo) */}
+            {!tokenInfo && (
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                <span style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)" }}>${result.tokenSymbol}</span>
+                <span style={{ fontSize: "14px", color: "var(--text-muted)" }}>{result.tokenName}</span>
+                <CopyButton text={result.mint} />
+              </div>
+            )}
+
+            {/* Analysis scope bar */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)" }}>
+              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                <strong style={{ color: "var(--text-secondary)" }}>{result.analyzedHolders}</strong> wallets analyzed
+                {result.totalHolders > result.analyzedHolders && (
+                  <> out of <strong style={{ color: "var(--text-secondary)" }}>{result.totalHolders.toLocaleString()}</strong> total holders</>
+                )}
+              </span>
+              <div style={{ display: "flex", gap: "6px" }}>
+                {[20, 50, 100].map(n => (
+                  <button key={n} onClick={() => { setAnalyzeLimit(n); analyze(n); }}
+                    disabled={loading || n === result.analyzedHolders}
+                    className="font-mono"
+                    style={{
+                      padding: "4px 12px", borderRadius: "8px", fontSize: "11px", fontWeight: 700, border: "1px solid var(--border)", cursor: loading ? "default" : "pointer",
+                      background: n === result.analyzedHolders ? "var(--accent-dark)" : "var(--bg-card)",
+                      color: n === result.analyzedHolders ? "var(--bg)" : "var(--text-muted)",
+                      opacity: loading ? 0.5 : 1,
+                    }}>
+                    Top {n}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Verdict card */}
