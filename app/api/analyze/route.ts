@@ -405,6 +405,7 @@ export async function POST(req: NextRequest) {
       },
       topHolders,
       wallets,
+      totalSupply,
       timestamp: now,
     };
 

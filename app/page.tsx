@@ -41,6 +41,7 @@ interface AnalysisResult {
   distribution: { walletAge: DistBucket[]; holdDuration: DistBucket[]; };
   topHolders: { address: string; balancePct: number; walletAgeDays: number; holdDurationDays: number; totalTxCount: number; isFresh: boolean; }[];
   wallets: WalletAnalysis[];
+  totalSupply: number;
 }
 
 interface Verdict { score: number; grade: string; verdict: string; flags: string[]; }
@@ -573,8 +574,7 @@ export default function Home() {
       // Deep scan
       setDeepScanLoading(true);
       try {
-        const totalSupply = data.wallets.reduce((s, w) => s + w.balance, 0);
-        const dsRes = await fetch("/api/deep-scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: data.mint, wallets: data.wallets, totalSupply }) });
+        const dsRes = await fetch("/api/deep-scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: data.mint, wallets: data.wallets, totalSupply: data.totalSupply }) });
         if (dsRes.ok) setDeepScan(await dsRes.json());
         else setDeepScanError("Deep scan incomplete");
       } catch { setDeepScanError("Deep scan incomplete"); }
@@ -587,7 +587,7 @@ export default function Home() {
     }
   }, [mint, analyzeLimit, tokenInfo]);
 
-  const totalSupply = result ? result.wallets.reduce((s, w) => s + w.balance, 0) : 0;
+  const totalSupply = result ? result.totalSupply : 0;
 
   // Scroll-triggered reveals
   useEffect(() => {
