@@ -55,9 +55,9 @@ export default function DocsPage() {
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
-    const savedLang = localStorage.getItem("holderscope-lang");
+    const savedLang = localStorage.getItem("holdtech-lang");
     if (savedLang === "zh") setLang("zh");
-    const savedTheme = localStorage.getItem("holderscope-theme");
+    const savedTheme = localStorage.getItem("holdtech-theme");
     const isDark = savedTheme === "dark";
     setDarkMode(isDark);
     document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
@@ -77,7 +77,7 @@ export default function DocsPage() {
     const next = !darkMode;
     setDarkMode(next);
     document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
-    localStorage.setItem("holderscope-theme", next ? "dark" : "light");
+    localStorage.setItem("holdtech-theme", next ? "dark" : "light");
   };
 
   const zh = lang === "zh";
@@ -89,12 +89,12 @@ export default function DocsPage() {
         {/* Nav */}
         <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <img src="/logo.png" alt="HolderScope" width={28} height={28} style={{ objectFit: "contain" }} />
+            <img src="/logo.png" alt="HoldTech" width={28} height={28} style={{ objectFit: "contain" }} />
             <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <span className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent)" }}>DOCS</span>
-            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holderscope-lang", next); }}
+            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holdtech-lang", next); }}
               className="font-mono" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "12px", fontWeight: 700 }}>
               {zh ? "EN" : "中文"}
             </button>
@@ -126,12 +126,12 @@ export default function DocsPage() {
             {/* Overview */}
             <section id="overview" style={{ marginBottom: "48px" }}>
               <h1 style={{ fontSize: "36px", fontWeight: 800, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "16px" }}>
-                {zh ? "HolderScope 技术文档" : "HolderScope Technical Documentation"}
+                {zh ? "HoldTech 技术文档" : "HoldTech Technical Documentation"}
               </h1>
               <p style={{ fontSize: "15px", color: "var(--text-secondary)", lineHeight: 1.8, marginBottom: "16px" }}>
                 {zh
-                  ? "HolderScope 是一个 Solana 代币持币结构分析工具。它逐个分析每个持有者钱包，计算质量指标，检测庄家模式，并生成 AI 评估报告。本文档涵盖了架构、指标定义、评分方法和 API 参考。"
-                  : "HolderScope is a Solana token holderbase quality analysis tool. It profiles individual holder wallets, computes quality metrics, detects manipulation patterns, and generates AI-powered verdicts. This documentation covers the architecture, metric definitions, scoring methodology, and API reference."}
+                  ? "HoldTech 是一个 Solana 代币持币结构分析工具。它逐个分析每个持有者钱包，计算质量指标，检测庄家模式，并生成 AI 评估报告。本文档涵盖了架构、指标定义、评分方法和 API 参考。"
+                  : "HoldTech is a Solana token holderbase quality analysis tool. It profiles individual holder wallets, computes quality metrics, detects manipulation patterns, and generates AI-powered verdicts. This documentation covers the architecture, metric definitions, scoring methodology, and API reference."}
               </p>
               <div className="glass" style={{ borderRadius: "14px", padding: "20px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
                 {[
@@ -497,7 +497,7 @@ Limitations:
         <div style={{ padding: "16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "2px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12px", color: "var(--text-muted)" }}>
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>
-              <img src="/logo.png" alt="" width={16} height={16} style={{ objectFit: "contain" }} /> HOLDERSCOPE
+              <img src="/logo.png" alt="" width={16} height={16} style={{ objectFit: "contain" }} /> HOLDTECH
             </Link>
           </div>
           <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>{zh ? "入场前先了解" : "know before you ape"}</div>
