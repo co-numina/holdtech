@@ -51,6 +51,8 @@ export default function TrendingPage() {
   const [source, setSource] = useState("all");
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [maxMcap, setMaxMcap] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [cacheAge, setCacheAge] = useState<number | null>(null);
 
   const fetchTrending = useCallback(async () => {
     setLoading(true);
@@ -60,6 +62,13 @@ export default function TrendingPage() {
         const data = await res.json();
         setTokens(data.tokens || []);
         setLastUpdate(data.timestamp);
+        setCacheAge(data.ageSeconds || null);
+        // If no tokens and status is refreshing, poll faster until results arrive
+        if (data.tokens?.length === 0 && (data.status === "refreshing" || data.status === "refresh_in_progress")) {
+          setRefreshing(true);
+        } else {
+          setRefreshing(false);
+        }
       }
     } catch {}
     setLoading(false);
@@ -69,12 +78,12 @@ export default function TrendingPage() {
     fetchTrending();
   }, [fetchTrending]);
 
-  // Auto-refresh every 60s
+  // When refreshing (no cache yet), poll every 5s. Otherwise every 60s.
   useEffect(() => {
     if (!autoRefresh) return;
-    const interval = setInterval(fetchTrending, 60000);
+    const interval = setInterval(fetchTrending, refreshing ? 5000 : 60000);
     return () => clearInterval(interval);
-  }, [autoRefresh, fetchTrending]);
+  }, [autoRefresh, fetchTrending, refreshing]);
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
@@ -98,7 +107,7 @@ export default function TrendingPage() {
               )}
             </div>
             <p style={{ color: "var(--text-muted)", fontSize: "13px", margin: 0 }}>
-              Auto-scanning trending tokens. Holder quality grades update every 60s.
+              Full holder quality scans on trending tokens. Cached & refreshed every 5 min.
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -158,11 +167,18 @@ export default function TrendingPage() {
           </div>
         </div>
 
-        {/* Loading */}
-        {loading && tokens.length === 0 && (
+        {/* Loading / Refreshing */}
+        {tokens.length === 0 && (loading || refreshing) && (
           <div style={{ textAlign: "center", padding: "80px 0" }}>
             <div style={{ width: "40px", height: "40px", border: "3px solid var(--border)", borderTop: "3px solid var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-            <div style={{ color: "var(--text-muted)", fontSize: "13px" }}>Scanning trending tokens...</div>
+            <div style={{ color: "var(--text-muted)", fontSize: "13px", marginBottom: "8px" }}>
+              {refreshing ? "Running full holder quality scans on trending tokens..." : "Loading..."}
+            </div>
+            {refreshing && (
+              <div style={{ color: "var(--text-muted)", fontSize: "11px", opacity: 0.6 }}>
+                Analyzing top 20 holders per token — this takes ~30 seconds on first load
+              </div>
+            )}
           </div>
         )}
 
@@ -259,7 +275,7 @@ export default function TrendingPage() {
         {/* Last update */}
         {lastUpdate && (
           <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)", textAlign: "center", padding: "16px 0" }}>
-            Last scan: {new Date(lastUpdate).toLocaleTimeString()} · {loading ? "Refreshing..." : autoRefresh ? "Next refresh in 60s" : "Auto-refresh paused"}
+            Last scan: {new Date(lastUpdate).toLocaleTimeString()}{cacheAge !== null ? ` (${cacheAge}s ago)` : ""} · {loading ? "Refreshing..." : autoRefresh ? "Auto-refresh on" : "Auto-refresh paused"}
           </div>
         )}
       </div>
