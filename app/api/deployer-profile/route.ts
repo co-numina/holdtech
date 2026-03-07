@@ -15,26 +15,43 @@ async function heliusRpc(method: string, params: unknown[]) {
 }
 
 async function getDeployerFromMint(mint: string): Promise<string | null> {
-  // Get the first transaction for this mint (the deploy tx)
-  const sigs = await heliusRpc("getSignaturesForAddress", [mint, { limit: 1, commitment: "confirmed" }]);
-  
-  if (!sigs || sigs.length === 0) {
-    // Try getting oldest signatures
-    const allSigs = await heliusRpc("getSignaturesForAddress", [mint, { limit: 1000 }]);
-    if (!allSigs || allSigs.length === 0) return null;
-    
-    // Get the oldest one
-    const oldest = allSigs[allSigs.length - 1];
+  // Try pump.fun API first (most tokens are pump.fun)
+  try {
+    const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (pumpRes.ok) {
+      const pumpData = await pumpRes.json();
+      if (pumpData.creator) return pumpData.creator;
+    }
+  } catch {}
+
+  // Fallback: get oldest transaction for this mint
+  try {
+    let sigs = await heliusRpc("getSignaturesForAddress", [mint, { limit: 1000 }]);
+    if (!sigs || sigs.length === 0) return null;
+
+    // Page through to find the very oldest
+    while (sigs.length === 1000) {
+      const older = await heliusRpc("getSignaturesForAddress", [mint, { limit: 1000, before: sigs[sigs.length - 1].signature }]);
+      if (!older || older.length === 0) break;
+      sigs = older;
+    }
+
+    const oldest = sigs[sigs.length - 1];
     const tx = await heliusRpc("getTransaction", [oldest.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]);
     if (!tx) return null;
     
-    // The fee payer of the deploy tx is the deployer
-    return tx.transaction?.message?.accountKeys?.[0]?.pubkey || null;
+    const keys = tx.transaction?.message?.accountKeys;
+    if (Array.isArray(keys)) {
+      // Fee payer is the deployer
+      const first = keys[0];
+      return typeof first === "string" ? first : first?.pubkey || null;
+    }
+    return null;
+  } catch {
+    return null;
   }
-  
-  const tx = await heliusRpc("getTransaction", [sigs[0].signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]);
-  if (!tx) return null;
-  return tx.transaction?.message?.accountKeys?.[0]?.pubkey || null;
 }
 
 async function getDeployedTokens(deployer: string): Promise<Array<{
@@ -44,45 +61,13 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
   deployedAt: number | null;
   image: string | null;
 }>> {
-  // Use Helius DAS to search for tokens created by this wallet
-  // We'll use parsed transaction history to find token creates
-  const res = await fetch(`https://api.helius.xyz/v0/addresses/${deployer}/transactions?api-key=${HELIUS_API_KEY}&type=CREATE&limit=50`, {
-    signal: AbortSignal.timeout(15000),
-  });
-  
-  if (!res.ok) return [];
-  
-  const txs = await res.json();
   const tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null }> = [];
   const seenMints = new Set<string>();
 
-  for (const tx of txs) {
-    // Look for token mint events
-    if (tx.tokenTransfers) {
-      for (const transfer of tx.tokenTransfers) {
-        if (transfer.mint && !seenMints.has(transfer.mint)) {
-          seenMints.add(transfer.mint);
-        }
-      }
-    }
-    // Also check token balances
-    if (tx.accountData) {
-      for (const acc of tx.accountData) {
-        if (acc.tokenBalanceChanges) {
-          for (const change of acc.tokenBalanceChanges) {
-            if (change.mint && !seenMints.has(change.mint)) {
-              seenMints.add(change.mint);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Also try pump.fun approach — check if deployer created tokens on pump
+  // Primary: pump.fun created coins
   try {
     const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/user-created-coins/${deployer}?limit=50&offset=0&includeNsfw=true`, {
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     });
     if (pumpRes.ok) {
       const pumpData = await pumpRes.json();
@@ -103,32 +88,33 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
     }
   } catch {}
 
-  // For mints found via Helius that aren't from pump.fun, try to get metadata
-  for (const mint of seenMints) {
-    if (tokens.find(t => t.mint === mint)) continue;
+  // Fallback: Helius enhanced transaction history
+  if (tokens.length === 0) {
     try {
-      const metaRes = await fetch(HELIUS_RPC, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0", id: 1,
-          method: "getAsset",
-          params: { id: mint },
-        }),
-        signal: AbortSignal.timeout(5000),
+      const res = await fetch(`https://api.helius.xyz/v0/addresses/${deployer}/transactions?api-key=${HELIUS_API_KEY}&limit=100`, {
+        signal: AbortSignal.timeout(15000),
       });
-      const metaData = await metaRes.json();
-      const content = metaData.result?.content;
-      tokens.push({
-        mint,
-        name: content?.metadata?.name || "Unknown",
-        symbol: content?.metadata?.symbol || "???",
-        deployedAt: null,
-        image: content?.links?.image || null,
-      });
-    } catch {
-      tokens.push({ mint, name: "Unknown", symbol: "???", deployedAt: null, image: null });
-    }
+      if (res.ok) {
+        const txs = await res.json();
+        for (const tx of txs) {
+          if (tx.type === "CREATE" || tx.type === "TOKEN_MINT" || tx.description?.includes("create")) {
+            const transfers = tx.tokenTransfers || [];
+            for (const t of transfers) {
+              if (t.mint && !seenMints.has(t.mint)) {
+                seenMints.add(t.mint);
+                tokens.push({
+                  mint: t.mint,
+                  name: tx.description?.match(/\$(\w+)/)?.[1] || "Unknown",
+                  symbol: "???",
+                  deployedAt: tx.timestamp ? tx.timestamp * 1000 : null,
+                  image: null,
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch {}
   }
 
   return tokens;
