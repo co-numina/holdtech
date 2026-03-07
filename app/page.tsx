@@ -766,6 +766,8 @@ export default function Home() {
   const [deepScan, setDeepScan] = useState<DeepScanResult | null>(null);
   const [deepScanLoading, setDeepScanLoading] = useState(false);
   const [deepScanError, setDeepScanError] = useState("");
+  const [deployerProfile, setDeployerProfile] = useState<{ deployer: string; totalLaunches: number; alive: number; dead: number; rugRate: number; currentToken: string; tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null; alive: boolean; liquidity: number | null }> } | null>(null);
+  const [deployerLoading, setDeployerLoading] = useState(false);
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
   const [analyzeLimit, setAnalyzeLimit] = useState(20);
@@ -799,7 +801,7 @@ export default function Home() {
     const addr = mint.trim();
     if (!addr) return;
     const useLimit = limit || analyzeLimit;
-    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
+    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setDeployerProfile(null); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
     setTokenInfo(null);
 
     try {
@@ -851,6 +853,14 @@ export default function Home() {
         else setDeepScanError("Deep scan incomplete");
       } catch { setDeepScanError("Deep scan incomplete"); }
       finally { setDeepScanLoading(false); }
+
+      // Deployer profile (non-blocking)
+      setDeployerLoading(true);
+      fetch("/api/deployer-profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: data.mint }) })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setDeployerProfile(d); })
+        .catch(() => {})
+        .finally(() => setDeployerLoading(false));
 
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (err) {
@@ -1493,6 +1503,100 @@ export default function Home() {
                 <SolDistChart dist={deepScan.solDistribution} />
                 <BubbleScatter wallets={result.wallets} totalSupply={totalSupply} />
               </>
+            )}
+
+            {/* Deployer Profile */}
+            {deployerLoading && (
+              <div className="glass" style={{ borderRadius: "20px", padding: "24px", textAlign: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  <div style={{ width: "16px", height: "16px", border: "2px solid var(--border)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                  <span className="font-mono" style={{ fontSize: "12px", color: "var(--text-muted)" }}>Loading deployer profile...</span>
+                </div>
+              </div>
+            )}
+            {deployerProfile && (
+              <div className="glass" style={{ borderRadius: "20px", overflow: "hidden" }}>
+                <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "18px" }}>👤</span>
+                    <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>DEPLOYER PROFILE</span>
+                  </div>
+                  <span className="font-mono" style={{ fontSize: "10px", color: "rgba(255,255,255,0.6)" }}>
+                    {deployerProfile.deployer.slice(0, 6)}...{deployerProfile.deployer.slice(-4)}
+                  </span>
+                </div>
+                <div style={{ padding: "20px 28px" }}>
+                  {/* Stats row */}
+                  <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "28px", fontWeight: 900, color: "var(--text)" }}>{deployerProfile.totalLaunches}</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>TOTAL LAUNCHES</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "28px", fontWeight: 900, color: "var(--green)" }}>{deployerProfile.alive}</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>ALIVE</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "28px", fontWeight: 900, color: "var(--red)" }}>{deployerProfile.dead}</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>DEAD</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: deployerProfile.rugRate > 70 ? "rgba(239,68,68,0.06)" : "var(--bg-card-alt)", border: `1px solid ${deployerProfile.rugRate > 70 ? "rgba(239,68,68,0.15)" : "var(--border)"}`, textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "28px", fontWeight: 900, color: deployerProfile.rugRate > 70 ? "var(--red)" : deployerProfile.rugRate > 40 ? "#eab308" : "var(--green)" }}>{deployerProfile.rugRate}%</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>RUG RATE</div>
+                    </div>
+                  </div>
+
+                  {/* Token list */}
+                  {deployerProfile.tokens.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", fontWeight: 600, marginBottom: "4px" }}>LAUNCH HISTORY</div>
+                      {deployerProfile.tokens.map((token) => (
+                        <div key={token.mint} style={{
+                          display: "flex", alignItems: "center", gap: "12px",
+                          padding: "10px 14px", borderRadius: "10px",
+                          background: token.mint === deployerProfile.currentToken ? "rgba(153,69,255,0.06)" : "var(--bg-card-alt)",
+                          border: `1px solid ${token.mint === deployerProfile.currentToken ? "rgba(153,69,255,0.15)" : "var(--border)"}`,
+                        }}>
+                          {token.image ? (
+                            <img src={token.image} width={28} height={28} style={{ borderRadius: "50%", objectFit: "cover" }} alt="" />
+                          ) : (
+                            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "var(--bg-card)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 800, color: "var(--text-muted)" }}>
+                              {token.symbol.charAt(0)}
+                            </div>
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              <span className="font-mono" style={{ fontSize: "13px", fontWeight: 800, color: "var(--text)" }}>${token.symbol}</span>
+                              <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>{token.name}</span>
+                              {token.mint === deployerProfile.currentToken && (
+                                <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "rgba(153,69,255,0.1)", color: "var(--accent)" }}>CURRENT</span>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {token.deployedAt && (
+                              <span className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+                                {new Date(token.deployedAt).toLocaleDateString()}
+                              </span>
+                            )}
+                            <span style={{
+                              fontSize: "9px", fontWeight: 800, padding: "3px 8px", borderRadius: "6px",
+                              background: token.alive ? "rgba(20,241,149,0.08)" : "rgba(239,68,68,0.08)",
+                              color: token.alive ? "var(--green)" : "var(--red)",
+                              border: `1px solid ${token.alive ? "rgba(20,241,149,0.15)" : "rgba(239,68,68,0.15)"}`,
+                            }}>{token.alive ? "ALIVE" : "DEAD"}</span>
+                            {token.liquidity !== null && token.alive && (
+                              <span className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+                                ${token.liquidity > 1000 ? `${(token.liquidity / 1000).toFixed(1)}K` : Math.round(token.liquidity)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {/* Footer note */}
