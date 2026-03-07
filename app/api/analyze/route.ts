@@ -16,6 +16,7 @@ interface WalletAnalysis {
   isFresh: boolean;
   solBalance: number;
   otherTokenCount: number;
+  isPool?: boolean;
 }
 
 async function heliusRpc(method: string, params: unknown[]) {
@@ -210,6 +211,49 @@ export async function POST(req: NextRequest) {
     const totalSupply = totalSupplyRaw > 0 ? totalSupplyRaw : holders.reduce((s, h) => s + h.amount, 0);
     const now = Date.now();
     const wallets: WalletAnalysis[] = [];
+    
+    // Known program/pool addresses to exclude from metrics (but still show in table)
+    const KNOWN_PROGRAMS = new Set([
+      "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1", // Raydium AMM
+      "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8", // Raydium V4
+      "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C", // Raydium CPMM
+      "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK", // Raydium CLMM
+      "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",  // Orca Whirlpool
+      "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP", // Orca Token Swap
+      "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",  // Meteora DLMM
+      "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB", // Meteora Pools
+      "PSwapMdSai8tjrEXcxFeQth87xC4rRsa4VA5mhGhXkP",  // PumpSwap AMM
+      "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",  // Pump.fun Program
+      "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp18W", // Pump.fun Bonding Curve Authority
+      "39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg", // Raydium Authority
+    ]);
+
+    // Detect pools: known programs + check if it's the largest holder with very high tx count
+    // Also check on-chain if the account is owned by a known AMM program
+    const poolDetected = new Set<string>();
+    
+    function isPoolOrProgram(address: string): boolean {
+      return KNOWN_PROGRAMS.has(address) || poolDetected.has(address);
+    }
+    
+    // Pre-check: the #1 holder is almost always the liquidity pool
+    // Check if it's owned by a known AMM program
+    if (holders.length > 0) {
+      try {
+        const topInfo = await heliusRpc("getAccountInfo", [
+          holders[0].owner,
+          { encoding: "jsonParsed" },
+        ]);
+        const owner = topInfo?.value?.owner;
+        if (owner && (
+          KNOWN_PROGRAMS.has(owner) ||
+          owner === "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" ||
+          owner === "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        )) {
+          poolDetected.add(holders[0].owner);
+        }
+      } catch { /* skip */ }
+    }
 
     // Step 4: Analyze each wallet — sequentially with delays
     // Each wallet = ~3-4 RPC calls (sigs, balance, tokens)
@@ -232,6 +276,7 @@ export async function POST(req: NextRequest) {
           isFresh: walletAgeDays < 7,
           solBalance: Math.round(info.solBalance * 1000) / 1000,
           otherTokenCount: info.tokenCount,
+          isPool: isPoolOrProgram(holder.owner),
         });
       } catch (err) {
         console.error(`Failed to analyze ${holder.owner}:`, err);
@@ -247,25 +292,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Analysis failed — rate limited" }, { status: 429 });
     }
 
-    // Compute metrics
-    const ages = wallets.map((w) => w.walletAgeDays);
-    const holds = wallets.map((w) => w.holdDurationDays);
-    const txCounts = wallets.map((w) => w.totalTxCount);
+    // Filter out pools/programs for metrics calculation
+    const humanWallets = wallets.filter((w) => !w.isPool);
+    if (humanWallets.length === 0) {
+      return NextResponse.json({ error: "No non-pool holders found" }, { status: 404 });
+    }
+
+    // Compute metrics (excluding pools)
+    const ages = humanWallets.map((w) => w.walletAgeDays);
+    const holds = humanWallets.map((w) => w.holdDurationDays);
+    const txCounts = humanWallets.map((w) => w.totalTxCount);
 
     const metrics = {
       avgWalletAgeDays: Math.round((ages.reduce((s, v) => s + v, 0) / ages.length) * 10) / 10,
       medianWalletAgeDays: Math.round(median(ages) * 10) / 10,
       avgHoldDurationDays: Math.round((holds.reduce((s, v) => s + v, 0) / holds.length) * 10) / 10,
       medianHoldDurationDays: Math.round(median(holds) * 10) / 10,
-      freshWalletPct: Math.round((wallets.filter((w) => w.walletAgeDays < 7).length / wallets.length) * 1000) / 10,
-      veryFreshWalletPct: Math.round((wallets.filter((w) => w.walletAgeDays < 1).length / wallets.length) * 1000) / 10,
-      diamondHandsPct: Math.round((wallets.filter((w) => w.holdDurationDays > 2).length / wallets.length) * 1000) / 10,
-      veteranHolderPct: Math.round((wallets.filter((w) => w.walletAgeDays > 90).length / wallets.length) * 1000) / 10,
-      ogHolderPct: Math.round((wallets.filter((w) => w.walletAgeDays > 180).length / wallets.length) * 1000) / 10,
+      freshWalletPct: Math.round((humanWallets.filter((w) => w.walletAgeDays < 7).length / humanWallets.length) * 1000) / 10,
+      veryFreshWalletPct: Math.round((humanWallets.filter((w) => w.walletAgeDays < 1).length / humanWallets.length) * 1000) / 10,
+      diamondHandsPct: Math.round((humanWallets.filter((w) => w.holdDurationDays > 2).length / humanWallets.length) * 1000) / 10,
+      veteranHolderPct: Math.round((humanWallets.filter((w) => w.walletAgeDays > 90).length / humanWallets.length) * 1000) / 10,
+      ogHolderPct: Math.round((humanWallets.filter((w) => w.walletAgeDays > 180).length / humanWallets.length) * 1000) / 10,
       avgTxCount: Math.round(txCounts.reduce((s, v) => s + v, 0) / txCounts.length),
-      lowActivityPct: Math.round((wallets.filter((w) => w.totalTxCount < 10).length / wallets.length) * 1000) / 10,
-      avgSolBalance: Math.round((wallets.reduce((s, w) => s + w.solBalance, 0) / wallets.length) * 100) / 100,
-      singleTokenPct: Math.round((wallets.filter((w) => w.otherTokenCount <= 1).length / wallets.length) * 1000) / 10,
+      lowActivityPct: Math.round((humanWallets.filter((w) => w.totalTxCount < 10).length / humanWallets.length) * 1000) / 10,
+      avgSolBalance: Math.round((humanWallets.reduce((s, w) => s + w.solBalance, 0) / humanWallets.length) * 100) / 100,
+      singleTokenPct: Math.round((humanWallets.filter((w) => w.otherTokenCount <= 1).length / humanWallets.length) * 1000) / 10,
     };
 
     const ageBuckets = [
@@ -292,6 +343,7 @@ export async function POST(req: NextRequest) {
       holdDurationDays: w.holdDurationDays,
       totalTxCount: w.totalTxCount,
       isFresh: w.isFresh,
+      isPool: w.isPool || false,
     }));
 
     const result = {

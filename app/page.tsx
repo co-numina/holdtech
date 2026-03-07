@@ -363,7 +363,9 @@ export default function Home() {
                           {h.totalTxCount.toLocaleString()}
                         </td>
                         <td className="py-2 text-right">
-                          {h.isFresh ? (
+                          {(h as Record<string, unknown>).isPool ? (
+                            <span className="text-purple-400 bg-purple-400/10 px-1.5 py-0.5 rounded">POOL</span>
+                          ) : h.isFresh ? (
                             <span className="text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">FRESH</span>
                           ) : h.walletAgeDays > 180 ? (
                             <span className="text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">OG</span>
