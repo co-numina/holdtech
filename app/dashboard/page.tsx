@@ -35,7 +35,7 @@ export default function Dashboard() {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
   const [tokenBalance, setTokenBalance] = useState(0);
-  const [tab, setTab] = useState<"overview" | "scan" | "watchlist" | "history" | "batch" | "bundlers">("overview");
+  const [tab, setTab] = useState<"overview" | "scan" | "watchlist" | "history" | "batch" | "bundlers">("bundlers");
   const [scanInput, setScanInput] = useState("");
   const [batchInput, setBatchInput] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -131,15 +131,32 @@ export default function Dashboard() {
   const fetchFeed = useCallback(async () => {
     if (bundlers.length === 0) return; setFeedLoading(true);
     try {
-      const all: FeedEvent[] = [];
+      const batches: { address: string; name: string; emoji: string; group: string }[][] = [];
       for (let i = 0; i < bundlers.length; i += 10) {
-        const batch = bundlers.slice(i, i + 10).map(b => ({ address: b.address, name: b.label, emoji: b.emoji || "🚩", group: b.group || "tracked" }));
-        const r = await fetch("/api/bundler-feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallets: batch }) });
-        if (r.ok) { const d = await r.json(); all.push(...(d.events || [])); }
+        batches.push(bundlers.slice(i, i + 10).map(b => ({ address: b.address, name: b.label, emoji: b.emoji || "🚩", group: b.group || "tracked" })));
       }
+      const results = await Promise.all(batches.map(batch =>
+        fetch("/api/bundler-feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallets: batch }) })
+          .then(r => r.ok ? r.json() : { events: [] }).catch(() => ({ events: [] }))
+      ));
+      const all: FeedEvent[] = [];
+      results.forEach(d => all.push(...(d.events || [])));
       all.sort((a, b) => b.timestamp - a.timestamp); setFeedEvents(all);
     } catch {} setFeedLoading(false);
   }, [bundlers]);
+
+  // Auto-load default bundlers on first visit if none saved
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (initRef.current) return; initRef.current = true;
+    const saved = localStorage.getItem("holdtech-bundlers");
+    if (!saved || JSON.parse(saved).length === 0) {
+      fetch("/bundlers-default.json").then(r => r.json()).then(d => {
+        const nb = d.map((x: any) => ({ address: x.address, label: x.name, emoji: x.emoji, group: x.group, addedAt: Date.now(), seenIn: [] as string[] }));
+        setBundlers(nb); localStorage.setItem("holdtech-bundlers", JSON.stringify(nb));
+      }).catch(() => {});
+    }
+  }, []);
 
   useEffect(() => { if (tab === "bundlers" && bundlers.length > 0 && feedEvents.length === 0) fetchFeed(); }, [tab, bundlers.length]);
   useEffect(() => { if (autoRefresh && tab === "bundlers") { intervalRef.current = setInterval(fetchFeed, 30000); return () => clearInterval(intervalRef.current); } else if (intervalRef.current) clearInterval(intervalRef.current); }, [autoRefresh, tab, fetchFeed]);
