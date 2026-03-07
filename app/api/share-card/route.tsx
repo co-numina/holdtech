@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 export const runtime = "edge";
 
-function gradeColor(g: string) {
+function gc(g: string) {
   if (g?.startsWith("A")) return "#14F195";
   if (g?.startsWith("B")) return "#4ade80";
   if (g?.startsWith("C")) return "#eab308";
@@ -12,11 +12,33 @@ function gradeColor(g: string) {
 }
 
 function scoreBg(score: number) {
-  if (score >= 80) return "linear-gradient(135deg, #14F195, #0ea370)";
-  if (score >= 65) return "linear-gradient(135deg, #4ade80, #22c55e)";
-  if (score >= 50) return "linear-gradient(135deg, #eab308, #ca8a04)";
-  if (score >= 35) return "linear-gradient(135deg, #f97316, #ea580c)";
-  return "linear-gradient(135deg, #ef4444, #dc2626)";
+  if (score >= 80) return "#14F195";
+  if (score >= 65) return "#4ade80";
+  if (score >= 50) return "#eab308";
+  if (score >= 35) return "#f97316";
+  return "#ef4444";
+}
+
+function metricColor(label: string, value: number) {
+  if (label === "FRESH") return value > 60 ? "#ef4444" : value > 40 ? "#f97316" : value > 20 ? "#eab308" : "#14F195";
+  if (label === "VETERANS") return value > 40 ? "#14F195" : value > 20 ? "#4ade80" : value > 10 ? "#eab308" : "#ef4444";
+  if (label === "LOW ACT") return value > 50 ? "#ef4444" : value > 30 ? "#f97316" : value > 15 ? "#eab308" : "#14F195";
+  if (label === "1-TOKEN") return value > 40 ? "#ef4444" : value > 20 ? "#f97316" : "#14F195";
+  if (label === "💎 HANDS") return value > 60 ? "#14F195" : value > 30 ? "#4ade80" : "#eab308";
+  if (label === "AVG SOL") return value < 0.5 ? "#ef4444" : value < 2 ? "#eab308" : "#14F195";
+  return "#e0e0f0";
+}
+
+function barWidth(label: string, value: number) {
+  if (label === "FRESH") return Math.min(value, 100);
+  if (label === "VETERANS") return Math.min(value, 100);
+  if (label === "LOW ACT") return Math.min(value, 100);
+  if (label === "1-TOKEN") return Math.min(value, 100);
+  if (label === "💎 HANDS") return Math.min(value, 100);
+  if (label === "AVG AGE") return Math.min(value / 3, 100); // 300d = full
+  if (label === "AVG TXS") return Math.min(value / 10, 100); // 1000 = full
+  if (label === "AVG SOL") return Math.min(value / 10 * 100, 100); // 10 SOL = full
+  return 50;
 }
 
 export async function GET(req: NextRequest) {
@@ -25,135 +47,162 @@ export async function GET(req: NextRequest) {
   const score = parseInt(p.get("score") || "0");
   const grade = p.get("grade") || "?";
   const holders = parseInt(p.get("holders") || "0");
-  const freshPct = p.get("freshPct") || "0";
-  const veteranPct = p.get("veteranPct") || "0";
-  const lowActivityPct = p.get("lowActivityPct") || "0";
-  const singleTokenPct = p.get("singleTokenPct") || "0";
-  const avgAge = p.get("avgAge") || "0";
-  const avgTxs = p.get("avgTxs") || "0";
-  const avgSol = p.get("avgSol") || "0";
-  const diamondPct = p.get("diamondPct") || "0";
+  const freshPct = parseFloat(p.get("freshPct") || "0");
+  const veteranPct = parseFloat(p.get("veteranPct") || "0");
+  const lowActivityPct = parseFloat(p.get("lowActivityPct") || "0");
+  const singleTokenPct = parseFloat(p.get("singleTokenPct") || "0");
+  const avgAge = parseFloat(p.get("avgAge") || "0");
+  const avgTxs = parseFloat(p.get("avgTxs") || "0");
+  const avgSol = parseFloat(p.get("avgSol") || "0");
+  const diamondPct = parseFloat(p.get("diamondPct") || "0");
   const tokenImage = p.get("image") || "";
-  // verdict removed — was crashing satori
+  const top5Pct = parseFloat(p.get("top5Pct") || "0");
 
-  const gc = gradeColor(grade);
-  const warnColor = "#ef4444";
+  const color = gc(grade);
+  const scoreLabel = score >= 80 ? "STRONG ORGANIC BASE" : score >= 65 ? "SOLID HOLDERBASE" : score >= 50 ? "MIXED SIGNALS" : score >= 35 ? "WEAK — HIGH SYBIL RISK" : "CRITICAL — SYBIL PATTERN";
+
+  const metrics: { label: string; value: number; display: string; suffix: string }[] = [
+    { label: "FRESH", value: freshPct, display: `${freshPct}`, suffix: "%" },
+    { label: "VETERANS", value: veteranPct, display: `${veteranPct}`, suffix: "%" },
+    { label: "LOW ACT", value: lowActivityPct, display: `${lowActivityPct}`, suffix: "%" },
+    { label: "1-TOKEN", value: singleTokenPct, display: `${singleTokenPct}`, suffix: "%" },
+    { label: "💎 HANDS", value: diamondPct, display: `${diamondPct}`, suffix: "%" },
+    { label: "AVG AGE", value: avgAge, display: `${avgAge}`, suffix: "d" },
+    { label: "AVG TXS", value: avgTxs, display: `${Math.round(avgTxs)}`, suffix: "" },
+    { label: "AVG SOL", value: avgSol, display: `${avgSol}`, suffix: "" },
+  ];
 
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: 1200, height: 630, display: "flex", flexDirection: "column",
-          background: "#0a0a12", fontFamily: "monospace", color: "#e0e0f0", position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Grid background */}
+      <div style={{
+        width: 1200, height: 630, display: "flex", flexDirection: "column",
+        background: "#08080f", fontFamily: "monospace", color: "#e0e0f0",
+        position: "relative", overflow: "hidden",
+      }}>
+        {/* Subtle grid */}
         <div style={{
           position: "absolute", inset: 0, display: "flex",
-          backgroundImage: "linear-gradient(rgba(153,69,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.06) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
+          backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "30px 30px",
+        }} />
+
+        {/* Accent glow behind score */}
+        <div style={{
+          position: "absolute", left: "60px", top: "120px", width: "280px", height: "280px",
+          borderRadius: "50%", background: `radial-gradient(circle, ${color}15, transparent 70%)`,
+          display: "flex",
         }} />
 
         {/* Top bar */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "28px 40px 0", position: "relative",
+          padding: "24px 40px", position: "relative",
+          borderBottom: "1px solid rgba(153,69,255,0.1)",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <span style={{ fontSize: "24px", fontWeight: 900, color: "#9945FF" }}>HOLD</span>
-            <span style={{ fontSize: "24px", fontWeight: 900, color: "#666" }}>TECH</span>
-            <span style={{
-              fontSize: "10px", fontWeight: 700, color: "#9945FF", border: "1px solid rgba(153,69,255,0.3)",
-              padding: "2px 6px", borderRadius: "4px", marginLeft: "4px",
-            }}>SCAN REPORT</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "22px", fontWeight: 900, color: "#9945FF" }}>HOLD</span>
+            <span style={{ fontSize: "22px", fontWeight: 900, color: "#555" }}>TECH</span>
+            <div style={{ display: "flex", marginLeft: "8px", padding: "3px 10px", borderRadius: "4px", background: "rgba(153,69,255,0.12)", border: "1px solid rgba(153,69,255,0.25)" }}>
+              <span style={{ fontSize: "9px", fontWeight: 700, color: "#9945FF", letterSpacing: "0.15em" }}>SCAN REPORT</span>
+            </div>
           </div>
-          <span style={{ fontSize: "13px", color: "#555" }}>holdtech.fun</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <span style={{ fontSize: "12px", color: "#333", letterSpacing: "0.05em" }}>holdtech.fun</span>
+          </div>
         </div>
 
         {/* Main content */}
-        <div style={{
-          display: "flex", flex: 1, padding: "24px 40px 0", gap: "32px", position: "relative",
-        }}>
-          {/* Left: Token info + score */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px", width: "340px", flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div style={{ display: "flex", flex: 1, padding: "28px 40px", gap: "36px", position: "relative" }}>
+
+          {/* Left column: Token + Score hero */}
+          <div style={{ display: "flex", flexDirection: "column", width: "320px", flexShrink: 0, justifyContent: "center" }}>
+            {/* Token identity */}
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "24px" }}>
               {tokenImage ? (
-                <img src={tokenImage} width={72} height={72} style={{ borderRadius: "50%", border: "2px solid rgba(153,69,255,0.3)" }} />
+                <img src={tokenImage} width={52} height={52} style={{ borderRadius: "50%", border: `2px solid ${color}44` }} />
               ) : (
-                <div style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(153,69,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", fontWeight: 900, color: "#9945FF" }}>
+                <div style={{ width: 52, height: 52, borderRadius: "50%", background: `${color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 900, color, border: `2px solid ${color}44` }}>
                   {symbol.charAt(0)}
                 </div>
               )}
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "32px", fontWeight: 900, letterSpacing: "-0.02em" }}>${symbol}</span>
-                <span style={{ fontSize: "13px", color: "#666" }}>{holders.toLocaleString()} holders</span>
+                <span style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1 }}>${symbol}</span>
+                <span style={{ fontSize: "12px", color: "#555", marginTop: "3px" }}>{holders.toLocaleString()} holders</span>
               </div>
             </div>
 
-            {/* Score circle */}
-            <div style={{ display: "flex", alignItems: "center", gap: "20px", marginTop: "8px" }}>
-              <div style={{
-                width: 100, height: 100, borderRadius: "50%",
-                background: scoreBg(score),
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 30px ${gc}33`,
-              }}>
-                <span style={{ fontSize: "42px", fontWeight: 900, color: "#000" }}>{score}</span>
+            {/* Score hero */}
+            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+              <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {/* Score ring */}
+                <div style={{
+                  width: 120, height: 120, borderRadius: "50%",
+                  border: `4px solid ${color}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: `${color}10`,
+                  boxShadow: `0 0 40px ${color}20, inset 0 0 30px ${color}08`,
+                }}>
+                  <span style={{ fontSize: "52px", fontWeight: 900, color, lineHeight: 1 }}>{score}</span>
+                </div>
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "56px", fontWeight: 900, color: gc, lineHeight: 1 }}>{grade}</span>
-                <span style={{ fontSize: "12px", color: "#666", marginTop: "2px" }}>
-                  {score >= 80 ? "STRONG" : score >= 65 ? "SOLID" : score >= 50 ? "MIXED" : score >= 35 ? "WEAK" : "CRITICAL"}
-                </span>
+                <span style={{ fontSize: "64px", fontWeight: 900, color, lineHeight: 1, letterSpacing: "-0.04em" }}>{grade}</span>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: `${color}aa`, letterSpacing: "0.1em", marginTop: "4px" }}>{scoreLabel}</span>
               </div>
             </div>
 
-            {/* Score label */}
-            <div style={{ fontSize: "13px", color: "#555", marginTop: "8px" }}>
-              {score >= 80 ? "Strong organic holderbase" : score >= 65 ? "Solid holderbase with minor concerns" : score >= 50 ? "Mixed signals — proceed with caution" : score >= 35 ? "Weak holderbase — high sybil risk" : "Critical — textbook sybil pattern"}
-            </div>
+            {/* Top 5 concentration if available */}
+            {top5Pct > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "20px" }}>
+                <span style={{ fontSize: "10px", color: "#444", fontWeight: 700, letterSpacing: "0.1em" }}>TOP 5 HOLD</span>
+                <div style={{ flex: 1, height: "6px", borderRadius: "3px", background: "rgba(153,69,255,0.08)", overflow: "hidden", display: "flex" }}>
+                  <div style={{ width: `${Math.min(top5Pct, 100)}%`, height: "100%", borderRadius: "3px", background: top5Pct > 50 ? "#ef4444" : top5Pct > 30 ? "#f97316" : "#9945FF" }} />
+                </div>
+                <span style={{ fontSize: "12px", fontWeight: 800, color: top5Pct > 50 ? "#ef4444" : "#9945FF" }}>{top5Pct}%</span>
+              </div>
+            )}
           </div>
 
-          {/* Right: Metrics grid */}
-          <div style={{
-            display: "flex", flexWrap: "wrap", gap: "10px", flex: 1,
-            alignContent: "flex-start",
-          }}>
-            {[
-              { label: "FRESH WALLETS", value: `${freshPct}%`, warn: parseFloat(freshPct) > 40 },
-              { label: "VETERANS (90D+)", value: `${veteranPct}%`, warn: false },
-              { label: "LOW ACTIVITY", value: `${lowActivityPct}%`, warn: parseFloat(lowActivityPct) > 40 },
-              { label: "SINGLE TOKEN", value: `${singleTokenPct}%`, warn: parseFloat(singleTokenPct) > 30 },
-              { label: "AVG WALLET AGE", value: `${avgAge}d`, warn: false },
-              { label: "AVG TX COUNT", value: avgTxs, warn: false },
-              { label: "AVG SOL BAL", value: `${avgSol} SOL`, warn: parseFloat(avgSol) < 0.5 },
-              { label: "DIAMOND HANDS", value: `${diamondPct}%`, warn: false },
-            ].map((m) => (
-              <div
-                key={m.label}
-                style={{
-                  width: "190px", padding: "14px 16px",
-                  background: "rgba(153,69,255,0.04)",
-                  border: `1px solid ${m.warn ? "rgba(239,68,68,0.3)" : "rgba(153,69,255,0.1)"}`,
-                  borderRadius: "10px",
-                  display: "flex", flexDirection: "column",
-                }}
-              >
-                <span style={{ fontSize: "9px", fontWeight: 700, color: "#555", letterSpacing: "0.12em" }}>{m.label}</span>
-                <span style={{ fontSize: "24px", fontWeight: 800, marginTop: "4px", color: m.warn ? warnColor : "#e0e0f0" }}>{m.value}</span>
-              </div>
-            ))}
+          {/* Right column: Metrics with visual bars */}
+          <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "8px", justifyContent: "center" }}>
+            {metrics.map((m) => {
+              const mc = metricColor(m.label, m.value);
+              const bw = barWidth(m.label, m.value);
+              return (
+                <div key={m.label} style={{
+                  display: "flex", alignItems: "center", gap: "12px",
+                  padding: "10px 16px",
+                  background: "rgba(255,255,255,0.02)",
+                  borderRadius: "8px",
+                  border: "1px solid rgba(153,69,255,0.06)",
+                }}>
+                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#555", letterSpacing: "0.1em", width: "80px", flexShrink: 0 }}>{m.label}</span>
+                  <div style={{ flex: 1, height: "8px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", overflow: "hidden", display: "flex" }}>
+                    <div style={{ width: `${bw}%`, height: "100%", borderRadius: "4px", background: `linear-gradient(90deg, ${mc}88, ${mc})` }} />
+                  </div>
+                  <span style={{ fontSize: "20px", fontWeight: 900, color: mc, minWidth: "70px", textAlign: "right", lineHeight: 1 }}>
+                    {m.display}<span style={{ fontSize: "12px", fontWeight: 600, color: `${mc}88` }}>{m.suffix}</span>
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Bottom bar */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 40px 24px", position: "relative",
+          padding: "0 40px 20px", position: "relative",
         }}>
-          <span style={{ fontSize: "11px", color: "#333" }}>Solana Token Intelligence · holdtech.fun/dashboard</span>
-          <span style={{ fontSize: "11px", color: "#333" }}>Powered by Helius · DexScreener</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <span style={{ fontSize: "10px", color: "#333", letterSpacing: "0.08em" }}>SOLANA TOKEN INTELLIGENCE</span>
+            <div style={{ width: "1px", height: "10px", background: "#222", display: "flex" }} />
+            <span style={{ fontSize: "10px", color: "#333" }}>Powered by Helius · DexScreener</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color, display: "flex" }} />
+            <span style={{ fontSize: "10px", color: "#444", fontWeight: 700 }}>holdtech.fun/dashboard</span>
+          </div>
         </div>
       </div>
     ),
