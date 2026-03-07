@@ -148,8 +148,8 @@ async function getWalletFirstTx(wallet: string): Promise<number | null> {
     let oldestSig = sigs[sigs.length - 1];
     let lastSig = oldestSig.signature;
     
-    // Quick pagination to find oldest (max 5 pages = 5000 txs)
-    for (let i = 0; i < 5; i++) {
+    // Quick pagination to find oldest (max 2 pages to conserve rate limit)
+    for (let i = 0; i < 2; i++) {
       const older = await heliusRpc("getSignaturesForAddress", [
         wallet,
         { limit: 1000, before: lastSig },
@@ -170,7 +170,7 @@ async function getWalletTxCount(wallet: string): Promise<number> {
   try {
     let count = 0;
     let lastSig: string | undefined;
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 1; i++) {
       const params: Record<string, unknown> = { limit: 1000 };
       if (lastSig) params.before = lastSig;
       const sigs = await heliusRpc("getSignaturesForAddress", [wallet, params]);
@@ -245,30 +245,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No holders found" }, { status: 404 });
     }
 
-    // Sort by balance desc, analyze top 100
+    // Sort by balance desc, analyze top 50
     const sorted = holders.sort((a, b) => b.amount - a.amount);
     const totalSupply = sorted.reduce((s, h) => s + h.amount, 0);
-    const toAnalyze = sorted.slice(0, 100);
+    const toAnalyze = sorted.slice(0, 50);
     
     const now = Date.now();
     const wallets: WalletAnalysis[] = [];
 
-    // Batch analyze wallets — process in parallel batches of 10
-    for (let i = 0; i < toAnalyze.length; i += 10) {
-      const batch = toAnalyze.slice(i, i + 10);
+    // Batch analyze wallets — process in parallel batches of 5 with delays
+    for (let i = 0; i < toAnalyze.length; i += 5) {
+      const batch = toAnalyze.slice(i, i + 5);
       const results = await Promise.all(
         batch.map(async (holder) => {
-          const [firstTx, txCount, solBal, tokenCount] = await Promise.all([
+          // Stagger within batch to avoid burst
+          const [firstTx, solBal, tokenCount] = await Promise.all([
             getWalletFirstTx(holder.address),
-            getWalletTxCount(holder.address),
             getWalletSolBalance(holder.address),
             getWalletTokenCount(holder.address),
           ]);
+          
+          // Get tx count separately to reduce concurrent load
+          const txCount = await getWalletTxCount(holder.address);
 
           const walletAgeDays = firstTx ? (now - firstTx) / (1000 * 60 * 60 * 24) : 0;
-          
-          // Hold duration: approximate from first tx (we'd need token-specific tx parsing for exact)
-          // For now, use wallet age as upper bound — we'll refine with parsed txs later
           const holdDurationDays = walletAgeDays; // TODO: parse actual token buy time
 
           return {
@@ -285,9 +285,9 @@ export async function POST(req: NextRequest) {
       );
       wallets.push(...results);
       
-      // Small delay between batches to respect rate limits
-      if (i + 10 < toAnalyze.length) {
-        await new Promise((r) => setTimeout(r, 200));
+      // Longer delay between batches to respect rate limits
+      if (i + 5 < toAnalyze.length) {
+        await new Promise((r) => setTimeout(r, 500));
       }
     }
 
