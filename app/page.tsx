@@ -898,16 +898,20 @@ export default function Home() {
       <div style={{ position: "relative", zIndex: 10, maxWidth: "1100px", margin: "0 auto", padding: "0 32px" }}>
 
         {/* ═══ NAV ═══ */}
-        <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px", flexWrap: "nowrap", minHeight: "52px" }}>
+          {/* Left: Logo + links */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
             <button onClick={() => { setResult(null); setVerdict(null); setDeepScan(null); setTokenInfo(null); setMint(""); setError(""); setDeepScanError(""); }} style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
               <img src="/logo.png" alt="HoldTech" width={28} height={28} style={{ objectFit: "contain" }} />
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLD</span><span style={{ color: "var(--text-muted)" }}>TECH</span></span>
             </button>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
+          </div>
+          {/* Center: Nav links */}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <button onClick={() => { navigator.clipboard.writeText("ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump"); const el = document.getElementById("ca-copied"); if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1500); } }}
               className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: "rgba(20,241,149,0.06)", border: "1px solid rgba(20,241,149,0.15)", color: "var(--green)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
-              <span>CA: ENvMgA...JjsJpump</span>
+              <span>CA</span>
               <span style={{ fontSize: "10px" }}>📋</span>
               <span id="ca-copied" style={{ position: "absolute", top: "-22px", left: "50%", transform: "translateX(-50%)", fontSize: "9px", color: "var(--green)", background: "var(--bg-card)", padding: "2px 6px", borderRadius: "4px", opacity: 0, transition: "opacity 0.2s", whiteSpace: "nowrap", pointerEvents: "none" }}>Copied!</span>
             </button>
@@ -927,10 +931,24 @@ export default function Home() {
               DASHBOARD
             </a>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          {/* Right: Wallet + controls */}
+            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holdtech-lang", next); }}
+              className="font-mono"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "8px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "11px", fontWeight: 700, transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              {lang === "en" ? "中文" : "EN"}
+            </button>
+            <button onClick={toggleTheme} title={darkMode ? "Light mode" : "Dark mode"}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "8px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "16px", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              {darkMode ? "☀️" : "🌙"}
+            </button>
+            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 2px" }} />
             {/* Wallet connect */}
             {connected && publicKey ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
                 {tierInfo && tierInfo.tier !== "FREE" && (
                   <span className="font-mono" style={{
                     fontSize: "9px", fontWeight: 800, letterSpacing: "1px",
@@ -956,49 +974,9 @@ export default function Home() {
                 background: "linear-gradient(135deg, #9945FF, #7c3aed)", color: "white",
                 border: "none", cursor: "pointer", letterSpacing: "0.5px",
               }}>
-                Connect Wallet
+                Connect
               </button>
             )}
-            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holdtech-lang", next); }}
-              className="font-mono"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "12px", fontWeight: 700, transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
-              {lang === "en" ? "中文" : "EN"}
-            </button>
-            <button onClick={toggleTheme} title={darkMode ? "Light mode" : "Dark mode"}
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "18px", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
-              {darkMode ? "☀️" : "🌙"}
-            </button>
-            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-            <a href="https://pump.fun" target="_blank" rel="noopener" title="Pump.fun"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
-              <PumpFunIcon size={20} />
-            </a>
-            <a href="https://dexscreener.com" target="_blank" rel="noopener" title="DexScreener"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
-              <DexScreenerIcon size={20} />
-            </a>
-            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
-            <a href="https://github.com/co-numina" target="_blank" rel="noopener" title="GitHub"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
-              <GitHubIcon size={20} />
-            </a>
-            <a href="https://x.com/co_numina" target="_blank" rel="noopener" title="Twitter"
-              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
-              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
-              <XIcon size={18} />
-            </a>
           </div>
         </div>
 
