@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
         {/* Content backing panel - full width, solid */}
         <div style={{
           position: "absolute", left: "24px", top: "52px", right: "24px", bottom: "40px",
-          background: "rgba(5,5,12,0.72)",
+          background: "rgba(5,5,12,0.88)",
           borderRadius: "16px",
           border: "1px solid rgba(153,69,255,0.08)",
           display: "flex",
