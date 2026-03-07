@@ -18,6 +18,22 @@ interface TrendingToken {
   boostAmount?: number;
 }
 
+interface ScanMetrics {
+  avgWalletAgeDays: number;
+  medianWalletAgeDays: number;
+  avgHoldDurationDays: number;
+  medianHoldDurationDays: number;
+  freshWalletPct: number;
+  veryFreshWalletPct: number;
+  diamondHandsPct: number;
+  veteranHolderPct: number;
+  ogHolderPct: number;
+  avgTxCount: number;
+  lowActivityPct: number;
+  avgSolBalance: number;
+  singleTokenPct: number;
+}
+
 interface ScoredToken extends TrendingToken {
   holderCount: number;
   freshPct: number;
@@ -26,6 +42,9 @@ interface ScoredToken extends TrendingToken {
   score: number;
   verdict?: string;
   flags?: string[];
+  metrics?: ScanMetrics;
+  topHolders?: any[];
+  distribution?: any;
 }
 
 // ─── Source fetchers ───
@@ -103,7 +122,7 @@ async function getDexBoosted(): Promise<TrendingToken[]> {
 
 // ─── Full scan per token ───
 
-async function fullScanToken(mint: string, baseUrl: string): Promise<{ holderCount: number; freshPct: number; avgWalletAgeDays: number; grade: string; score: number; verdict?: string; flags?: string[] } | null> {
+async function fullScanToken(mint: string, baseUrl: string): Promise<{ holderCount: number; freshPct: number; avgWalletAgeDays: number; grade: string; score: number; verdict?: string; flags?: string[]; metrics?: ScanMetrics; topHolders?: any[]; distribution?: any } | null> {
   try {
     // Step 1: Run the real analyze endpoint (top 20 holders)
     const analyzeRes = await fetch(`${baseUrl}/api/analyze`, {
@@ -141,6 +160,9 @@ async function fullScanToken(mint: string, baseUrl: string): Promise<{ holderCou
       score: verdictData.score || 0,
       verdict: verdictData.verdict,
       flags: verdictData.flags,
+      metrics: analyzeData.metrics,
+      topHolders: analyzeData.topHolders,
+      distribution: analyzeData.distribution,
     };
   } catch {
     return null;
