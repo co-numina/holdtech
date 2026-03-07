@@ -269,7 +269,7 @@ export default function TrendingPage() {
                       </div>
                     </div>
                     <div className="font-mono" style={{ fontSize: "12px", fontWeight: 700 }}>{fmtMcap(token.marketCap)}</div>
-                    <div className="font-mono" style={{ fontSize: "12px", color: "var(--text-muted)" }}>{token.holderCount || "—"}</div>
+                    <div className="font-mono" style={{ fontSize: "12px", color: "var(--text-muted)" }}>{token.holderCount === 1000 ? "1k+" : token.holderCount > 1000 ? `${(token.holderCount / 1000).toFixed(1)}k` : token.holderCount || "—"}</div>
                     <div className="font-mono" style={{ fontSize: "12px", fontWeight: 700, color: m ? pctColor(m.freshWalletPct) : "var(--text-muted)" }}>
                       {m ? `${m.freshWalletPct}%` : token.freshPct ? `${token.freshPct}%` : "—"}
                     </div>
