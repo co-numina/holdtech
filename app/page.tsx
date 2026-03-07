@@ -1006,11 +1006,12 @@ export default function Home() {
               {[
                 { src: "/logos/solana.png", alt: "Solana" },
                 { src: "/logos/helius.png", alt: "Helius" },
+                { src: "/logos/nextjs.png", alt: "Next.js" },
+                { src: "/logos/typescript.png", alt: "TypeScript" },
                 { src: "/logos/jupiter.png", alt: "Jupiter" },
                 { src: "/logos/dexscreener.png", alt: "DexScreener" },
                 { src: "/logos/pump.png", alt: "pump.fun" },
-                { src: "/logos/vercel.png", alt: "Vercel" },
-                { src: "/logos/chrome.svg", alt: "Chrome" },
+                { src: "/logos/chrome.svg", alt: "Chrome Extension" },
               ].map((logo) => (
                 <div key={logo.alt} style={{ display: "flex", alignItems: "center", gap: "6px", opacity: 0.5, transition: "opacity 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")} onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}>
                   <img src={logo.src} alt={logo.alt} style={{ height: 18, width: "auto" }} />
