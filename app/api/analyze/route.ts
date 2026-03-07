@@ -190,23 +190,33 @@ export async function POST(req: NextRequest) {
     // Get real holder count via Helius DAS (must request limit >= actual count to get true total)
     let realHolderCount = topAccounts.length;
     try {
-      // Paginate through all holders to get accurate count
-      let page = 1;
-      let totalCounted = 0;
-      while (page <= 50) { // safety cap at 50 pages = 50k holders max
-        const dasRes = await fetch(HELIUS_RPC, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0", id: `hc-${page}`, method: "getTokenAccounts",
-            params: { mint, limit: 1000, page },
-          }),
-        });
-        const dasData = await dasRes.json();
-        const accounts = dasData.result?.token_accounts || [];
-        totalCounted += accounts.length;
-        if (accounts.length < 1000) break; // last page
-        page++;
+      // First page to check scale
+      const p1Res = await fetch(HELIUS_RPC, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: "hc-1", method: "getTokenAccounts", params: { mint, limit: 1000, page: 1 } }),
+      });
+      const p1Data = await p1Res.json();
+      const p1Accounts = p1Data.result?.token_accounts || [];
+      let totalCounted = p1Accounts.length;
+
+      if (p1Accounts.length === 1000) {
+        // More than 1000 holders — fetch pages in parallel batches of 5
+        let page = 2;
+        let done = false;
+        while (!done && page <= 100) {
+          const batch = Array.from({ length: 5 }, (_, i) => page + i).filter(p => p <= 100);
+          const results = await Promise.all(batch.map(p =>
+            fetch(HELIUS_RPC, {
+              method: "POST", headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ jsonrpc: "2.0", id: `hc-${p}`, method: "getTokenAccounts", params: { mint, limit: 1000, page: p } }),
+            }).then(r => r.json()).then(d => d.result?.token_accounts?.length || 0).catch(() => 0)
+          ));
+          for (const count of results) {
+            totalCounted += count;
+            if (count < 1000) { done = true; break; }
+          }
+          page += 5;
+        }
       }
       if (totalCounted > realHolderCount) realHolderCount = totalCounted;
     } catch { /* keep topAccounts.length */ }
