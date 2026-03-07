@@ -114,17 +114,21 @@ export default function Dashboard() {
 
   const runScan = useCallback(async (mint: string): Promise<ScanResult | null> => {
     try {
-      const [aR, cR] = await Promise.all([
-        fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) }),
-        fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) }),
-      ]);
+      const aR = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) });
       if (!aR.ok) return null;
-      const a = await aR.json(); const c = cR.ok ? await cR.json() : { count: null };
+      const a = await aR.json();
+      // Fetch holder count separately — don't let it block or fail the scan
+      let holderCount: number | null = null;
+      try {
+        const cR = await fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) });
+        if (cR.ok) { const c = await cR.json(); holderCount = c.holderCount || c.count || null; }
+      } catch {}
       const w = a.wallets || []; const supply = a.totalSupply || 1;
       const top5 = w.slice(0, 5).reduce((s: number, x: any) => s + (x.balance || 0), 0);
-      const vR = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: a.metrics, totalHolders: c.count || a.analyzedHolders, analyzedHolders: a.analyzedHolders, tokenSymbol: a.tokenSymbol }) });
+      const totalHolders = holderCount || (a.totalHolders > a.analyzedHolders ? a.totalHolders : null) || a.analyzedHolders;
+      const vR = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: a.metrics, totalHolders, analyzedHolders: a.analyzedHolders, tokenSymbol: a.tokenSymbol }) });
       const v = vR.ok ? await vR.json() : null;
-      return { mint, symbol: a.tokenSymbol || mint.slice(0, 6), score: v?.score ?? 0, grade: v?.grade || "?", holders: c.count || a.totalHolders || w.length, top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)), freshPct: a.metrics?.freshWalletPct ?? 0, avgAge: Math.round(a.metrics?.avgWalletAgeDays ?? 0), timestamp: Date.now() };
+      return { mint, symbol: a.tokenSymbol || mint.slice(0, 6), score: v?.score ?? 0, grade: v?.grade || "?", holders: totalHolders, top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)), freshPct: a.metrics?.freshWalletPct ?? 0, avgAge: Math.round(a.metrics?.avgWalletAgeDays ?? 0), timestamp: Date.now() };
     } catch { return null; }
   }, []);
 
