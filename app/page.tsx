@@ -1000,18 +1000,24 @@ export default function Home() {
 
         {/* ═══ POWERED BY ═══ */}
         {!result && !loading && (
-          <div className="reveal" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "32px", padding: "16px 0 20px", opacity: 0.45 }}>
-            {[
-              { src: "/logos/solana.png", alt: "Solana", h: 22 },
-              { src: "/logos/helius.png", alt: "Helius", h: 20 },
-              { src: "/logos/jupiter.png", alt: "Jupiter", h: 22 },
-              { src: "/logos/dexscreener.png", alt: "DexScreener", h: 20 },
-              { src: "/logos/pump.png", alt: "pump.fun", h: 22 },
-              { src: "/logos/vercel.png", alt: "Vercel", h: 18 },
-              { src: "/logos/chrome.svg", alt: "Chrome", h: 22 },
-            ].map((logo) => (
-              <img key={logo.alt} src={logo.src} alt={logo.alt} height={logo.h} style={{ height: logo.h, width: "auto", filter: "grayscale(1)", transition: "filter 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.filter = "grayscale(0)")} onMouseLeave={(e) => (e.currentTarget.style.filter = "grayscale(1)")} />
-            ))}
+          <div className="reveal" style={{ padding: "20px 0 24px" }}>
+            <div className="font-mono" style={{ textAlign: "center", fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: "14px" }}>Powered by</div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "24px", flexWrap: "wrap" }}>
+              {[
+                { src: "/logos/solana.png", alt: "Solana" },
+                { src: "/logos/helius.png", alt: "Helius" },
+                { src: "/logos/jupiter.png", alt: "Jupiter" },
+                { src: "/logos/dexscreener.png", alt: "DexScreener" },
+                { src: "/logos/pump.png", alt: "pump.fun" },
+                { src: "/logos/vercel.png", alt: "Vercel" },
+                { src: "/logos/chrome.svg", alt: "Chrome" },
+              ].map((logo) => (
+                <div key={logo.alt} style={{ display: "flex", alignItems: "center", gap: "6px", opacity: 0.5, transition: "opacity 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")} onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.5")}>
+                  <img src={logo.src} alt={logo.alt} style={{ height: 18, width: "auto" }} />
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)" }}>{logo.alt}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
