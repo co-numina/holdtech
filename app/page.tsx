@@ -163,6 +163,27 @@ const T = {
     holders: "holders...",
     footer: "know before you ape",
     footerData: "Data sourced from Helius RPC · Wallet ages from first on-chain transaction · Top 100 holders analyzed · Results are indicative, not definitive",
+    scopeTitle: "$SCOPE",
+    scopeTagline: "Stop being the drillpig.",
+    scopeDesc: "HolderScope is free. $SCOPE holders get the edge.",
+    tierFree: "FREE",
+    tierFreeDesc: "Single scans, rate-limited. Prove it works yourself.",
+    tierScout: "SCOUT",
+    tierScoutHold: "Hold 10K $SCOPE",
+    tierScoutDesc: "Watchlist · Historical scans · Batch scan 5 tokens · Trajectory alerts",
+    tierOperator: "OPERATOR",
+    tierOperatorHold: "Hold 100K $SCOPE",
+    tierOperatorDesc: "Real-time launch feed · Drill alerts · Known bundler warnings · API access",
+    tierWhale: "WHALE",
+    tierWhaleHold: "Hold 1M $SCOPE",
+    tierWhaleDesc: "Unlimited everything · Raw data export · Priority RPC · Early features",
+    scopeFeed: "REAL-TIME FEED",
+    scopeFeedDesc: "Every new pump.fun deploy auto-scanned and scored within 30 seconds. Stop finding tokens after the drill — find them before.",
+    scopeDrill: "DRILL INTELLIGENCE",
+    scopeDrillDesc: "Every scan builds the bundler database. Known cluster enters a new token? You get the alert. Crowdsourced degen intelligence.",
+    scopeTrajectory: "TRAJECTORY",
+    scopeTrajectoryDesc: "Snapshots are noise. Track holder quality over time — see concentration shifting, bundles accumulating, distribution improving. The trend is the signal.",
+    scopeCTA: "CA dropping soon",
     freshWallets: "Fresh Wallets (<7d)",
     under24h: "under 24hrs",
     veteranHolders: "Veteran Holders (90d+)",
@@ -240,6 +261,27 @@ const T = {
     holders: "名持有者...",
     footer: "入场前先了解",
     footerData: "数据来源：Helius RPC · 钱包年龄基于首笔链上交易 · 前100名持有者 · 结果仅供参考",
+    scopeTitle: "$SCOPE",
+    scopeTagline: "别再当drillpig了。",
+    scopeDesc: "HolderScope免费使用。持有$SCOPE获得优势。",
+    tierFree: "免费",
+    tierFreeDesc: "单次扫描，有频率限制。自己验证效果。",
+    tierScout: "侦察兵",
+    tierScoutHold: "持有 10K $SCOPE",
+    tierScoutDesc: "关注列表 · 历史扫描 · 批量扫描5个代币 · 趋势提醒",
+    tierOperator: "操作员",
+    tierOperatorHold: "持有 100K $SCOPE",
+    tierOperatorDesc: "实时上线动态 · 钻探预警 · 已知捆绑者警告 · API访问",
+    tierWhale: "鲸鱼",
+    tierWhaleHold: "持有 1M $SCOPE",
+    tierWhaleDesc: "无限制使用 · 原始数据导出 · 优先RPC · 抢先体验",
+    scopeFeed: "实时动态",
+    scopeFeedDesc: "每个新的pump.fun代币在30秒内自动扫描评分。不要在被钻之后才发现代币——在之前就发现它。",
+    scopeDrill: "钻探情报",
+    scopeDrillDesc: "每次扫描都在构建捆绑者数据库。已知集群进入新代币？你会收到警报。众包的defi情报网络。",
+    scopeTrajectory: "趋势追踪",
+    scopeTrajectoryDesc: "快照只是噪音。追踪持有者质量随时间的变化——看到集中度转移、捆绑累积、分布改善。趋势才是信号。",
+    scopeCTA: "CA即将公布",
     freshWallets: "新钱包 (<7天)",
     under24h: "24小时内",
     veteranHolders: "老持有者 (90天+)",
@@ -1022,6 +1064,62 @@ export default function Home() {
               <div style={{ background: "rgba(153,69,255,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>{t.holderscope}</div>
                 <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: t.holderscopeDesc }} />
+              </div>
+            </div>
+
+            {/* ═══ $SCOPE TOKEN ═══ */}
+            <div className="reveal" style={{ marginBottom: "32px" }}>
+              <div style={{ textAlign: "center", marginBottom: "24px" }}>
+                <div className="font-mono" style={{ fontSize: "28px", fontWeight: 800, background: "linear-gradient(135deg, var(--accent), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t.scopeTitle}</div>
+                <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginTop: "6px" }}>{t.scopeTagline}</div>
+                <div style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>{t.scopeDesc}</div>
+              </div>
+
+              {/* Tier cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid var(--border)", background: "var(--card-bg)" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", marginBottom: "4px" }}>{t.tierFree}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierFreeDesc}</div>
+                </div>
+                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid rgba(153,69,255,0.2)", background: "rgba(153,69,255,0.03)" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "2px" }}>{t.tierScout}</div>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.tierScoutHold}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierScoutDesc}</div>
+                </div>
+                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid rgba(153,69,255,0.35)", background: "rgba(153,69,255,0.06)" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "2px" }}>{t.tierOperator}</div>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.tierOperatorHold}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierOperatorDesc}</div>
+                </div>
+                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid rgba(20,241,149,0.3)", background: "linear-gradient(135deg, rgba(153,69,255,0.05), rgba(20,241,149,0.05))" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--green)", marginBottom: "2px" }}>{t.tierWhale}</div>
+                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.tierWhaleHold}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierWhaleDesc}</div>
+                </div>
+              </div>
+
+              {/* Feature highlights */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
+                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>📡</div>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.scopeFeed}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.scopeFeedDesc}</div>
+                </div>
+                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
+                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>🔩</div>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.scopeDrill}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.scopeDrillDesc}</div>
+                </div>
+                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
+                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>📈</div>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.scopeTrajectory}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.scopeTrajectoryDesc}</div>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div style={{ textAlign: "center", padding: "16px", borderRadius: "12px", border: "1px dashed var(--border-accent)", background: "rgba(153,69,255,0.03)" }}>
+                <div className="font-mono" style={{ fontSize: "14px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.1em" }}>{t.scopeCTA}</div>
               </div>
             </div>
 
