@@ -118,17 +118,12 @@ export async function GET(req: NextRequest) {
           position: "absolute", inset: 0, display: "flex",
           background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.65) 100%)",
         }} />
-        {/* Content backing panels for readability */}
-        {/* Left panel */}
+        {/* Content backing panel - full width, solid */}
         <div style={{
-          position: "absolute", left: 0, top: "56px", width: "420px", bottom: "44px",
-          background: "linear-gradient(90deg, rgba(0,0,0,0.5), rgba(0,0,0,0.15))",
-          display: "flex",
-        }} />
-        {/* Right panel */}
-        <div style={{
-          position: "absolute", left: "420px", top: "56px", right: 0, bottom: "44px",
-          background: "linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.45))",
+          position: "absolute", left: "24px", top: "52px", right: "24px", bottom: "40px",
+          background: "rgba(5,5,12,0.72)",
+          borderRadius: "16px",
+          border: "1px solid rgba(153,69,255,0.08)",
           display: "flex",
         }} />
         {/* Score glow */}
