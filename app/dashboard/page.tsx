@@ -247,8 +247,14 @@ export default function Dashboard() {
   // Coordinated buy detection
   const coordinated = useMemo((): CoordinatedAlert[] => {
     const byToken: Record<string, FeedEvent[]> = {};
+    const EXCLUDED_MINTS = new Set([
+      "So11111111111111111111111111111111111111112", // SOL
+      "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+      "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", // USDT
+    ]);
     feedEvents.forEach(ev => {
       if (ev.type !== "buy") return;
+      if (EXCLUDED_MINTS.has(ev.tokenMint)) return;
       if (!byToken[ev.tokenMint]) byToken[ev.tokenMint] = [];
       byToken[ev.tokenMint].push(ev);
     });
