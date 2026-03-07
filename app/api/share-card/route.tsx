@@ -113,9 +113,9 @@ export async function GET(req: NextRequest) {
             {verdict && (
               <div style={{
                 fontSize: "12px", color: "#888", lineHeight: 1.5,
-                marginTop: "4px", maxHeight: "60px", overflow: "hidden",
+                marginTop: "4px",
               }}>
-                {verdict.slice(0, 160)}{verdict.length > 160 ? "..." : ""}
+                {verdict.slice(0, 140)}
               </div>
             )}
           </div>
