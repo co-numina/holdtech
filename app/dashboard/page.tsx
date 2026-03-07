@@ -915,6 +915,7 @@ export default function Dashboard() {
                       borderTop: i > 0 ? `1px solid var(--border, rgba(153,69,255,0.06))` : "none", cursor: "pointer",
                     }} onClick={() => window.open(`/?mint=${h.mint}`, "_blank")}>
                       <span style={{ ...M, fontSize: "18px", fontWeight: 800, color: gc(h.grade), minWidth: "32px" }}>{h.grade}</span>
+                      {h.tokenImage && <img src={h.tokenImage} alt={h.symbol} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: "13px", fontWeight: 700 }}>{h.symbol}</div>
                         <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 8)}...{h.mint.slice(-6)}</div>
