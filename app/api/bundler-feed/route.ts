@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cached } from "@/app/lib/cache";
+import { cached, cacheGet, cacheSet } from "@/app/lib/cache";
 
 const HELIUS_KEY = process.env.HELIUS_API_KEY || "2e5afdba-52c8-47bb-a203-d7571a17ade5";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
@@ -122,34 +122,38 @@ export async function POST(req: NextRequest) {
 
     if (mints.length > 0) {
       try {
-        // Cache token metadata for 120s — symbols/images rarely change
-        const mintKey = mints.slice(0, 50).sort().join(",");
-        const cachedMeta = await cached(`tm:${mintKey.slice(0, 200)}`, 120, async () => {
+        // Check per-mint cache first
+        const uncached: string[] = [];
+        await Promise.all(mints.slice(0, 50).map(async (m) => {
+          const hit = await cacheGet<{ symbol: string; image: string }>(`tm:${m}`);
+          if (hit) { tokenMeta[m] = hit; } else { uncached.push(m); }
+        }));
+
+        // Only fetch uncached mints from Helius
+        if (uncached.length > 0) {
           const dasRes = await fetch(HELIUS_RPC, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              jsonrpc: "2.0",
-              id: "meta",
-              method: "getAssetBatch",
-              params: { ids: mints.slice(0, 50) },
+              jsonrpc: "2.0", id: "meta", method: "getAssetBatch",
+              params: { ids: uncached },
             }),
           });
-          if (!dasRes.ok) return {};
-          const dasData = await dasRes.json();
-          const assets = dasData.result || [];
-          const meta: Record<string, { symbol: string; image: string }> = {};
-          for (const asset of assets) {
-            if (asset?.id) {
-              meta[asset.id] = {
-                symbol: asset.content?.metadata?.symbol || asset.id.slice(0, 6),
-                image: asset.content?.links?.image || asset.content?.files?.[0]?.uri || "",
-              };
+          if (dasRes.ok) {
+            const dasData = await dasRes.json();
+            const assets = dasData.result || [];
+            for (const asset of assets) {
+              if (asset?.id) {
+                const meta = {
+                  symbol: asset.content?.metadata?.symbol || asset.id.slice(0, 6),
+                  image: asset.content?.links?.image || asset.content?.files?.[0]?.uri || "",
+                };
+                tokenMeta[asset.id] = meta;
+                await cacheSet(`tm:${asset.id}`, meta, 300); // 5 min per mint
+              }
             }
           }
-          return meta;
-        });
-        Object.assign(tokenMeta, cachedMeta);
+        }
       } catch {}
     }
 
