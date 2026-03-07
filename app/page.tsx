@@ -110,6 +110,163 @@ const DexScreenerIcon = ({ size = 18 }: { size?: number }) => (
 // UTILITY
 // ============================================================
 function shortenAddr(addr: string) { return addr.slice(0, 4) + "..." + addr.slice(-4); }
+const T = {
+  en: {
+    subtitle: "SOLANA TOKEN INTELLIGENCE",
+    hero: "See through the",
+    heroHighlight: "holderbase.",
+    heroDesc: "Paste any Solana token address. Get wallet age, activity analysis, bundle detection, cabal pattern scoring, and a plain-English quality verdict in seconds.",
+    placeholder: "Paste token mint address...",
+    analyze: "Analyze",
+    analyzing: "Analyzing...",
+    beta: "BETA",
+    whyTitle: "Why holderbase quality matters",
+    problemTitle: "The problem",
+    problemDesc: 'Most tokens look organic on the surface. 500 holders, growing chart, active Telegram. But underneath: <strong style="color: var(--text)">70% are fresh wallets from the same funding source</strong>, bundled in the same slot, holding nothing else. The chart is manufactured. The "community" is one person with 50 wallets.',
+    detectTitle: "What we detect",
+    detectDesc: 'HolderScope analyzes every wallet individually. <strong style="color: var(--text)">Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.',
+    verdictTitle: "Plain-English verdict",
+    verdictDesc: 'No jargon, no ambiguous charts. You get a letter grade (A–F), a numerical score, specific red flags, and a written verdict explaining exactly what the holderbase looks like and why. <strong style="color: var(--accent)">Know before you ape.</strong>',
+    sybilTitle: "Sybil / Cabal Detection",
+    sybilDesc: "Fresh wallets, single-token holders, same-slot buys, funding cluster analysis. Spots manufactured holderbases.",
+    qualityTitle: "Wallet Quality Scoring",
+    qualityDesc: "Age, tx count, SOL balance, token diversity. Each wallet profiled individually. Aggregated into holderbase metrics.",
+    concTitle: "Concentration Analysis",
+    concDesc: "Top 5/10/20 holder dominance, Gini coefficient, HHI index. Detects whale risk and distribution health.",
+    howTitle: "How it works",
+    step1: "Paste any Solana token mint address",
+    step2: "We fetch top 100 holders via Helius DAS and analyze each wallet in parallel",
+    step3: "Deep scan runs bundle detection, funding cluster tracing, and buy timing analysis",
+    step4: "Get a scored verdict — letter grade, red flags, and plain-English assessment",
+    dataSource: "Data source:",
+    dataSourceDesc: "Helius RPC (enhanced transactions, DAS). No third-party APIs that can be gamed. All analysis runs on raw on-chain data.",
+    rugcheck: "❌ Rugcheck",
+    rugcheckDesc: 'Flags supply concentration and LP locks. Doesn\'t analyze individual wallets, wallet age, or funding sources. <strong style="color: var(--red)">Surface-level only.</strong>',
+    bubblemaps: "⚠️ Bubblemaps",
+    bubblemapsDesc: 'Shows wallet clusters visually. Useful but no scoring, no age analysis, no automated verdict. <strong style="color: var(--yellow)">Manual interpretation required.</strong>',
+    holderscope: "✓ HolderScope",
+    holderscopeDesc: 'Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style="color: var(--accent)">Full picture, plain English.</strong>',
+    emptyTitle: "Paste a Solana token address above to analyze its holderbase",
+    emptySub: "Analysis takes ~15-20 seconds · Top 100 holders · Free to use",
+    verdictHeader: "Holderbase Verdict",
+    walletsAnalyzed: "wallets analyzed",
+    outOf: "out of",
+    totalHolders: "total holders",
+    top20: "Top 20 Holders",
+    allWallets: "All Analyzed Wallets",
+    deepScanTitle: "DEEP SCAN RESULTS",
+    deepScanLoading: "Running deep scan...",
+    deepScanSub: "Analyzing bundles, funding sources, and buy patterns",
+    countingHolders: "Counting holders...",
+    genVerdict: "Generating verdict...",
+    fetchingHolders: "Fetching top",
+    holders: "holders...",
+    footer: "know before you ape",
+    footerData: "Data sourced from Helius RPC · Wallet ages from first on-chain transaction · Top 100 holders analyzed · Results are indicative, not definitive",
+    freshWallets: "Fresh Wallets (<7d)",
+    under24h: "under 24hrs",
+    veteranHolders: "Veteran Holders (90d+)",
+    og180: "OG (180d+)",
+    lowActivity: "Low Activity (<10 txs)",
+    likelyBurner: "likely burner wallets",
+    singleToken: "Single-Token Holders",
+    onlyHoldThis: "only hold this token",
+    avgWalletAge: "Avg Wallet Age",
+    median: "median",
+    avgTxCount: "Avg Tx Count",
+    lifetimeTx: "lifetime transactions",
+    avgSolBal: "Avg SOL Balance",
+    solPerWallet: "SOL per wallet",
+    diamondHands: "Diamond Hands (>2d)",
+    holding2d: "holding for 2+ days",
+    walletAgeDist: "Wallet Age Distribution",
+    holdDurDist: "Hold Duration Distribution",
+    radar: "Holderbase Radar",
+    tokenConc: "Token Concentration",
+    buyTimeline: "Buy Timeline",
+    solBalDist: "SOL Balance Distribution",
+    walletScatter: "Wallet Scatter (Age vs Holdings)",
+    mcap: "MCap", vol24: "24h Vol", liquidity: "Liquidity", holdersLabel: "Holders", dex: "DEX",
+  },
+  zh: {
+    subtitle: "SOLANA 代币情报",
+    hero: "看透",
+    heroHighlight: "持币结构。",
+    heroDesc: "粘贴任意 Solana 代币地址，即刻获取钱包年龄、活跃度分析、捆绑检测、庄家模式评分和中文质量评估。",
+    placeholder: "粘贴代币地址...",
+    analyze: "分析",
+    analyzing: "分析中...",
+    beta: "测试版",
+    whyTitle: "为什么持币质量很重要",
+    problemTitle: "问题所在",
+    problemDesc: '大多数代币表面看起来很正常——500个持有者、上涨的图表、活跃的电报群。但实际上：<strong style="color: var(--text)">70%是来自同一资金来源的新钱包</strong>，在同一个区块买入，只持有这一个代币。图表是人为制造的，"社区"不过是一个人操控的50个钱包。',
+    detectTitle: "我们检测什么",
+    detectDesc: 'HolderScope 逐个分析每个钱包。<strong style="color: var(--text)">钱包年龄、交易历史、SOL余额、代币多样性、资金来源、买入时间和捆绑模式。</strong>计算集中度指标（基尼系数、HHI），检测同区块买入，追踪资金集群，对整个持币基础进行0-100评分。',
+    verdictTitle: "中文评估报告",
+    verdictDesc: '没有行话，没有模糊的图表。你会得到一个字母等级（A–F）、一个数字分数、具体的危险信号，以及一份详细解释持币结构的评估报告。<strong style="color: var(--accent)">入场前先了解。</strong>',
+    sybilTitle: "女巫 / 庄家检测",
+    sybilDesc: "新钱包、单币持有者、同区块买入、资金集群分析。识别人为制造的持币结构。",
+    qualityTitle: "钱包质量评分",
+    qualityDesc: "年龄、交易数、SOL余额、代币多样性。逐个分析每个钱包，汇总为持币基础指标。",
+    concTitle: "集中度分析",
+    concDesc: "Top 5/10/20 持有者占比、基尼系数、HHI指数。检测鲸鱼风险和分配健康度。",
+    howTitle: "工作原理",
+    step1: "粘贴任意 Solana 代币地址",
+    step2: "通过 Helius DAS 获取前100名持有者，并行分析每个钱包",
+    step3: "深度扫描运行捆绑检测、资金集群追踪和买入时间分析",
+    step4: "获得评分报告——字母等级、危险信号和中文评估",
+    dataSource: "数据来源：",
+    dataSourceDesc: "Helius RPC（增强交易、DAS）。无第三方API。所有分析基于原始链上数据。",
+    rugcheck: "❌ Rugcheck",
+    rugcheckDesc: '标记供应集中度和LP锁定。不分析单个钱包、钱包年龄或资金来源。<strong style="color: var(--red)">仅表面层级。</strong>',
+    bubblemaps: "⚠️ Bubblemaps",
+    bubblemapsDesc: '可视化钱包集群。有用但无评分、无年龄分析、无自动评估。<strong style="color: var(--yellow)">需人工解读。</strong>',
+    holderscope: "✓ HolderScope",
+    holderscopeDesc: '单个钱包分析、资金追踪、捆绑检测、买入时间、集中度指标和AI评分。<strong style="color: var(--accent)">全景分析，中文报告。</strong>',
+    emptyTitle: "在上方粘贴 Solana 代币地址以分析其持币结构",
+    emptySub: "分析耗时约15-20秒 · 前100名持有者 · 免费使用",
+    verdictHeader: "持币基础评估",
+    walletsAnalyzed: "个钱包已分析",
+    outOf: "共",
+    totalHolders: "个持有者",
+    top20: "前20名持有者",
+    allWallets: "全部已分析钱包",
+    deepScanTitle: "深度扫描结果",
+    deepScanLoading: "正在深度扫描...",
+    deepScanSub: "分析捆绑、资金来源和买入模式",
+    countingHolders: "正在统计持有者...",
+    genVerdict: "正在生成评估...",
+    fetchingHolders: "正在获取前",
+    holders: "名持有者...",
+    footer: "入场前先了解",
+    footerData: "数据来源：Helius RPC · 钱包年龄基于首笔链上交易 · 前100名持有者 · 结果仅供参考",
+    freshWallets: "新钱包 (<7天)",
+    under24h: "24小时内",
+    veteranHolders: "老持有者 (90天+)",
+    og180: "元老 (180天+)",
+    lowActivity: "低活跃 (<10笔)",
+    likelyBurner: "可能是一次性钱包",
+    singleToken: "单币持有者",
+    onlyHoldThis: "仅持有此代币",
+    avgWalletAge: "平均钱包年龄",
+    median: "中位数",
+    avgTxCount: "平均交易数",
+    lifetimeTx: "历史总交易",
+    avgSolBal: "平均SOL余额",
+    solPerWallet: "每钱包SOL",
+    diamondHands: "钻石手 (>2天)",
+    holding2d: "持有超过2天",
+    walletAgeDist: "钱包年龄分布",
+    holdDurDist: "持有时长分布",
+    radar: "持币雷达图",
+    tokenConc: "代币集中度",
+    buyTimeline: "买入时间线",
+    solBalDist: "SOL余额分布",
+    walletScatter: "钱包散点图（年龄 vs 持仓）",
+    mcap: "市值", vol24: "24h成交量", liquidity: "流动性", holdersLabel: "持有者", dex: "DEX",
+  },
+};
+
 function gradeColor(g: string) { return g === "A" ? "text-emerald-600" : g === "B" ? "text-violet-600" : g === "C" ? "text-yellow-600" : g === "D" ? "text-orange-600" : "text-red-600"; }
 function scoreColor(s: number) { return s >= 80 ? "bg-emerald-500" : s >= 65 ? "bg-violet-500" : s >= 50 ? "bg-yellow-500" : s >= 35 ? "bg-orange-500" : "bg-red-500"; }
 function scoreBorderColor(s: number) { return s >= 80 ? "border-emerald-500/30" : s >= 65 ? "border-violet-500/30" : s >= 50 ? "border-yellow-500/30" : s >= 35 ? "border-orange-500/30" : "border-red-500/30"; }
@@ -143,7 +300,7 @@ function Sparkline({ data, width = 120, height = 40, color }: { data: number[]; 
   );
 }
 
-function TokenCard({ info }: { info: TokenInfo }) {
+function TokenCard({ info, labels }: { info: TokenInfo; labels: { mcap: string; vol24: string; liquidity: string; holdersLabel: string; dex: string } }) {
   const fmt = (n: number | null, prefix = "$") => {
     if (n === null) return "—";
     if (n >= 1e9) return `${prefix}${(n / 1e9).toFixed(2)}B`;
@@ -195,11 +352,11 @@ function TokenCard({ info }: { info: TokenInfo }) {
       {/* Stats row */}
       <div style={{ padding: "0 24px 16px", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
         {[
-          { label: "MCap", value: fmt(info.mcap) },
-          { label: "24h Vol", value: fmt(info.volume24h) },
-          { label: "Liquidity", value: fmt(info.liquidity) },
-          { label: "Holders", value: info.holderCount ? info.holderCount.toLocaleString() : "—" },
-          { label: "DEX", value: info.dexId || "—" },
+          { label: labels.mcap, value: fmt(info.mcap) },
+          { label: labels.vol24, value: fmt(info.volume24h) },
+          { label: labels.liquidity, value: fmt(info.liquidity) },
+          { label: labels.holdersLabel, value: info.holderCount ? info.holderCount.toLocaleString() : "—" },
+          { label: labels.dex, value: info.dexId || "—" },
         ].map(s => (
           <div key={s.label} style={{ textAlign: "center", padding: "8px", borderRadius: "10px", background: "var(--bg-card-alt)", border: "1px solid var(--border)" }}>
             <div className="font-mono" style={{ fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: "2px" }}>{s.label}</div>
@@ -541,14 +698,16 @@ export default function Home() {
   const [showWallets, setShowWallets] = useState(false);
   const [analyzeLimit, setAnalyzeLimit] = useState(20);
   const [darkMode, setDarkMode] = useState(false);
+  const [lang, setLang] = useState<"en" | "zh">("en");
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("holderscope-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const isDark = saved ? saved === "dark" : prefersDark;
+    const isDark = saved === "dark";
     setDarkMode(isDark);
     document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+    const savedLang = localStorage.getItem("holderscope-lang");
+    if (savedLang === "zh") setLang("zh");
   }, []);
 
   const toggleTheme = () => {
@@ -562,7 +721,7 @@ export default function Home() {
     const addr = mint.trim();
     if (!addr) return;
     const useLimit = limit || analyzeLimit;
-    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress(`Fetching top ${useLimit} holders...`);
+    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
     setTokenInfo(null);
 
     try {
@@ -580,7 +739,7 @@ export default function Home() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
       const data: AnalysisResult = await res.json();
       setResult(data);
-      setProgress("Counting holders...");
+      setProgress(t.countingHolders);
 
       // Get accurate holder count before verdict
       let realHolderCount = data.totalHolders;
@@ -596,7 +755,7 @@ export default function Home() {
         }
       } catch { /* use analyze count */ }
 
-      setProgress("Generating verdict...");
+      setProgress(t.genVerdict);
       const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: realHolderCount, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
       if (vRes.ok) setVerdict(await vRes.json());
 
@@ -619,6 +778,7 @@ export default function Home() {
   }, [mint, analyzeLimit]);
 
   const totalSupply = result ? result.totalSupply : 0;
+  const t = T[lang];
 
   // Scroll-triggered reveals
   useEffect(() => {
@@ -665,6 +825,13 @@ export default function Home() {
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holderscope-lang", next); }}
+              className="font-mono"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "12px", fontWeight: 700, transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              {lang === "en" ? "中文" : "EN"}
+            </button>
             <button onClick={toggleTheme} title={darkMode ? "Light mode" : "Dark mode"}
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "18px", transition: "all 0.15s" }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
@@ -704,14 +871,14 @@ export default function Home() {
         <div style={{ padding: "48px 0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "40px" }}>
           <div style={{ flex: 1 }}>
             <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "14px" }}>
-              SOLANA TOKEN INTELLIGENCE
+              {t.subtitle}
             </div>
             <h1 style={{ fontSize: "44px", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "14px" }}>
-              See through the{" "}
-              <span style={{ background: "linear-gradient(135deg, var(--accent-bright), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>holderbase.</span>
+              {t.hero}{" "}
+              <span style={{ background: "linear-gradient(135deg, var(--accent-bright), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t.heroHighlight}</span>
             </h1>
             <p style={{ fontSize: "15px", color: "var(--text-secondary)", maxWidth: "540px", lineHeight: 1.7 }}>
-              Paste any Solana token address. Get wallet age, activity analysis, bundle detection, cabal pattern scoring, and a plain-English quality verdict in seconds.
+              {t.heroDesc}
             </p>
           </div>
           <div style={{ flexShrink: 0 }}>
@@ -727,7 +894,7 @@ export default function Home() {
               <input
                 type="text" value={mint} onChange={e => setMint(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !loading && analyze()}
-                placeholder="Paste token mint address..."
+                placeholder={t.placeholder}
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
@@ -751,7 +918,7 @@ export default function Home() {
                 color: loading || !mint.trim() ? "var(--text-muted)" : "var(--bg)", boxShadow: loading || !mint.trim() ? "none" : "0 4px 16px var(--accent-glow)",
               }}
             >
-              {loading ? "Analyzing..." : "Analyze"}
+              {loading ? t.analyzing : t.analyze}
             </button>
           </div>
         </div>
@@ -866,8 +1033,8 @@ export default function Home() {
             {/* ═══ EMPTY STATE ═══ */}
             <div style={{ textAlign: "center", padding: "40px 0 60px" }}>
               <div style={{ fontSize: "48px", marginBottom: "12px", opacity: 0.6 }}>🔍</div>
-              <div style={{ fontSize: "16px", color: "var(--text-muted)", marginBottom: "6px" }}>Paste a Solana token address above to analyze its holderbase</div>
-              <div style={{ fontSize: "13px", color: "var(--text-muted)", opacity: 0.6 }}>Analysis takes ~15-20 seconds · Top 100 holders · Free to use</div>
+              <div style={{ fontSize: "16px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.emptyTitle}</div>
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", opacity: 0.6 }}>{t.emptySub}</div>
             </div>
           </>
         )}
@@ -896,7 +1063,7 @@ export default function Home() {
           <div ref={resultsRef} style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "40px" }}>
 
             {/* Token Card */}
-            {tokenInfo && <TokenCard info={tokenInfo} />}
+            {tokenInfo && <TokenCard info={tokenInfo} labels={t} />}
 
             {/* Token header (fallback if no tokenInfo) */}
             {!tokenInfo && (
@@ -937,7 +1104,7 @@ export default function Home() {
               <div className="glass" style={{ borderRadius: "20px", overflow: "hidden" }}>
                 <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                   <ShieldIcon size={20} color="white" />
-                  <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Holderbase Verdict</span>
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>{t.verdictHeader}</span>
                 </div>
                 <div style={{ padding: "28px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
                   <div style={{ textAlign: "center", flexShrink: 0 }}>
@@ -960,14 +1127,14 @@ export default function Home() {
 
             {/* Key Metrics */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
-              <MetricCard label="Fresh Wallets (<7d)" value={`${result.metrics.freshWalletPct}%`} sub={`${result.metrics.veryFreshWalletPct}% under 24hrs`} warn={result.metrics.freshWalletPct > 40} />
-              <MetricCard label="Veteran Holders (90d+)" value={`${result.metrics.veteranHolderPct}%`} sub={`${result.metrics.ogHolderPct}% OG (180d+)`} />
-              <MetricCard label="Low Activity (<10 txs)" value={`${result.metrics.lowActivityPct}%`} sub="likely burner wallets" warn={result.metrics.lowActivityPct > 40} />
-              <MetricCard label="Single-Token Holders" value={`${result.metrics.singleTokenPct}%`} sub="only hold this token" warn={result.metrics.singleTokenPct > 30} />
-              <MetricCard label="Avg Wallet Age" value={`${result.metrics.avgWalletAgeDays}d`} sub={`median: ${result.metrics.medianWalletAgeDays}d`} />
-              <MetricCard label="Avg Tx Count" value={`${result.metrics.avgTxCount}`} sub="lifetime transactions" />
-              <MetricCard label="Avg SOL Balance" value={`${result.metrics.avgSolBalance}`} sub="SOL per wallet" warn={result.metrics.avgSolBalance < 0.5} />
-              <MetricCard label="Diamond Hands (>2d)" value={`${result.metrics.diamondHandsPct}%`} sub="holding for 2+ days" />
+              <MetricCard label={t.freshWallets} value={`${result.metrics.freshWalletPct}%`} sub={`${result.metrics.veryFreshWalletPct}% ${t.under24h}`} warn={result.metrics.freshWalletPct > 40} />
+              <MetricCard label={t.veteranHolders} value={`${result.metrics.veteranHolderPct}%`} sub={`${result.metrics.ogHolderPct}% ${t.og180}`} />
+              <MetricCard label={t.lowActivity} value={`${result.metrics.lowActivityPct}%`} sub={t.likelyBurner} warn={result.metrics.lowActivityPct > 40} />
+              <MetricCard label={t.singleToken} value={`${result.metrics.singleTokenPct}%`} sub={t.onlyHoldThis} warn={result.metrics.singleTokenPct > 30} />
+              <MetricCard label={t.avgWalletAge} value={`${result.metrics.avgWalletAgeDays}d`} sub={`${t.median}: ${result.metrics.medianWalletAgeDays}d`} />
+              <MetricCard label={t.avgTxCount} value={`${result.metrics.avgTxCount}`} sub={t.lifetimeTx} />
+              <MetricCard label={t.avgSolBal} value={`${result.metrics.avgSolBalance}`} sub={t.solPerWallet} warn={result.metrics.avgSolBalance < 0.5} />
+              <MetricCard label={t.diamondHands} value={`${result.metrics.diamondHandsPct}%`} sub={t.holding2d} />
             </div>
 
             {/* Distributions + Radar */}
@@ -1090,7 +1257,7 @@ export default function Home() {
 
             {/* Footer note */}
             <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", padding: "8px 0", lineHeight: 1.6 }}>
-              Data sourced from Helius RPC · Wallet ages from first on-chain transaction · Top 100 holders analyzed · Results are indicative, not definitive
+              {t.footerData}
             </div>
           </div>
         )}
@@ -1108,7 +1275,7 @@ export default function Home() {
               <XIcon size={14} /> twitter
             </a>
           </div>
-          <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>know before you ape</div>
+          <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>{t.footer}</div>
         </div>
       </div>
     </div>
