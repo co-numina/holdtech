@@ -770,6 +770,7 @@ export default function Home() {
   const [lang, setLang] = useState<"en" | "zh">("en");
   const [shareCard, setShareCard] = useState<{ url: string; symbol: string } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareLoading, setShareLoading] = useState(true);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1313,6 +1314,7 @@ export default function Home() {
                       top5Pct: String(deepScan?.concentration?.top5Pct ?? 0),
                       ...(tokenInfo?.image ? { image: tokenInfo.image } : {}),
                     });
+                    setShareLoading(true);
                     setShareCard({ url: `/api/share-card?${p.toString()}`, symbol: result!.tokenSymbol });
                   }} style={{ padding: "4px 12px", background: "rgba(255,255,255,0.15)", color: "white", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: 700, cursor: "pointer", backdropFilter: "blur(4px)" }}>📸 Share</button>
                 </div>
@@ -1497,13 +1499,22 @@ export default function Home() {
               <span className="font-mono" style={{ fontSize: "14px", fontWeight: 800 }}>Share Card — ${shareCard.symbol}</span>
               <button onClick={() => { setShareCard(null); setShareCopied(false); }} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-muted)", padding: "4px 8px" }}>✕</button>
             </div>
-            <img
-              id="share-card-img"
-              src={shareCard.url}
-              alt={`${shareCard.symbol} scan card`}
-              style={{ width: "100%", borderRadius: "12px", border: "1px solid var(--border)" }}
-              crossOrigin="anonymous"
-            />
+            <div style={{ position: "relative", minHeight: shareLoading ? "200px" : "auto" }}>
+              {shareLoading && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ width: "32px", height: "32px", border: "3px solid var(--border)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                  <span className="font-mono" style={{ fontSize: "11px", color: "var(--text-muted)" }}>Generating card...</span>
+                </div>
+              )}
+              <img
+                id="share-card-img"
+                src={shareCard.url}
+                alt={`${shareCard.symbol} scan card`}
+                onLoad={() => setShareLoading(false)}
+                style={{ width: "100%", borderRadius: "12px", border: "1px solid var(--border)", opacity: shareLoading ? 0 : 1, transition: "opacity 0.3s" }}
+                crossOrigin="anonymous"
+              />
+            </div>
             <div style={{ display: "flex", gap: "8px" }}>
               <button onClick={async () => {
                 try {

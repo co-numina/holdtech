@@ -97,6 +97,7 @@ export default function Dashboard() {
   const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [shareCard, setShareCard] = useState<{ url: string; symbol: string } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareLoading, setShareLoading] = useState(true);
   const [inlineScanResult, setInlineScanResult] = useState<ScanResult | null>(null);
   const [inlineScanning, setInlineScanning] = useState(false);
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
@@ -815,7 +816,7 @@ export default function Dashboard() {
                       </div>
                       <div style={{ display: "flex", gap: "6px" }}>
                         <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>+ Watch</button>
-                        <button onClick={() => setShareCard({ url: getShareCardUrl(scanResult), symbol: scanResult.symbol })} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
+                        <button onClick={() => { setShareLoading(true); setShareCard({ url: getShareCardUrl(scanResult), symbol: scanResult.symbol }); }} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
                         <button onClick={() => window.open(`/?mint=${scanResult.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
                       </div>
                     </div>
@@ -1047,7 +1048,7 @@ export default function Dashboard() {
                             </div>
                           )}
                           <div style={{ display: "flex", gap: "6px" }}>
-                            <button onClick={() => setShareCard({ url: getShareCardUrl(h), symbol: h.symbol })} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
+                            <button onClick={() => { setShareLoading(true); setShareCard({ url: getShareCardUrl(h), symbol: h.symbol }); }} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
                             <button onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
                           </div>
                         </div>
@@ -1317,15 +1318,24 @@ export default function Dashboard() {
               <span style={{ ...M, fontSize: "14px", fontWeight: 800 }}>Share Card — ${shareCard.symbol}</span>
               <button onClick={() => { setShareCard(null); setShareCopied(false); }} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-muted, #888)", padding: "4px 8px" }}>✕</button>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              id="share-card-img"
-              src={shareCard.url}
-              alt={`${shareCard.symbol} scan card`}
-              crossOrigin="anonymous"
-              style={{ width: "100%", borderRadius: "10px", border: "1px solid rgba(153,69,255,0.15)", display: "block" }}
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
+            <div style={{ position: "relative", minHeight: shareLoading ? "200px" : "auto" }}>
+              {shareLoading && (
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ width: "32px", height: "32px", border: "3px solid rgba(153,69,255,0.2)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                  <span style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)" }}>Generating card...</span>
+                </div>
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                id="share-card-img"
+                src={shareCard.url}
+                alt={`${shareCard.symbol} scan card`}
+                crossOrigin="anonymous"
+                onLoad={() => setShareLoading(false)}
+                style={{ width: "100%", borderRadius: "10px", border: "1px solid rgba(153,69,255,0.15)", display: "block", opacity: shareLoading ? 0 : 1, transition: "opacity 0.3s" }}
+                onError={(e) => { setShareLoading(false); (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
             <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
               <button onClick={async () => {
                 try {
