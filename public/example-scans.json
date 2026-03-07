@@ -1,0 +1,1420 @@
+[
+  {
+    "mint": "NV2RYH954cTJ3ckFUpvfqaQXU4ARqqDH3562nFSpump",
+    "symbol": "Punch",
+    "score": 66,
+    "grade": "B",
+    "holders": 24355,
+    "top5Pct": 13.1,
+    "freshPct": 21.1,
+    "avgAge": 59,
+    "timestamp": 1772890818865,
+    "metrics": {
+      "avgWalletAgeDays": 59,
+      "medianWalletAgeDays": 35.1,
+      "avgHoldDurationDays": 59,
+      "medianHoldDurationDays": 35.1,
+      "freshWalletPct": 21.1,
+      "veryFreshWalletPct": 15.8,
+      "diamondHandsPct": 84.2,
+      "veteranHolderPct": 26.3,
+      "ogHolderPct": 5.3,
+      "avgTxCount": 1264,
+      "lowActivityPct": 5.3,
+      "avgSolBalance": 1513.02,
+      "singleTokenPct": 26.3
+    },
+    "distribution": {
+      "walletAge": [
+        {
+          "label": "< 1 day",
+          "count": 3,
+          "pct": 15.8
+        },
+        {
+          "label": "1-7 days",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "7-30 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "30-90 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "90-180 days",
+          "count": 4,
+          "pct": 21.1
+        },
+        {
+          "label": "180+ days",
+          "count": 1,
+          "pct": 5.3
+        }
+      ],
+      "holdDuration": [
+        {
+          "label": "< 1 hour",
+          "count": 2,
+          "pct": 10.5
+        },
+        {
+          "label": "1-24 hours",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "1-7 days",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "7-30 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "30+ days",
+          "count": 10,
+          "pct": 52.6
+        }
+      ]
+    },
+    "topHolders": [
+      {
+        "address": "Hbx5PturLVp9F7YYG18jZZSWFTNp9TTSXEJepq6pvSi3",
+        "balancePct": 3.9,
+        "walletAgeDays": 45.4,
+        "holdDurationDays": 45.4,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": true
+      },
+      {
+        "address": "A6KHMiFzn9AM7VKBtVP4fZNY9bCo2jP63R9dphaW1vrq",
+        "balancePct": 3.1,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "H8GLvJ89DwoeBTY3YhepLTf3VmKR4qVnskNdEZHQVDPK",
+        "balancePct": 2.5,
+        "walletAgeDays": 198.3,
+        "holdDurationDays": 198.3,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "DXU65912VjiPUhKR37TLiHCrbp4uNHVNNZiBdLv1uAx1",
+        "balancePct": 1.9,
+        "walletAgeDays": 42,
+        "holdDurationDays": 42,
+        "totalTxCount": 442,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "ASTyfSima4LLAdDgoFGkgqoKowG1LZFDr9fAQrg7iaJZ",
+        "balancePct": 1.8,
+        "walletAgeDays": 0.4,
+        "holdDurationDays": 0.4,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "DdohigzK24XuagEsWUEDsHgCn4AePixRzPhmLMKE7un8",
+        "balancePct": 1.6,
+        "walletAgeDays": 47.8,
+        "holdDurationDays": 47.8,
+        "totalTxCount": 71,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FixmSpsBa7ew26gWdiqpoMAgKRFgbSXFbGAgfMZw67X",
+        "balancePct": 1.6,
+        "walletAgeDays": 23.6,
+        "holdDurationDays": 23.6,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "CU9G7NV93eoqcS9iXWfZPtkNvB4nV4ZmdaN9LpFtPLwz",
+        "balancePct": 1.4,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "FWfWNwidPBBGwSSxA6wZGAeTK7fSVA1sfaoQvC1fPB1D",
+        "balancePct": 1.3,
+        "walletAgeDays": 60.6,
+        "holdDurationDays": 60.6,
+        "totalTxCount": 152,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "a4vf9ETLCLRW9s6RmydwfnyJCkn1y8zTwkG8eW5F1uX",
+        "balancePct": 1.2,
+        "walletAgeDays": 178.6,
+        "holdDurationDays": 178.6,
+        "totalTxCount": 1376,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "8yhgsGD5HuY9QZVUXZbCkd4q7zSo1EdRFq4KYND1yWwb",
+        "balancePct": 1.2,
+        "walletAgeDays": 144.8,
+        "holdDurationDays": 144.8,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "8jF3WfycyFNR8HPR4DbzHrz2SFmFBtS5bqauwjyQgUJm",
+        "balancePct": 1.1,
+        "walletAgeDays": 152.5,
+        "holdDurationDays": 152.5,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "ESq3xrkeBNmjiTEaDEkjiG6kmB3ePAs4aGRjKzG4UqB8",
+        "balancePct": 1.1,
+        "walletAgeDays": 6.9,
+        "holdDurationDays": 6.9,
+        "totalTxCount": 16,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "697jHRquCjs4MGs8pZpGjjnHgXskzJ1Na4Dm7gSTcJHA",
+        "balancePct": 1,
+        "walletAgeDays": 43.5,
+        "holdDurationDays": 43.5,
+        "totalTxCount": 1290,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "E9cRjDCbScXtmGVdxnzkNntFJo74EXGvgy35kgTsQ7Te",
+        "balancePct": 1,
+        "walletAgeDays": 117.9,
+        "holdDurationDays": 117.9,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "4VvdcB1Bde2qCPdbxkFcy79qk3cT1nMXFoGuhfhCa7gr",
+        "balancePct": 0.9,
+        "walletAgeDays": 7.5,
+        "holdDurationDays": 7.5,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "2y831reZywsuQwyFTspjo5ebQxHpvEn3gEepGiZhrsmW",
+        "balancePct": 0.9,
+        "walletAgeDays": 35.1,
+        "holdDurationDays": 35.1,
+        "totalTxCount": 374,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "J3XvzFiJ9u17jAQr5jpkaKTNTZKt3MS2o61nSeqSqXcQ",
+        "balancePct": 0.8,
+        "walletAgeDays": 15.6,
+        "holdDurationDays": 15.6,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "BbAruSsPE8xhCa5uG6sR4jr8cgDmC1pp8PBobEgysuCS",
+        "balancePct": 0.8,
+        "walletAgeDays": 25.6,
+        "holdDurationDays": 25.6,
+        "totalTxCount": 9,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "9i4Qn5oY79EgiZ4NvMxkNkDDuHR8nYidi3MyK6CKYNu1",
+        "balancePct": 0.7,
+        "walletAgeDays": 19.7,
+        "holdDurationDays": 19.7,
+        "totalTxCount": 280,
+        "isFresh": false,
+        "isPool": false
+      }
+    ],
+    "verdict": {
+      "score": 66,
+      "grade": "B",
+      "verdict": "$Punch has a solid holderbase with minor concerns. Most holders appear real with history, but some fresh or low-activity wallets are present. Moderate confidence in organic accumulation.",
+      "flags": [
+        "⚠️ 15.8% very fresh wallets — worth monitoring",
+        "👍 26.3% veteran wallets (90d+) — decent experienced mix",
+        "✅ Low burner rate — only 5.3% have <10 lifetime txs",
+        "⚠️ 26.3% single-token wallets — elevated burner risk",
+        "✅ Average 1264 txs per wallet — active, experienced traders",
+        "✅ Average 1513.02 SOL per wallet — holders have capital",
+        "ℹ️ 24,355 total holders — widely distributed"
+      ]
+    },
+    "tokenImage": "https://cdn.dexscreener.com/cms/images/91da26a8f6bb6493c28e76be1d9f1b952fc00a3ff9f20c0f20d42a85bbb166f1?width=800&height=800&quality=90"
+  },
+  {
+    "mint": "5Jr9hGmJgxBRjjF8XGcGgQzXUdsbpZNNMpigEv8Wpump",
+    "symbol": "MUSHU",
+    "score": 100,
+    "grade": "A",
+    "holders": 3596,
+    "top5Pct": 25.4,
+    "freshPct": 0,
+    "avgAge": 198,
+    "timestamp": 1772890845901,
+    "metrics": {
+      "avgWalletAgeDays": 198.3,
+      "medianWalletAgeDays": 50.5,
+      "avgHoldDurationDays": 198.3,
+      "medianHoldDurationDays": 50.5,
+      "freshWalletPct": 0,
+      "veryFreshWalletPct": 0,
+      "diamondHandsPct": 100,
+      "veteranHolderPct": 42.1,
+      "ogHolderPct": 36.8,
+      "avgTxCount": 963,
+      "lowActivityPct": 10.5,
+      "avgSolBalance": 9.03,
+      "singleTokenPct": 10.5
+    },
+    "distribution": {
+      "walletAge": [
+        {
+          "label": "< 1 day",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-7 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "7-30 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "30-90 days",
+          "count": 6,
+          "pct": 31.6
+        },
+        {
+          "label": "90-180 days",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "180+ days",
+          "count": 7,
+          "pct": 36.8
+        }
+      ],
+      "holdDuration": [
+        {
+          "label": "< 1 hour",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-24 hours",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-7 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "7-30 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "30+ days",
+          "count": 14,
+          "pct": 73.7
+        }
+      ]
+    },
+    "topHolders": [
+      {
+        "address": "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1",
+        "balancePct": 15.1,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": true
+      },
+      {
+        "address": "2wfUsQLJ7QCm5bF28M7iMyp9Y1WfKDbChCmiVSQi1rHz",
+        "balancePct": 3.6,
+        "walletAgeDays": 62.8,
+        "holdDurationDays": 62.8,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "2EXvm6bKNxZPEH4s1pPbpipFomHZXQA3eugp6STjEUpR",
+        "balancePct": 2.9,
+        "walletAgeDays": 35.6,
+        "holdDurationDays": 35.6,
+        "totalTxCount": 615,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "3drmqrv97uFeXqt1ANwzYZhLPnBMLVFXdNeFB17AL5k5",
+        "balancePct": 1.9,
+        "walletAgeDays": 18.6,
+        "holdDurationDays": 18.6,
+        "totalTxCount": 42,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "4mLvyQBqwj6J7epQoNKBT7Mm9vRrswvvbmoMD1amGdzT",
+        "balancePct": 1.9,
+        "walletAgeDays": 451.5,
+        "holdDurationDays": 451.5,
+        "totalTxCount": 234,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "6mTkZx5qst57eF5soE9QgGoeZAPx6Cw2R5LMm9F8TCok",
+        "balancePct": 1.8,
+        "walletAgeDays": 41.4,
+        "holdDurationDays": 41.4,
+        "totalTxCount": 386,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "3QiSkesmvyPUxaetSrNuGmMRyjJXmHyvXNxCCek9jrQK",
+        "balancePct": 1.8,
+        "walletAgeDays": 612.5,
+        "holdDurationDays": 612.5,
+        "totalTxCount": 72,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "GfcpAy8ZYp8oBQdPtxCTo8krJRrN1Xiv1e6JWUvE1PKb",
+        "balancePct": 1.8,
+        "walletAgeDays": 18.5,
+        "holdDurationDays": 18.5,
+        "totalTxCount": 2,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "8VP8mkeyiVTFXkVVS3MM5tPBfCvAsN8rCFLyCK6JHDBY",
+        "balancePct": 1.7,
+        "walletAgeDays": 13.2,
+        "holdDurationDays": 13.2,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "BCFp1UCHf6uBDuEnVq2P4f4qCpDnR3fmSVTeAktFh3om",
+        "balancePct": 1.5,
+        "walletAgeDays": 156.7,
+        "holdDurationDays": 156.7,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "DGeg7ZP76A63wkPiQmnBSgh44wY12c6TBR6UD1X9knhG",
+        "balancePct": 1.4,
+        "walletAgeDays": 595.6,
+        "holdDurationDays": 595.6,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "75VeuoAxHhKZ9sijTFQ9EYXp3P6zmcxcFcY5VCdYe9cp",
+        "balancePct": 1.3,
+        "walletAgeDays": 701.9,
+        "holdDurationDays": 701.9,
+        "totalTxCount": 393,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "6r6SdfhfdvNi8571brBMiD61bn8PbUmxWS8crzpykbSb",
+        "balancePct": 1.3,
+        "walletAgeDays": 50,
+        "holdDurationDays": 50,
+        "totalTxCount": 565,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FmXieEEaTQ1YiMZ8aze2U6bV9Krsz5UcpmsgcEndbuQa",
+        "balancePct": 1.3,
+        "walletAgeDays": 477.7,
+        "holdDurationDays": 477.7,
+        "totalTxCount": 423,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "GzhW1dmszcqR9XVUZZhEi7E7jxbB9NfbBnCtgUYfkrF5",
+        "balancePct": 1.2,
+        "walletAgeDays": 18.5,
+        "holdDurationDays": 18.5,
+        "totalTxCount": 3,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "7tckyorz5jukWk8LbXE2FPovTukKBJw1TLzqcWDAY4b4",
+        "balancePct": 1.2,
+        "walletAgeDays": 216.9,
+        "holdDurationDays": 216.9,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "2cd28kZAQV1EokNVtFZ7y7EuyK67z5SDrECc7PzNcAbo",
+        "balancePct": 1.1,
+        "walletAgeDays": 50.5,
+        "holdDurationDays": 50.5,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "6Ej4esUAys7hkxUQp7fuZQxeroNinfcrDe8jbbUic3Zq",
+        "balancePct": 0.9,
+        "walletAgeDays": 34.7,
+        "holdDurationDays": 34.7,
+        "totalTxCount": 862,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FUDjTfP7oRipn317ben99P3hjEGDgwKTfPm2QxGwQd78",
+        "balancePct": 0.9,
+        "walletAgeDays": 190.8,
+        "holdDurationDays": 190.8,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "HfLyhwHUbu1gtLbJKRuiUYQaoaeeNB4jTLcDP5pUa6zc",
+        "balancePct": 0.9,
+        "walletAgeDays": 20.7,
+        "holdDurationDays": 20.7,
+        "totalTxCount": 705,
+        "isFresh": false,
+        "isPool": false
+      }
+    ],
+    "verdict": {
+      "score": 100,
+      "grade": "A",
+      "verdict": "$MUSHU has an exceptionally strong holderbase. Majority of wallets are aged, active, and diversified — genuine organic demand from experienced traders. Low sybil risk.",
+      "flags": [
+        "✅ Only 0% fresh wallets — holderbase looks organic",
+        "✅ 42.1% veteran wallets (90d+) — mature, experienced base",
+        "✅ 36.8% OG wallets (180d+) — strong long-term presence",
+        "✅ Low burner rate — only 10.5% have <10 lifetime txs",
+        "✅ Average 963 txs per wallet — active, experienced traders",
+        "✅ Average 9.03 SOL per wallet — holders have capital",
+        "ℹ️ 3,596 total holders — well-distributed"
+      ]
+    },
+    "tokenImage": "https://cdn.dexscreener.com/cms/images/558d591a7c9a733127e3cd52229b3b686701eab5e9c9ecf72b5b577f61c95cba?width=800&height=800&quality=90"
+  },
+  {
+    "mint": "4TyZGqRLG3VcHTGMcLBoPUmqYitMVojXinAmkL8xpump",
+    "symbol": "testicle",
+    "score": 100,
+    "grade": "A",
+    "holders": 10837,
+    "top5Pct": 18.7,
+    "freshPct": 0,
+    "avgAge": 161,
+    "timestamp": 1772890857606,
+    "metrics": {
+      "avgWalletAgeDays": 161.2,
+      "medianWalletAgeDays": 127.7,
+      "avgHoldDurationDays": 161.2,
+      "medianHoldDurationDays": 127.7,
+      "freshWalletPct": 0,
+      "veryFreshWalletPct": 0,
+      "diamondHandsPct": 100,
+      "veteranHolderPct": 57.9,
+      "ogHolderPct": 31.6,
+      "avgTxCount": 1202,
+      "lowActivityPct": 0,
+      "avgSolBalance": 35.65,
+      "singleTokenPct": 5.3
+    },
+    "distribution": {
+      "walletAge": [
+        {
+          "label": "< 1 day",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-7 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "7-30 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "30-90 days",
+          "count": 3,
+          "pct": 15.8
+        },
+        {
+          "label": "90-180 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "180+ days",
+          "count": 6,
+          "pct": 31.6
+        }
+      ],
+      "holdDuration": [
+        {
+          "label": "< 1 hour",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-24 hours",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-7 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "7-30 days",
+          "count": 5,
+          "pct": 26.3
+        },
+        {
+          "label": "30+ days",
+          "count": 14,
+          "pct": 73.7
+        }
+      ]
+    },
+    "topHolders": [
+      {
+        "address": "E616WShkSjxnyToCExYLhNWxyYraFqs1RTQz1gZ9ZDUk",
+        "balancePct": 5.4,
+        "walletAgeDays": 0.3,
+        "holdDurationDays": 0.3,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": true
+      },
+      {
+        "address": "BMgsHTvcasRVtuevHJh8t6Vf5dmcWkDLAx6gSAQ3dsYm",
+        "balancePct": 4.3,
+        "walletAgeDays": 102.6,
+        "holdDurationDays": 102.6,
+        "totalTxCount": 405,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "BZiwq5yQgyodL2Rqu7drwHYrZcLdzjnKvQKfJL6zCCt5",
+        "balancePct": 3.4,
+        "walletAgeDays": 162.1,
+        "holdDurationDays": 162.1,
+        "totalTxCount": 1333,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "8VwmbW9VehM9XEc5tLinSAhag8TcrfcMnagmWKEGtxN7",
+        "balancePct": 3.3,
+        "walletAgeDays": 297.1,
+        "holdDurationDays": 297.1,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "59mWSDjx5VFQz15FGJio8BJzupKorK5SVHSbaJaZGAxC",
+        "balancePct": 2.4,
+        "walletAgeDays": 138.7,
+        "holdDurationDays": 138.7,
+        "totalTxCount": 319,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "9kfdB9UGFLoGWyFAZtqZjL2D5iYXtKqWqsLJUZEMvRgM",
+        "balancePct": 2.3,
+        "walletAgeDays": 22.7,
+        "holdDurationDays": 22.7,
+        "totalTxCount": 1246,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "Gvdo9u6GR7PkKQcx34GmqDQpEG6YRsFDuXHzzABt5DQj",
+        "balancePct": 2,
+        "walletAgeDays": 24.6,
+        "holdDurationDays": 24.6,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "2Wgjf72ZiufTcbceVtqHDGz2Jc6PCbfjiJMNGBQzAgZh",
+        "balancePct": 2,
+        "walletAgeDays": 25.4,
+        "holdDurationDays": 25.4,
+        "totalTxCount": 241,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "rD1VaXAiudECSHBZaoo4k2GyeY5E94jRFRWEyCobYqx",
+        "balancePct": 2,
+        "walletAgeDays": 287.2,
+        "holdDurationDays": 287.2,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FL4j8EEMAPUjrvASnqX7VdpWZJji1LFsAxwojhpueUYt",
+        "balancePct": 1.9,
+        "walletAgeDays": 50.7,
+        "holdDurationDays": 50.7,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "3zkPoSdJ1LmSrKoEn981GP8QYZPQxhfAJYjAFdsCyv6x",
+        "balancePct": 1.8,
+        "walletAgeDays": 144.7,
+        "holdDurationDays": 144.7,
+        "totalTxCount": 117,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "C6mWdjVGKTmUW3aSAv8C5C4iXymsSsYVYw4aVmhHoPVG",
+        "balancePct": 1.7,
+        "walletAgeDays": 448.8,
+        "holdDurationDays": 448.8,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FMkNK3u7ZhS84hqxt9ETNSeC9w43RThiN6RvQJaSEhC8",
+        "balancePct": 1.7,
+        "walletAgeDays": 380.8,
+        "holdDurationDays": 380.8,
+        "totalTxCount": 1955,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "13D1SXfLCWuZKustUJBchi2ufijCe6LUcB4GWrmYR6bV",
+        "balancePct": 1.7,
+        "walletAgeDays": 25.4,
+        "holdDurationDays": 25.4,
+        "totalTxCount": 28,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "GJG9L1P3aTAajZsVPgDm1xCtfJ8ac331pqxyFx6KJRep",
+        "balancePct": 1.5,
+        "walletAgeDays": 40.7,
+        "holdDurationDays": 40.7,
+        "totalTxCount": 57,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FWfsfm9YyqTRS4kepM3Kgv2ZXtpapHChni6jj9b8gYVD",
+        "balancePct": 1.2,
+        "walletAgeDays": 26.7,
+        "holdDurationDays": 26.7,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "7sVYRhV43t6xQuf97jqHd1NfkX389UK2ZwZCMgvpMAyj",
+        "balancePct": 1.2,
+        "walletAgeDays": 127.7,
+        "holdDurationDays": 127.7,
+        "totalTxCount": 907,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "CyHWA7ru59DRzdZASd7EpJFdn5JfuaSSe1Ges6g3XtLD",
+        "balancePct": 1,
+        "walletAgeDays": 222.1,
+        "holdDurationDays": 222.1,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "BShpehCEvaskHScDHE7t3vDrjxF3bnpauiyTBAhzDyhn",
+        "balancePct": 1,
+        "walletAgeDays": 54.6,
+        "holdDurationDays": 54.6,
+        "totalTxCount": 229,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "5zbQtt1q8zq1SZY4Doc6ct6PP3DhW8cx5S5z2eTcBaMj",
+        "balancePct": 0.9,
+        "walletAgeDays": 479.7,
+        "holdDurationDays": 479.7,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      }
+    ],
+    "verdict": {
+      "score": 100,
+      "grade": "A",
+      "verdict": "$testicle has an exceptionally strong holderbase. Majority of wallets are aged, active, and diversified — genuine organic demand from experienced traders. Low sybil risk.",
+      "flags": [
+        "✅ Only 0% fresh wallets — holderbase looks organic",
+        "✅ 57.9% veteran wallets (90d+) — mature, experienced base",
+        "✅ 31.6% OG wallets (180d+) — strong long-term presence",
+        "✅ Low burner rate — only 0% have <10 lifetime txs",
+        "✅ Average 1202 txs per wallet — active, experienced traders",
+        "✅ Average 35.65 SOL per wallet — holders have capital",
+        "ℹ️ 10,837 total holders — widely distributed"
+      ]
+    },
+    "tokenImage": "https://cdn.dexscreener.com/cms/images/0289077313219109f9a9e1de5ccff1af9a3b88b79c2dcb7fd588190eba062e49?width=800&height=800&quality=90"
+  },
+  {
+    "mint": "CoPRYLGHc7Qadere13xSPhRvgwwStCZn9dHpBZQ7pump",
+    "symbol": "CORVUS",
+    "score": 100,
+    "grade": "A",
+    "holders": 1843,
+    "top5Pct": 23,
+    "freshPct": 10.5,
+    "avgAge": 253,
+    "timestamp": 1772890864014,
+    "metrics": {
+      "avgWalletAgeDays": 253.2,
+      "medianWalletAgeDays": 74.9,
+      "avgHoldDurationDays": 253.2,
+      "medianHoldDurationDays": 74.9,
+      "freshWalletPct": 10.5,
+      "veryFreshWalletPct": 10.5,
+      "diamondHandsPct": 89.5,
+      "veteranHolderPct": 47.4,
+      "ogHolderPct": 42.1,
+      "avgTxCount": 1419,
+      "lowActivityPct": 0,
+      "avgSolBalance": 0.73,
+      "singleTokenPct": 10.5
+    },
+    "distribution": {
+      "walletAge": [
+        {
+          "label": "< 1 day",
+          "count": 2,
+          "pct": 10.5
+        },
+        {
+          "label": "1-7 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "7-30 days",
+          "count": 4,
+          "pct": 21.1
+        },
+        {
+          "label": "30-90 days",
+          "count": 4,
+          "pct": 21.1
+        },
+        {
+          "label": "90-180 days",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "180+ days",
+          "count": 8,
+          "pct": 42.1
+        }
+      ],
+      "holdDuration": [
+        {
+          "label": "< 1 hour",
+          "count": 2,
+          "pct": 10.5
+        },
+        {
+          "label": "1-24 hours",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "1-7 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "7-30 days",
+          "count": 4,
+          "pct": 21.1
+        },
+        {
+          "label": "30+ days",
+          "count": 13,
+          "pct": 68.4
+        }
+      ]
+    },
+    "topHolders": [
+      {
+        "address": "4ph1ELkDKbVLnRDLPtg4QrsweEEeqoRVUGYVcuRrzPHG",
+        "balancePct": 9,
+        "walletAgeDays": 1.5,
+        "holdDurationDays": 1.5,
+        "totalTxCount": 1,
+        "isFresh": true,
+        "isPool": true
+      },
+      {
+        "address": "AVss19ugd7SAnWTTEp8V1vHVfEqVeHXmPTUjpmsCW7di",
+        "balancePct": 6.3,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "6b7Q4DiNQ2As1hTr2GCKzL1uzSvHa8YEGb9rEd9kBbQA",
+        "balancePct": 3.2,
+        "walletAgeDays": 44.4,
+        "holdDurationDays": 44.4,
+        "totalTxCount": 722,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "7SVT8sXJ6gJoVqvffkrjNyoPiZcgoYne4ygRDTG3g367",
+        "balancePct": 2.5,
+        "walletAgeDays": 405.7,
+        "holdDurationDays": 405.7,
+        "totalTxCount": 1647,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "7FwEFJTaAU3nuUmfUuvtqhH5FoTm6DwwT4CcAH4bQmT5",
+        "balancePct": 2.1,
+        "walletAgeDays": 1168.1,
+        "holdDurationDays": 1168.1,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "71ZgBgtB1FfC5e2CZzfc5xXUnQWP1yE5AQe6LiFdacsj",
+        "balancePct": 2.1,
+        "walletAgeDays": 1149.8,
+        "holdDurationDays": 1149.8,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "3xz1f8Hk39enuiddjUAW1xQZoVAJpLmowJENZRGzBKWJ",
+        "balancePct": 2,
+        "walletAgeDays": 233.2,
+        "holdDurationDays": 233.2,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "icYP8G2JEJadz3P3Sb7AoYMeLN4dDV5jVsDcdEdnjRQ",
+        "balancePct": 1.9,
+        "walletAgeDays": 227.4,
+        "holdDurationDays": 227.4,
+        "totalTxCount": 1758,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "9JZoiakpzxwh3xzabDrHbSr6QvBAMrdM58JW68NhAgrR",
+        "balancePct": 1.8,
+        "walletAgeDays": 30.1,
+        "holdDurationDays": 30.1,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "24dHtQP5i3V9PSLDyC8XXrDDvq2pHWbsphcambwDAn7c",
+        "balancePct": 1.8,
+        "walletAgeDays": 28.2,
+        "holdDurationDays": 28.2,
+        "totalTxCount": 1717,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "AnyKNWhgxDEnYCDY7ETitdkYReouPcQ48x9yeebazFT",
+        "balancePct": 1.7,
+        "walletAgeDays": 239.9,
+        "holdDurationDays": 239.9,
+        "totalTxCount": 1073,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FCdSqxPjVMQu3Fsew9XdNj2aXQCdffnWEnoBQeneMtnU",
+        "balancePct": 1.3,
+        "walletAgeDays": 31.5,
+        "holdDurationDays": 31.5,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "HymYiUw1ckPSH2VxLMYe54vTEe557jMhTvQcbQLpJ1ba",
+        "balancePct": 1.3,
+        "walletAgeDays": 74.9,
+        "holdDurationDays": 74.9,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "DbK2xhrQFVb1NZfMEaRj7zqpWLgYudmM8a5YhzsVEdKE",
+        "balancePct": 1.1,
+        "walletAgeDays": 15.5,
+        "holdDurationDays": 15.5,
+        "totalTxCount": 543,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "GxpWcYRz2nLcNxshch7yAhseZGtdgQz1nG8p5XxwQVdD",
+        "balancePct": 1.1,
+        "walletAgeDays": 130.4,
+        "holdDurationDays": 130.4,
+        "totalTxCount": 712,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "6ziXqyF6FLAE89VHe6nkJxX8FHYVNQee9aruRFPp1g3M",
+        "balancePct": 1,
+        "walletAgeDays": 24.4,
+        "holdDurationDays": 24.4,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "5wh2E3oaSdbGkts8MzhXsC7bZ6hfiKmeWPJ1scXXV7UD",
+        "balancePct": 1,
+        "walletAgeDays": 25,
+        "holdDurationDays": 25,
+        "totalTxCount": 274,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "4G8EYnhnmYLVaXsjpiQPAnBzBAUJLqc4hiPvrsYj9WWe",
+        "balancePct": 0.9,
+        "walletAgeDays": 594.6,
+        "holdDurationDays": 594.6,
+        "totalTxCount": 149,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "GTcdDKHPSsi7KdSgbLDVsnXVVhsaRGzWCCcLfYVqa2oD",
+        "balancePct": 0.9,
+        "walletAgeDays": 388.3,
+        "holdDurationDays": 388.3,
+        "totalTxCount": 367,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "7iC4m86Qhry1drXfFoDRkqwNnNg78Er8Y33qM2dWKvRL",
+        "balancePct": 0.9,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      }
+    ],
+    "verdict": {
+      "score": 100,
+      "grade": "A",
+      "verdict": "$CORVUS has an exceptionally strong holderbase. Majority of wallets are aged, active, and diversified — genuine organic demand from experienced traders. Low sybil risk.",
+      "flags": [
+        "✅ Only 10.5% fresh wallets — holderbase looks organic",
+        "✅ 47.4% veteran wallets (90d+) — mature, experienced base",
+        "✅ 42.1% OG wallets (180d+) — strong long-term presence",
+        "✅ Low burner rate — only 0% have <10 lifetime txs",
+        "✅ Average 1419 txs per wallet — active, experienced traders",
+        "ℹ️ 1,843 total holders — well-distributed"
+      ]
+    },
+    "tokenImage": "https://cdn.dexscreener.com/cms/images/QPbRwWvdqImrEzhZ?width=800&height=800&quality=90"
+  },
+  {
+    "mint": "GMD16hpoKqfpXpPTWoymvzjddsruQsdqPu8T28ZKpump",
+    "symbol": "ONE",
+    "score": 49,
+    "grade": "D",
+    "holders": 3059,
+    "top5Pct": 19.9,
+    "freshPct": 42.1,
+    "avgAge": 47,
+    "timestamp": 1772890870436,
+    "metrics": {
+      "avgWalletAgeDays": 46.7,
+      "medianWalletAgeDays": 11.9,
+      "avgHoldDurationDays": 46.7,
+      "medianHoldDurationDays": 11.9,
+      "freshWalletPct": 42.1,
+      "veryFreshWalletPct": 10.5,
+      "diamondHandsPct": 78.9,
+      "veteranHolderPct": 5.3,
+      "ogHolderPct": 5.3,
+      "avgTxCount": 1181,
+      "lowActivityPct": 0,
+      "avgSolBalance": 69.92,
+      "singleTokenPct": 10.5
+    },
+    "distribution": {
+      "walletAge": [
+        {
+          "label": "< 1 day",
+          "count": 2,
+          "pct": 10.5
+        },
+        {
+          "label": "1-7 days",
+          "count": 6,
+          "pct": 31.6
+        },
+        {
+          "label": "7-30 days",
+          "count": 4,
+          "pct": 21.1
+        },
+        {
+          "label": "30-90 days",
+          "count": 6,
+          "pct": 31.6
+        },
+        {
+          "label": "90-180 days",
+          "count": 0,
+          "pct": 0
+        },
+        {
+          "label": "180+ days",
+          "count": 1,
+          "pct": 5.3
+        }
+      ],
+      "holdDuration": [
+        {
+          "label": "< 1 hour",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "1-24 hours",
+          "count": 1,
+          "pct": 5.3
+        },
+        {
+          "label": "1-7 days",
+          "count": 6,
+          "pct": 31.6
+        },
+        {
+          "label": "7-30 days",
+          "count": 4,
+          "pct": 21.1
+        },
+        {
+          "label": "30+ days",
+          "count": 7,
+          "pct": 36.8
+        }
+      ]
+    },
+    "topHolders": [
+      {
+        "address": "3rP5JeMVmKRZ1HPXiNmUyLqaW4iqxFCnrW2rRmN9dJXS",
+        "balancePct": 11.4,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": true
+      },
+      {
+        "address": "3ABA191xHH2eVAdBXu8wv2W1kfUWvZoNYbF7Yhkn418G",
+        "balancePct": 2.3,
+        "walletAgeDays": 59.9,
+        "holdDurationDays": 59.9,
+        "totalTxCount": 1027,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "FVFWUyj9CqgK3YxphWaj9ofYrabU5tcYL4a8do2jptk",
+        "balancePct": 2.2,
+        "walletAgeDays": 27.5,
+        "holdDurationDays": 27.5,
+        "totalTxCount": 35,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "teddyYXw7aiNpDuQCeLb2YiBJhqthBid4C54BuWcPxm",
+        "balancePct": 2,
+        "walletAgeDays": 2.2,
+        "holdDurationDays": 2.2,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "FdgSEYoqRtfQARe5ijqdPTtcjvNPMzAjJBXQhF3aQjHX",
+        "balancePct": 1.9,
+        "walletAgeDays": 0,
+        "holdDurationDays": 0,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "H4Akjc8hUNaqQXFsFVru6Q6XHXLq9sTBqteuBuhuzJ6J",
+        "balancePct": 1.8,
+        "walletAgeDays": 24.7,
+        "holdDurationDays": 24.7,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "4mLvyQBqwj6J7epQoNKBT7Mm9vRrswvvbmoMD1amGdzT",
+        "balancePct": 1.5,
+        "walletAgeDays": 451.5,
+        "holdDurationDays": 451.5,
+        "totalTxCount": 234,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "8msKHk3fCHmBaAXdLeBexd1qRsCbNxUE88jtZf5hqYgn",
+        "balancePct": 1.5,
+        "walletAgeDays": 11.9,
+        "holdDurationDays": 11.9,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "DxdFH4BcE49u4WLiTffseRJZzT8droikXdXyD5jmb4Yt",
+        "balancePct": 1.4,
+        "walletAgeDays": 1.6,
+        "holdDurationDays": 1.6,
+        "totalTxCount": 93,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "FsG3BaPmRTdSrPaivbgJsFNCCa8cPfkUtk8VLWXkHpHP",
+        "balancePct": 1.2,
+        "walletAgeDays": 2.9,
+        "holdDurationDays": 2.9,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "4Dpu2UjkFmnwmjSM5z2hMwAxynmg3qE1mZ9Awq5pJq1G",
+        "balancePct": 1.2,
+        "walletAgeDays": 5.7,
+        "holdDurationDays": 5.7,
+        "totalTxCount": 20,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "GGfiQeqfEAffU98qtT8f92FejUWNrPQ9hDPEVt5ofpk5",
+        "balancePct": 1.2,
+        "walletAgeDays": 11.9,
+        "holdDurationDays": 11.9,
+        "totalTxCount": 791,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "HqnuQQSh4Qyw9c6iN6tLiKdL1kaQPjihGL3HqmJm41Zf",
+        "balancePct": 1.1,
+        "walletAgeDays": 60,
+        "holdDurationDays": 60,
+        "totalTxCount": 911,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "D5aubtKC2cqazsxLjnGGV74JMx9uyGYvX2RtwqpmKoQp",
+        "balancePct": 1,
+        "walletAgeDays": 82.3,
+        "holdDurationDays": 82.3,
+        "totalTxCount": 560,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "87xZv1PfnTc9zK1c7KJWyjzSiJEemGHetRDoxFw1fVhv",
+        "balancePct": 1,
+        "walletAgeDays": 39.7,
+        "holdDurationDays": 39.7,
+        "totalTxCount": 1083,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "BM9CcyErJcu2mjrFvUsRRrD3snGeHDDVirJLvL6EjvMN",
+        "balancePct": 1,
+        "walletAgeDays": 0.3,
+        "holdDurationDays": 0.3,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "9XVWfqzavraezfvS38v8xcZepHYxcNKtnNMEKpPXEwTN",
+        "balancePct": 1,
+        "walletAgeDays": 55.7,
+        "holdDurationDays": 55.7,
+        "totalTxCount": 2000,
+        "isFresh": false,
+        "isPool": false
+      },
+      {
+        "address": "3AG8cm7cDtoPsg9SHns88GyqWnjC1Nti7nkQVQe7FbQT",
+        "balancePct": 1,
+        "walletAgeDays": 2,
+        "holdDurationDays": 2,
+        "totalTxCount": 163,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "CEUA7zVoDRqRYoeHTP58UHU6TR8yvtVbeLrX1dppqoXJ",
+        "balancePct": 1,
+        "walletAgeDays": 6.9,
+        "holdDurationDays": 6.9,
+        "totalTxCount": 2000,
+        "isFresh": true,
+        "isPool": false
+      },
+      {
+        "address": "FrPZ4zCK144no8ZKFFAH8T2MSQwii7vGueeoEaZfdqxX",
+        "balancePct": 1,
+        "walletAgeDays": 39.8,
+        "holdDurationDays": 39.8,
+        "totalTxCount": 1525,
+        "isFresh": false,
+        "isPool": false
+      }
+    ],
+    "verdict": {
+      "score": 49,
+      "grade": "D",
+      "verdict": "$ONE has a weak holderbase. High concentration of fresh wallets, burner addresses, or single-token holders points to manufactured demand. Real holder count likely inflated by sybils.",
+      "flags": [
+        "⚠️ 42.1% fresh wallets (<7d) — elevated risk",
+        "⚠️ Only 5.3% veteran wallets — mostly newcomer/disposable wallets",
+        "✅ Low burner rate — only 0% have <10 lifetime txs",
+        "✅ Average 1181 txs per wallet — active, experienced traders",
+        "✅ Average 69.92 SOL per wallet — holders have capital",
+        "ℹ️ 3,059 total holders — well-distributed"
+      ]
+    },
+    "tokenImage": "https://cdn.dexscreener.com/cms/images/CLje9Ixwj0aBf2T6?width=800&height=800&quality=90"
+  }
+]

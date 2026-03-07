@@ -98,7 +98,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     try {
-      setHistory(JSON.parse(localStorage.getItem("holdtech-history") || "[]"));
+      const saved = JSON.parse(localStorage.getItem("holdtech-history") || "[]");
+      if (saved.length > 0) { setHistory(saved); } else {
+        // Load example scans for new users
+        fetch("/example-scans.json").then(r => r.ok ? r.json() : []).then(ex => { if (ex.length && !historyRef.current.length) setHistory(ex); }).catch(() => {});
+      }
       setWatchlist(JSON.parse(localStorage.getItem("holdtech-watchlist") || "[]"));
       setBundlers(JSON.parse(localStorage.getItem("holdtech-bundlers") || "[]"));
       const theme = localStorage.getItem("holdtech-theme");
