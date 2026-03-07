@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #13132b;
-  --bg-card: #1a1a38;
-  --bg-card-alt: #212145;
-  --bg-deep: #0a0a14;
-  --text: #e8eaf0;
-  --text-secondary: #9a9ab8;
-  --text-muted: #5c5c7a;
+  --bg: #f0f0f6;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f7f7fc;
+  --bg-deep: #e8e8f0;
+  --text: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --text-muted: #8888a8;
   --accent: #9945FF;
   --accent-dark: #7c3aed;
   --accent-bright: #b06aff;
@@ -37,11 +37,11 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(153, 69, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(153, 69, 255, 0.18) 1px, transparent 1px);
+    linear-gradient(rgba(153, 69, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(153, 69, 255, 0.08) 1px, transparent 1px);
   background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, black 10%, transparent 75%);
-  -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, black 10%, transparent 75%);
+  mask-image: radial-gradient(ellipse 120% 100% at 50% 0%, black 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 120% 100% at 50% 0%, black 20%, transparent 80%);
 }
 
 * { box-sizing: border-box; }
@@ -51,7 +51,7 @@ body::before {
 }
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(153,69,255,0.15); } 50% { box-shadow: 0 0 24px rgba(153,69,255,0.3); } }
+@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(153,69,255,0.2); } 50% { box-shadow: 0 0 24px rgba(153,69,255,0.35); } }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 ::selection { background: rgba(153,69,255,0.15); }

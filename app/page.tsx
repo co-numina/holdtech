@@ -261,7 +261,7 @@ function BarChart({ data, color = "bg-cyan-500" }: { data: DistBucket[]; color?:
       {data.map(d => (
         <div key={d.label} className="flex items-center gap-2 text-xs">
           <span className="w-24 text-right shrink-0" style={{ color: "var(--text-muted)" }}>{d.label}</span>
-          <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+          <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(153,69,255,0.04)" }}>
             <div className={`h-full ${color} rounded transition-all duration-500`} style={{ width: `${(d.pct / max) * 100}%` }} />
           </div>
           <span className="w-16 shrink-0" style={{ color: "var(--text-secondary)" }}>{d.pct}% ({d.count})</span>
@@ -296,7 +296,7 @@ function ConcentrationBar({ concentration }: { concentration: DeepScanResult["co
         {top5 > 0 && <div className="group relative" style={{ width: `${top5}%`, background: "var(--red)", height: "100%" }}><span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">Top 5: {top5.toFixed(1)}%</span></div>}
         {top10Only > 0 && <div style={{ width: `${top10Only}%`, background: "var(--yellow)", height: "100%" }} />}
         {top20Only > 0 && <div style={{ width: `${top20Only}%`, background: "var(--accent)", height: "100%" }} />}
-        {rest > 0 && <div style={{ width: `${rest}%`, background: "rgba(255,255,255,0.05)", height: "100%" }} />}
+        {rest > 0 && <div style={{ width: `${rest}%`, background: "rgba(153,69,255,0.05)", height: "100%" }} />}
       </div>
       <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
         <span>🔴 Top 5 ({top5.toFixed(1)}%)</span>
@@ -322,7 +322,7 @@ function BundleDetection({ bundles, bundleCount, bundledWalletCount }: { bundles
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {bundles.map((b, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "12px" }}>
+          <div key={i} style={{ background: "rgba(153,69,255,0.04)", borderRadius: "10px", padding: "12px" }}>
             <button onClick={() => setExpanded(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", fontSize: "11px", textAlign: "left", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
               <span style={{ color: "var(--text-muted)" }}>{expanded[i] ? "▼" : "▶"}</span>
               <span>Slot {b.slot.toLocaleString()}</span>
@@ -355,7 +355,7 @@ function FundingClusters({ clusters, clusterCount, clusteredWalletCount }: { clu
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {clusters.map((c, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "12px", border: c.count >= 3 ? "1px solid rgba(239,68,68,0.3)" : "none" }}>
+          <div key={i} style={{ background: "rgba(153,69,255,0.04)", borderRadius: "10px", padding: "12px", border: c.count >= 3 ? "1px solid rgba(239,68,68,0.3)" : "none" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", marginBottom: "6px" }}>
               {c.count >= 3 && <span style={{ color: "var(--red)", fontSize: "10px", fontWeight: 700, background: "rgba(239,68,68,0.1)", padding: "2px 6px", borderRadius: "4px" }}>RED FLAG</span>}
               <a href={`https://solscan.io/account/${c.funder}`} target="_blank" rel="noopener" className="font-mono" style={{ color: "var(--yellow)", textDecoration: "none" }}>{shortenAddr(c.funder)}</a>
@@ -379,7 +379,7 @@ function BuyTimeline({ timeline }: { timeline: DeepScanResult["buyTimeline"] }) 
   return (
     <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Buy Timeline</div>
-      <div style={{ position: "relative", height: "64px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", overflow: "hidden" }}>
+      <div style={{ position: "relative", height: "64px", background: "rgba(153,69,255,0.04)", borderRadius: "8px", overflow: "hidden" }}>
         {timeline.map((t, i) => {
           const left = (t.minutesAfterFirst / maxMin) * 100;
           const bg = t.minutesAfterFirst < 5 ? "var(--red)" : t.minutesAfterFirst < 60 ? "var(--yellow)" : "var(--green)";
@@ -417,7 +417,7 @@ function SolDistChart({ dist }: { dist: DeepScanResult["solDistribution"] }) {
         {buckets.map((d, i) => (
           <div key={d.label} className="flex items-center gap-2 text-xs">
             <span className="w-24 text-right shrink-0" style={{ color: "var(--text-muted)" }}>{d.label}</span>
-            <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(153,69,255,0.04)" }}>
               <div className={`h-full ${colors[i]} rounded`} style={{ width: `${(d.pct / max) * 100}%` }} />
             </div>
             <span className="w-16 shrink-0" style={{ color: "var(--text-secondary)" }}>{d.pct}% ({d.count})</span>
@@ -494,10 +494,10 @@ function BubbleScatter({ wallets, totalSupply }: { wallets: WalletAnalysis[]; to
           </circle>;
         })}
         {/* Axis labels */}
-        <text x={PAD} y={H - 4} fill="#8b8ba8" fontSize={10}>0d</text>
-        <text x={PAD + plotW} y={H - 4} fill="#8b8ba8" fontSize={10} textAnchor="end">{maxAge.toFixed(0)}d</text>
-        <text x={PAD + plotW / 2} y={H - 4} fill="#8b8ba8" fontSize={9} textAnchor="middle">wallet age →</text>
-        <text x={8} y={PAD + plotH / 2} fill="#8b8ba8" fontSize={9} textAnchor="middle" transform={`rotate(-90, 8, ${PAD + plotH / 2})`}>holdings % →</text>
+        <text x={PAD} y={H - 4} fill="#8888a8" fontSize={10}>0d</text>
+        <text x={PAD + plotW} y={H - 4} fill="#8888a8" fontSize={10} textAnchor="end">{maxAge.toFixed(0)}d</text>
+        <text x={PAD + plotW / 2} y={H - 4} fill="#8888a8" fontSize={9} textAnchor="middle">wallet age →</text>
+        <text x={8} y={PAD + plotH / 2} fill="#8888a8" fontSize={9} textAnchor="middle" transform={`rotate(-90, 8, ${PAD + plotH / 2})`}>holdings % →</text>
       </svg>
       <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)", justifyContent: "center" }}>
         <span>🔴 Fresh (&lt;7d)</span>
@@ -663,21 +663,22 @@ export default function Home() {
         </div>
 
         {/* ═══ HERO ═══ */}
-        <div style={{ padding: "48px 0 32px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px" }}>
-            <img src="/logo.png" alt="HolderScope" width={56} height={56} style={{ objectFit: "contain" }} />
-            <div>
-              <div style={{ fontSize: "28px", fontWeight: 800, letterSpacing: "-0.02em" }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></div>
-              <div className="font-mono" style={{ fontSize: "10px", fontWeight: 600, color: "var(--accent-dark)", letterSpacing: "0.12em", textTransform: "uppercase" }}>SOLANA TOKEN INTELLIGENCE</div>
+        <div style={{ padding: "48px 0 32px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "40px" }}>
+          <div style={{ flex: 1 }}>
+            <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "14px" }}>
+              SOLANA TOKEN INTELLIGENCE
             </div>
+            <h1 style={{ fontSize: "44px", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "14px" }}>
+              See through the{" "}
+              <span style={{ background: "linear-gradient(135deg, var(--accent-bright), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>holderbase.</span>
+            </h1>
+            <p style={{ fontSize: "15px", color: "var(--text-secondary)", maxWidth: "540px", lineHeight: 1.7 }}>
+              Paste any Solana token address. Get wallet age, activity analysis, bundle detection, cabal pattern scoring, and a plain-English quality verdict in seconds.
+            </p>
           </div>
-          <h1 style={{ fontSize: "44px", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "14px" }}>
-            See through the{" "}
-            <span style={{ background: "linear-gradient(135deg, var(--accent-bright), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>holderbase.</span>
-          </h1>
-          <p style={{ fontSize: "15px", color: "var(--text-secondary)", maxWidth: "640px", lineHeight: 1.7 }}>
-            Paste any Solana token address. Get wallet age, activity analysis, bundle detection, cabal pattern scoring, and a plain-English quality verdict in seconds.
-          </p>
+          <div style={{ flexShrink: 0 }}>
+            <img src="/logo.png" alt="HolderScope" width={160} height={160} style={{ objectFit: "contain", opacity: 0.9, filter: "drop-shadow(0 8px 32px rgba(153,69,255,0.2))" }} />
+          </div>
         </div>
 
         {/* ═══ SEARCH BAR ═══ */}
@@ -742,7 +743,7 @@ export default function Home() {
                     HolderScope analyzes every wallet individually. <strong style={{ color: "var(--text)" }}>Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.
                   </p>
                 </div>
-                <div style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(8,145,178,0.06))", borderRadius: "14px", padding: "24px", border: "1px solid var(--border-accent)" }}>
+                <div style={{ background: "linear-gradient(135deg, rgba(153,69,255,0.05), rgba(8,145,178,0.06))", borderRadius: "14px", padding: "24px", border: "1px solid var(--border-accent)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
                     <ShieldIcon size={20} color="var(--accent)" />
                     <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent)" }}>Plain-English verdict</span>
@@ -765,7 +766,7 @@ export default function Home() {
                   padding: "24px", borderRadius: "16px", border: "1px solid var(--border)", background: "var(--bg-card)",
                   display: "flex", flexDirection: "column", gap: "12px", transition: "all 0.2s ease",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "var(--border-accent)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(153,69,255,0.05)"; e.currentTarget.style.borderColor = "var(--border-accent)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -795,7 +796,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.03)", border: "1px solid var(--border-accent)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(153,69,255,0.04)", border: "1px solid var(--border-accent)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
                 <strong style={{ color: "var(--accent-dark)" }}>Data source:</strong> Helius RPC (enhanced transactions, DAS). No third-party APIs that can be gamed. All analysis runs on raw on-chain data.
               </div>
             </div>
@@ -814,7 +815,7 @@ export default function Home() {
                   Shows wallet clusters visually. Useful but no scoring, no age analysis, no automated verdict. <strong style={{ color: "var(--yellow)" }}>Manual interpretation required.</strong>
                 </div>
               </div>
-              <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
+              <div style={{ background: "rgba(153,69,255,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>✓ HolderScope</div>
                 <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
                   Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style={{ color: "var(--accent)" }}>Full picture, plain English.</strong>
@@ -901,7 +902,7 @@ export default function Home() {
                 <div style={{ padding: "28px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
                   <div style={{ textAlign: "center", flexShrink: 0 }}>
                     <div className={`${scoreColor(verdict.score)}`} style={{ width: 80, height: 80, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", animation: "pulse-glow 3s ease-in-out infinite" }}>
-                      <span style={{ fontSize: "32px", fontWeight: 900, color: "var(--bg)" }}>{verdict.score}</span>
+                      <span style={{ fontSize: "32px", fontWeight: 900, color: "white" }}>{verdict.score}</span>
                     </div>
                     <div className={`${gradeColor(verdict.grade)}`} style={{ fontSize: "28px", fontWeight: 900, marginTop: "6px" }}>{verdict.grade}</div>
                   </div>
