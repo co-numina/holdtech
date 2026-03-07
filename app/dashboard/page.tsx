@@ -317,17 +317,21 @@ export default function Dashboard() {
     { id: "batch" as const, label: "Batch", icon: "▤" },
   ];
 
+  const cardBg = darkMode ? "rgba(22,22,42,0.7)" : "rgba(255,255,255,0.6)";
+  const cardBgSolid = darkMode ? "rgba(18,18,36,0.9)" : "rgba(255,255,255,0.8)";
+  const subtleBg = darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)";
+  const metricBg = darkMode ? "rgba(153,69,255,0.08)" : "rgba(153,69,255,0.03)";
   const card = (extra?: React.CSSProperties): React.CSSProperties => ({
-    background: "var(--card-bg, rgba(255,255,255,0.6))",
+    background: cardBg,
     backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-    border: "1px solid var(--border, rgba(153,69,255,0.08))",
+    border: `1px solid var(--border, ${darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.08)"})`,
     borderRadius: "14px", ...extra,
   });
 
   const pill = (active: boolean, color?: string): React.CSSProperties => ({
     ...M, padding: "5px 12px", borderRadius: "20px", border: "none", cursor: "pointer",
     fontSize: "10px", fontWeight: 700, letterSpacing: "0.03em",
-    background: active ? `${color || "#9945FF"}15` : "rgba(0,0,0,0.02)",
+    background: active ? `${color || "#9945FF"}15` : subtleBg,
     color: active ? (color || "#9945FF") : "var(--text-muted, #888)", transition: "all 0.2s",
   });
 
@@ -407,9 +411,9 @@ export default function Dashboard() {
           </div>
 
           <div style={{ display: "flex", gap: "4px", marginTop: "6px" }}>
-            <button onClick={toggleTheme} style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.06))", background: "rgba(0,0,0,0.02)", cursor: "pointer", fontSize: "13px" }}>{darkMode ? "☀️" : "🌙"}</button>
-            <a href="/docs" style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.06))", background: "rgba(0,0,0,0.02)", textDecoration: "none", textAlign: "center", fontSize: "10px", fontWeight: 700, color: "var(--text-muted, #888)", display: "flex", alignItems: "center", justifyContent: "center", ...M }}>DOCS</a>
-            <a href="/" style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.06))", background: "rgba(0,0,0,0.02)", textDecoration: "none", textAlign: "center", fontSize: "10px", fontWeight: 700, color: "var(--text-muted, #888)", display: "flex", alignItems: "center", justifyContent: "center", ...M }}>HOME</a>
+            <button onClick={toggleTheme} style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.06))", background: subtleBg, cursor: "pointer", fontSize: "13px" }}>{darkMode ? "☀️" : "🌙"}</button>
+            <a href="/docs" style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.06))", background: subtleBg, textDecoration: "none", textAlign: "center", fontSize: "10px", fontWeight: 700, color: "var(--text-muted, #888)", display: "flex", alignItems: "center", justifyContent: "center", ...M }}>DOCS</a>
+            <a href="/" style={{ flex: 1, padding: "9px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.06))", background: subtleBg, textDecoration: "none", textAlign: "center", fontSize: "10px", fontWeight: 700, color: "var(--text-muted, #888)", display: "flex", alignItems: "center", justifyContent: "center", ...M }}>HOME</a>
           </div>
         </div>
 
@@ -583,7 +587,7 @@ export default function Dashboard() {
                           <span style={{ fontSize: "13px" }}>{b.emoji}</span>
                           <span style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{b.label}</span>
                           <span style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{b.address.slice(0, 6)}..{b.address.slice(-4)}</span>
-                          {b.group && <span style={{ ...M, fontSize: "8px", color: "#9945FF", background: "rgba(153,69,255,0.06)", padding: "1px 5px", borderRadius: "4px" }}>{b.group}</span>}
+                          {b.group && <span style={{ ...M, fontSize: "8px", color: "#9945FF", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)", padding: "1px 5px", borderRadius: "4px" }}>{b.group}</span>}
                         </div>
                         <button onClick={() => { const n = bundlers.filter(x => x.address !== b.address); setBundlers(n); localStorage.setItem("holdtech-bundlers", JSON.stringify(n)); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", fontSize: "14px", padding: "2px 6px" }}>×</button>
                       </div>
@@ -607,11 +611,11 @@ export default function Dashboard() {
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {Array.from({ length: 6 }).map((_, i) => (
                     <div key={i} className="skeleton-row" style={{ opacity: 1 - i * 0.12 }}>
-                      <div style={{ width: 42, height: 42, borderRadius: "10px", background: "rgba(153,69,255,0.06)" }} />
+                      <div style={{ width: 42, height: 42, borderRadius: "10px", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)" }} />
                       <div style={{ width: 40, height: 18, borderRadius: "4px", background: "rgba(153,69,255,0.04)" }} />
                       <div style={{ flex: 1 }}>
-                        <div style={{ width: "40%", height: 14, borderRadius: "4px", background: "rgba(153,69,255,0.06)", marginBottom: "6px" }} />
-                        <div style={{ width: "60%", height: 10, borderRadius: "3px", background: "rgba(153,69,255,0.03)" }} />
+                        <div style={{ width: "40%", height: 14, borderRadius: "4px", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)", marginBottom: "6px" }} />
+                        <div style={{ width: "60%", height: 10, borderRadius: "3px", background: metricBg }} />
                       </div>
                       <div style={{ width: 80, height: 14, borderRadius: "4px", background: "rgba(153,69,255,0.04)" }} />
                     </div>
@@ -640,7 +644,7 @@ export default function Dashboard() {
                       borderLeft: `3px solid ${ev.type === "buy" ? "rgba(20,241,149,0.4)" : "rgba(239,68,68,0.3)"}`,
                     }} onClick={() => handleInlineScan(ev.tokenMint)}>
                       {/* Token image */}
-                      <div style={{ width: 42, height: 42, borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: "rgba(153,69,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(153,69,255,0.06)" }}>
+                      <div style={{ width: 42, height: 42, borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: metricBg, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid rgba(153,69,255,0.06)" }}>
                         {ev.tokenImage ? <img src={ev.tokenImage} alt="" width={42} height={42} style={{ objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <span style={{ fontSize: "18px", opacity: 0.2 }}>🪙</span>}
                       </div>
 
@@ -691,7 +695,7 @@ export default function Dashboard() {
                           <div className="inline-scan-grid">
                             <div style={{ ...M, fontSize: "36px", fontWeight: 800, color: gc(inlineScanResult.grade), background: `${gc(inlineScanResult.grade)}12`, padding: "8px 20px", borderRadius: "12px", textAlign: "center", gridRow: "1 / 3" }}>{inlineScanResult.grade}</div>
                             {[{ l: "Score", v: `${inlineScanResult.score}/100` }, { l: "Holders", v: inlineScanResult.holders.toLocaleString() }, { l: "Top 5%", v: `${inlineScanResult.top5Pct}%` }, { l: "Fresh Wallets", v: `${inlineScanResult.freshPct}%` }, { l: "Avg Age", v: `${inlineScanResult.avgAge}d` }].map(m => (
-                              <div key={m.l} style={{ background: "rgba(153,69,255,0.03)", borderRadius: "10px", padding: "10px 12px" }}>
+                              <div key={m.l} style={{ background: metricBg, borderRadius: "10px", padding: "10px 12px" }}>
                                 <div style={{ ...M, fontSize: "7px", fontWeight: 700, color: "var(--text-muted, #888)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{m.l}</div>
                                 <div style={{ ...M, fontSize: "16px", fontWeight: 800, marginTop: "2px" }}>{m.v}</div>
                               </div>
@@ -749,7 +753,7 @@ export default function Dashboard() {
                   </div>
                   <div className="metrics-grid">
                     {[{ l: "Score", v: `${scanResult.score}/100` }, { l: "Holders", v: scanResult.holders.toLocaleString() }, { l: "Top 5", v: `${scanResult.top5Pct}%` }, { l: "Fresh", v: `${scanResult.freshPct}%` }, { l: "Avg Age", v: `${scanResult.avgAge}d` }].map(m => (
-                      <div key={m.l} style={{ background: "rgba(153,69,255,0.03)", borderRadius: "12px", padding: "14px" }}>
+                      <div key={m.l} style={{ background: metricBg, borderRadius: "12px", padding: "14px" }}>
                         <div style={{ ...M, fontSize: "8px", fontWeight: 700, color: "var(--text-muted, #888)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{m.l}</div>
                         <div style={{ ...M, fontSize: "22px", fontWeight: 800, marginTop: "4px" }}>{m.v}</div>
                       </div>
@@ -822,7 +826,7 @@ export default function Dashboard() {
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                 <div style={{ ...M, fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>Watchlist</div>
-                <span style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)", background: "rgba(0,0,0,0.03)", padding: "4px 10px", borderRadius: "6px" }}>{watchlist.length}/{tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200} · {tier.name}</span>
+                <span style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)", background: subtleBg, padding: "4px 10px", borderRadius: "6px" }}>{watchlist.length}/{tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200} · {tier.name}</span>
               </div>
               {watchlist.length === 0 && <div style={{ ...card({ padding: "60px", textAlign: "center" }) }}><div style={{ fontSize: "36px", marginBottom: "10px", opacity: 0.3 }}>◉</div><div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px" }}>No tokens watched</div><div style={{ fontSize: "12px", color: "var(--text-muted, #888)" }}>Scan a token and click &quot;+ Watch&quot;</div></div>}
               {watchlist.map(w => (
@@ -832,7 +836,7 @@ export default function Dashboard() {
                     <div><div style={{ fontSize: "15px", fontWeight: 700 }}>{w.symbol}</div><div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{w.lastScore}/100 · {w.lastHolders.toLocaleString()} holders · added {timeAgo(w.addedAt)}</div></div>
                   </div>
                   <div style={{ display: "flex", gap: "6px" }}>
-                    <button onClick={() => { setScanInput(w.mint); setTab("scan"); }} style={{ ...M, padding: "7px 14px", background: "rgba(153,69,255,0.06)", color: "#9945FF", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Rescan</button>
+                    <button onClick={() => { setScanInput(w.mint); setTab("scan"); }} style={{ ...M, padding: "7px 14px", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)", color: "#9945FF", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Rescan</button>
                     <button onClick={() => rmWatch(w.mint)} style={{ ...M, padding: "7px 14px", background: "rgba(239,68,68,0.04)", color: "#ef4444", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Remove</button>
                   </div>
                 </div>
@@ -886,7 +890,7 @@ export default function Dashboard() {
                   <div style={{ flex: 1 }}><span style={{ fontSize: "14px", fontWeight: 700 }}>{r.symbol}</span></div>
                   <span style={{ ...M, fontSize: "13px", fontWeight: 700 }}>{r.score}/100</span>
                   <span style={{ ...M, fontSize: "11px", color: "var(--text-secondary, #666)" }}>{r.holders.toLocaleString()}</span>
-                  <a href={`/?mint=${r.mint}`} target="_blank" style={{ ...M, fontSize: "11px", color: "#9945FF", textDecoration: "none", padding: "4px 10px", background: "rgba(153,69,255,0.06)", borderRadius: "6px" }}>Full →</a>
+                  <a href={`/?mint=${r.mint}`} target="_blank" style={{ ...M, fontSize: "11px", color: "#9945FF", textDecoration: "none", padding: "4px 10px", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)", borderRadius: "6px" }}>Full →</a>
                 </div>
               ))}
             </div>
@@ -961,6 +965,17 @@ export default function Dashboard() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(153,69,255,0.15); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(153,69,255,0.25); }
+
+        /* ═══ DARK MODE ═══ */
+        [data-theme="dark"] .sidebar { background: rgba(14,14,30,0.85); border-color: rgba(153,69,255,0.1); }
+        [data-theme="dark"] .skeleton-row { background: rgba(22,22,42,0.7); border-color: rgba(153,69,255,0.12); }
+        [data-theme="dark"] .manage-input,
+        [data-theme="dark"] .manage-textarea,
+        [data-theme="dark"] .scan-input { background: rgba(22,22,42,0.8); color: #e8eaf0; border-color: rgba(153,69,255,0.2); }
+        [data-theme="dark"] .mobile-header { background: rgba(14,14,30,0.9); }
+        [data-theme="dark"] .mobile-bottom-nav { background: rgba(14,14,30,0.95); }
+        [data-theme="dark"] .wallet-row { border-color: rgba(255,255,255,0.04); }
+        [data-theme="dark"] .feed-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
 
         /* ═══ MOBILE ═══ */
         @media (max-width: 768px) {
