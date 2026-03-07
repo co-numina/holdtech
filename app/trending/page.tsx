@@ -50,6 +50,7 @@ export default function TrendingPage() {
   const [lastUpdate, setLastUpdate] = useState<number | null>(null);
   const [source, setSource] = useState("all");
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [maxMcap, setMaxMcap] = useState<number | null>(null);
 
   const fetchTrending = useCallback(async () => {
     setLoading(true);
@@ -127,7 +128,7 @@ export default function TrendingPage() {
             { key: "pump_hot", label: "TOP MCAP" },
             { key: "pump_live", label: "LIVE NOW" },
             { key: "dex_boosted", label: "DEX BOOSTED" },
-          ].map(s => (
+          ].map((s: { key: string; label: string }) => (
             <button key={s.key} onClick={() => setSource(s.key)} className="font-mono" style={{
               padding: "6px 14px", borderRadius: "8px", fontSize: "10px", fontWeight: 700,
               background: source === s.key ? "rgba(153,69,255,0.1)" : "var(--bg-card-alt)",
@@ -138,6 +139,23 @@ export default function TrendingPage() {
               {s.label}
             </button>
           ))}
+          <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
+            {[
+              { value: null, label: "ALL MCAP" },
+              { value: 100000, label: "<100K" },
+              { value: 500000, label: "<500K" },
+              { value: 1000000, label: "<1M" },
+            ].map((f: { value: number | null; label: string }) => (
+              <button key={f.label} onClick={() => setMaxMcap(f.value)} className="font-mono" style={{
+                padding: "6px 10px", borderRadius: "8px", fontSize: "9px", fontWeight: 700,
+                background: maxMcap === f.value ? "rgba(20,241,149,0.1)" : "var(--bg-card-alt)",
+                border: `1px solid ${maxMcap === f.value ? "rgba(20,241,149,0.2)" : "var(--border)"}`,
+                color: maxMcap === f.value ? "#14F195" : "var(--text-muted)", cursor: "pointer",
+              }}>
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Loading */}
@@ -149,7 +167,9 @@ export default function TrendingPage() {
         )}
 
         {/* Table */}
-        {tokens.length > 0 && (
+        {tokens.length > 0 && (() => {
+          const filtered = maxMcap ? tokens.filter(t => t.marketCap > 0 && t.marketCap <= maxMcap) : tokens;
+          return filtered.length > 0 && (
           <div className="glass" style={{ borderRadius: "16px", overflow: "hidden" }}>
             {/* Header row */}
             <div style={{
@@ -168,7 +188,7 @@ export default function TrendingPage() {
             </div>
 
             {/* Rows */}
-            {tokens.map((token, i) => (
+            {filtered.map((token, i) => (
               <a
                 key={token.mint}
                 href={`/?mint=${token.mint}`}
@@ -233,7 +253,8 @@ export default function TrendingPage() {
               </a>
             ))}
           </div>
-        )}
+        );
+        })()}
 
         {/* Last update */}
         {lastUpdate && (
