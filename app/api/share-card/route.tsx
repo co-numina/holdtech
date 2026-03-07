@@ -47,7 +47,7 @@ function metricStatus(label: string, value: number): { color: string; tag: strin
   }
   if (label === "AVG SOL BAL") {
     if (value >= 5) return { color: "#14F195", tag: "FUNDED" };
-    if (value >= 1) return { color: "#4ade80", tag: "OK" };
+    if (value >= 1) return { color: "#4ade80", tag: "DECENT" };
     if (value >= 0.3) return { color: "#eab308", tag: "LIGHT" };
     return { color: "#ef4444", tag: "DUST" };
   }
