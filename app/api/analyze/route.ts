@@ -296,6 +296,10 @@ export async function POST(req: NextRequest) {
       return KNOWN_PROGRAMS.has(address) || poolDetected.has(address);
     }
 
+    // Fresh wallet threshold — 24h for verified project tokens, 7d default
+    const HOLDTECH_MINT = "ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump";
+    const freshThreshold = mint === HOLDTECH_MINT ? 1 : 7;
+
     // Step 4: Analyze wallets in parallel batches of 5
     const BATCH_SIZE = 10;
     for (let i = 0; i < holders.length; i += BATCH_SIZE) {
@@ -312,7 +316,7 @@ export async function POST(req: NextRequest) {
             walletAgeDays: Math.round(walletAgeDays * 10) / 10,
             holdDurationDays: Math.round(walletAgeDays * 10) / 10,
             totalTxCount: info.txCount,
-            isFresh: walletAgeDays < (mint === "ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump" ? 1 : 7),
+            isFresh: walletAgeDays < freshThreshold,
             solBalance: Math.round(info.solBalance * 1000) / 1000,
             otherTokenCount: info.tokenCount,
             isPool: isPoolOrProgram(holder.owner),
@@ -339,8 +343,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Compute metrics (excluding pools)
-    const HOLDTECH_MINT = "ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump";
-    const freshThreshold = mint === HOLDTECH_MINT ? 1 : 7;
     const ages = humanWallets.map((w) => w.walletAgeDays);
     const holds = humanWallets.map((w) => w.holdDurationDays);
     const txCounts = humanWallets.map((w) => w.totalTxCount);
@@ -350,7 +352,7 @@ export async function POST(req: NextRequest) {
       medianWalletAgeDays: Math.round(median(ages) * 10) / 10,
       avgHoldDurationDays: Math.round((holds.reduce((s, v) => s + v, 0) / holds.length) * 10) / 10,
       medianHoldDurationDays: Math.round(median(holds) * 10) / 10,
-      freshWalletPct: Math.round((humanWallets.filter((w) => w.walletAgeDays < (mint === "ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump" ? 1 : 7)).length / humanWallets.length) * 1000) / 10,
+      freshWalletPct: Math.round((humanWallets.filter((w) => w.walletAgeDays < freshThreshold).length / humanWallets.length) * 1000) / 10,
       veryFreshWalletPct: Math.round((humanWallets.filter((w) => w.walletAgeDays < (mint === "ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump" ? 0.25 : 1)).length / humanWallets.length) * 1000) / 10,
       diamondHandsPct: Math.round((humanWallets.filter((w) => w.holdDurationDays > 2).length / humanWallets.length) * 1000) / 10,
       veteranHolderPct: Math.round((humanWallets.filter((w) => w.walletAgeDays > 90).length / humanWallets.length) * 1000) / 10,
