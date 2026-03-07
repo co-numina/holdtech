@@ -113,10 +113,23 @@ export async function GET(req: NextRequest) {
       }}>
         {/* Background image */}
         <img src="https://holdtech.fun/card-bg.png" width={1200} height={630} style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }} />
-        {/* Dark overlay to ensure text readability */}
+        {/* Dark overlay */}
         <div style={{
           position: "absolute", inset: 0, display: "flex",
-          background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.68) 100%)",
+          background: "linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.65) 100%)",
+        }} />
+        {/* Content backing panels for readability */}
+        {/* Left panel */}
+        <div style={{
+          position: "absolute", left: 0, top: "56px", width: "420px", bottom: "44px",
+          background: "linear-gradient(90deg, rgba(0,0,0,0.5), rgba(0,0,0,0.15))",
+          display: "flex",
+        }} />
+        {/* Right panel */}
+        <div style={{
+          position: "absolute", left: "420px", top: "56px", right: 0, bottom: "44px",
+          background: "linear-gradient(90deg, rgba(0,0,0,0.15), rgba(0,0,0,0.45))",
+          display: "flex",
         }} />
         {/* Score glow */}
         <div style={{
