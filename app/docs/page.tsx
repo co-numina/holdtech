@@ -90,7 +90,7 @@ export default function DocsPage() {
         <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px" }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
             <img src="/logo.png" alt="HoldTech" width={28} height={28} style={{ objectFit: "contain" }} />
-            <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
+            <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLD</span><span style={{ color: "var(--text-muted)" }}>TECH</span></span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <span className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent)" }}>DOCS</span>
