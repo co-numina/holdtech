@@ -212,7 +212,7 @@ export default function Home() {
           <div className="text-center py-12">
             <div className="inline-block w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-4" />
             <div className="text-sm text-white/50">{progress}</div>
-            <div className="text-xs text-white/20 mt-1">Analyzing up to 100 wallets — this takes ~30-60 seconds</div>
+            <div className="text-xs text-white/20 mt-1">Analyzing top 20 holders — takes ~15-20 seconds</div>
           </div>
         )}
 
@@ -220,6 +220,9 @@ export default function Home() {
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
             {error}
+            {error.includes("max usage") || error.includes("429") || error.includes("rate") ? (
+              <div className="text-xs text-red-400/60 mt-1">RPC rate limited — wait 30 seconds and try again</div>
+            ) : null}
           </div>
         )}
 

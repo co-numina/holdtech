@@ -2,13 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 const HELIUS_API_KEY = "65a496c3-0f36-4efe-a65a-67a716193997";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-const HELIUS_API = `https://api.helius.xyz/v0`;
 
-interface HolderAccount {
-  address: string; // wallet
-  amount: number;
-  decimals: number;
-}
+// Use Helius enhanced API — 1 call gets parsed transaction history
+// Use DAS API for bulk operations
+// Target: < 20 total RPC calls per analysis
 
 interface WalletAnalysis {
   address: string;
@@ -16,46 +13,9 @@ interface WalletAnalysis {
   walletAgeDays: number;
   holdDurationDays: number;
   totalTxCount: number;
-  isFresh: boolean; // wallet < 7 days old at time of first buy
+  isFresh: boolean;
   solBalance: number;
   otherTokenCount: number;
-}
-
-interface AnalysisResult {
-  mint: string;
-  tokenName: string;
-  tokenSymbol: string;
-  totalHolders: number;
-  analyzedHolders: number;
-  metrics: {
-    avgWalletAgeDays: number;
-    medianWalletAgeDays: number;
-    avgHoldDurationDays: number;
-    medianHoldDurationDays: number;
-    freshWalletPct: number; // wallets < 7 days old
-    veryFreshWalletPct: number; // wallets < 24 hrs old
-    diamondHandsPct: number; // holding > 2 days
-    veteranHolderPct: number; // wallet age > 90 days
-    ogHolderPct: number; // wallet age > 180 days
-    avgTxCount: number;
-    lowActivityPct: number; // < 10 total txs ever
-    avgSolBalance: number;
-    singleTokenPct: number; // only hold this token (likely burner)
-  };
-  distribution: {
-    walletAge: { label: string; count: number; pct: number }[];
-    holdDuration: { label: string; count: number; pct: number }[];
-  };
-  topHolders: {
-    address: string;
-    balancePct: number;
-    walletAgeDays: number;
-    holdDurationDays: number;
-    totalTxCount: number;
-    isFresh: boolean;
-  }[];
-  wallets: WalletAnalysis[];
-  timestamp: number;
 }
 
 async function heliusRpc(method: string, params: unknown[]) {
@@ -65,49 +25,106 @@ async function heliusRpc(method: string, params: unknown[]) {
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
   });
   const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
   return data.result;
 }
 
-async function getTokenAccounts(mint: string): Promise<HolderAccount[]> {
-  // Use Helius DAS getTokenAccounts
-  const res = await fetch(`${HELIUS_API}/token/holders?api-key=${HELIUS_API_KEY}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ mint, limit: 200 }),
-  });
-  
-  if (!res.ok) {
-    // Fallback: use RPC getTokenLargestAccounts + parse
-    const largest = await heliusRpc("getTokenLargestAccounts", [mint]);
-    if (!largest?.value) return [];
-    
-    const accounts: HolderAccount[] = [];
-    for (const acc of largest.value.slice(0, 20)) {
-      // Get account info to find owner
-      const info = await heliusRpc("getAccountInfo", [acc.address, { encoding: "jsonParsed" }]);
-      if (info?.value?.data?.parsed?.info?.owner) {
-        accounts.push({
-          address: info.value.data.parsed.info.owner,
-          amount: parseFloat(acc.uiAmountString || acc.amount),
-          decimals: acc.decimals,
-        });
+// Single call: get top holders via getTokenLargestAccounts
+async function getTopHolders(mint: string) {
+  const result = await heliusRpc("getTokenLargestAccounts", [mint]);
+  return result?.value || [];
+}
+
+// Single call: get account info for a token account (to find owner)
+async function getTokenAccountOwner(tokenAccount: string) {
+  const result = await heliusRpc("getAccountInfo", [
+    tokenAccount,
+    { encoding: "jsonParsed" },
+  ]);
+  const parsed = result?.value?.data?.parsed?.info;
+  return {
+    owner: parsed?.owner || null,
+    amount: parseFloat(parsed?.tokenAmount?.uiAmountString || "0"),
+    decimals: parsed?.tokenAmount?.decimals || 6,
+  };
+}
+
+// Batch: get multiple account infos in one call
+async function getMultipleAccounts(accounts: string[]) {
+  const result = await heliusRpc("getMultipleAccountsInfo", [
+    accounts,
+    { encoding: "jsonParsed" },
+  ]);
+  return result?.value || [];
+}
+
+// Single call: get SOL balances for multiple accounts (not available as batch in standard RPC)
+// Use getMultipleAccounts instead
+async function getWalletInfo(wallet: string): Promise<{
+  solBalance: number;
+  firstTxTime: number | null;
+  txCount: number;
+  tokenCount: number;
+}> {
+  // Combine: get signatures (1 call for age + count estimate) + balance + tokens
+  const [sigsResult, balResult, tokensResult] = await Promise.allSettled([
+    // Get last page of signatures to estimate age — just 1 call, get oldest we can
+    heliusRpc("getSignaturesForAddress", [wallet, { limit: 1000 }]),
+    heliusRpc("getBalance", [wallet]),
+    heliusRpc("getTokenAccountsByOwner", [
+      wallet,
+      { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+      { encoding: "jsonParsed" },
+    ]),
+  ]);
+
+  let firstTxTime: number | null = null;
+  let txCount = 0;
+
+  if (sigsResult.status === "fulfilled" && sigsResult.value) {
+    const sigs = sigsResult.value;
+    txCount = sigs.length; // Approximate — up to 1000
+    if (sigs.length > 0) {
+      // The last signature in the array is the oldest we fetched
+      const oldest = sigs[sigs.length - 1];
+      firstTxTime = oldest.blockTime ? oldest.blockTime * 1000 : null;
+      
+      // If we got exactly 1000, wallet has more history — try one more page
+      if (sigs.length === 1000) {
+        try {
+          const older = await heliusRpc("getSignaturesForAddress", [
+            wallet,
+            { limit: 1000, before: oldest.signature },
+          ]);
+          if (older && older.length > 0) {
+            txCount += older.length;
+            const realOldest = older[older.length - 1];
+            firstTxTime = realOldest.blockTime ? realOldest.blockTime * 1000 : firstTxTime;
+          }
+        } catch { /* keep what we have */ }
       }
     }
-    return accounts;
   }
-  
-  const data = await res.json();
-  return (data.holders || data || []).map((h: { owner: string; balance: number; decimals: number }) => ({
-    address: h.owner,
-    amount: h.balance,
-    decimals: h.decimals || 6,
-  }));
+
+  const solBalance = balResult.status === "fulfilled" ? (balResult.value?.value || 0) / 1e9 : 0;
+  const tokenCount = tokensResult.status === "fulfilled" ? (tokensResult.value?.value?.length || 0) : 0;
+
+  return { solBalance, firstTxTime, txCount, tokenCount };
 }
 
 async function getTokenMetadata(mint: string) {
+  // Try pump.fun first (free, no rate limit)
   try {
-    const res = await fetch(`${HELIUS_API}/token-metadata?api-key=${HELIUS_API_KEY}`, {
+    const res = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.name) return { name: data.name, symbol: data.symbol || "???" };
+    }
+  } catch { /* fall through */ }
+
+  // Fallback: Helius token metadata (1 call)
+  try {
+    const res = await fetch(`https://api.helius.xyz/v0/token-metadata?api-key=${HELIUS_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mintAccounts: [mint], includeOffChain: true }),
@@ -120,91 +137,9 @@ async function getTokenMetadata(mint: string) {
         symbol: meta.onChainMetadata?.metadata?.data?.symbol || meta.offChainMetadata?.metadata?.symbol || "???",
       };
     }
-  } catch {
-    // Try pump.fun API
-    try {
-      const res = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`);
-      if (res.ok) {
-        const data = await res.json();
-        return { name: data.name || "Unknown", symbol: data.symbol || "???" };
-      }
-    } catch { /* ignore */ }
-  }
+  } catch { /* ignore */ }
+
   return { name: "Unknown", symbol: "???" };
-}
-
-async function getWalletFirstTx(wallet: string): Promise<number | null> {
-  try {
-    // Get oldest signature
-    const sigs = await heliusRpc("getSignaturesForAddress", [
-      wallet,
-      { limit: 1, before: undefined },
-    ]);
-    
-    if (!sigs || sigs.length === 0) return null;
-    
-    // To get the actual oldest, we need to paginate backwards
-    // For speed, just get recent + use the last page approach
-    let oldestSig = sigs[sigs.length - 1];
-    let lastSig = oldestSig.signature;
-    
-    // Quick pagination to find oldest (max 2 pages to conserve rate limit)
-    for (let i = 0; i < 2; i++) {
-      const older = await heliusRpc("getSignaturesForAddress", [
-        wallet,
-        { limit: 1000, before: lastSig },
-      ]);
-      if (!older || older.length === 0) break;
-      oldestSig = older[older.length - 1];
-      lastSig = oldestSig.signature;
-      if (older.length < 1000) break;
-    }
-    
-    return oldestSig.blockTime ? oldestSig.blockTime * 1000 : null;
-  } catch {
-    return null;
-  }
-}
-
-async function getWalletTxCount(wallet: string): Promise<number> {
-  try {
-    let count = 0;
-    let lastSig: string | undefined;
-    for (let i = 0; i < 1; i++) {
-      const params: Record<string, unknown> = { limit: 1000 };
-      if (lastSig) params.before = lastSig;
-      const sigs = await heliusRpc("getSignaturesForAddress", [wallet, params]);
-      if (!sigs || sigs.length === 0) break;
-      count += sigs.length;
-      lastSig = sigs[sigs.length - 1].signature;
-      if (sigs.length < 1000) break;
-    }
-    return count;
-  } catch {
-    return 0;
-  }
-}
-
-async function getWalletSolBalance(wallet: string): Promise<number> {
-  try {
-    const result = await heliusRpc("getBalance", [wallet]);
-    return (result?.value || 0) / 1e9;
-  } catch {
-    return 0;
-  }
-}
-
-async function getWalletTokenCount(wallet: string): Promise<number> {
-  try {
-    const result = await heliusRpc("getTokenAccountsByOwner", [
-      wallet,
-      { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
-      { encoding: "jsonParsed" },
-    ]);
-    return result?.value?.length || 0;
-  } catch {
-    return 0;
-  }
 }
 
 function median(arr: number[]): number {
@@ -214,7 +149,7 @@ function median(arr: number[]): number {
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
-function bucketize(values: number[], buckets: { label: string; max: number }[]): { label: string; count: number; pct: number }[] {
+function bucketize(values: number[], buckets: { label: string; max: number }[]) {
   const counts = buckets.map((b) => ({ label: b.label, count: 0, pct: 0 }));
   for (const v of values) {
     for (let i = 0; i < buckets.length; i++) {
@@ -236,59 +171,76 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing mint address" }, { status: 400 });
     }
 
-    // Get token metadata
+    // Step 1: Get token metadata (1 call, or 0 if pump.fun works)
     const meta = await getTokenMetadata(mint);
 
-    // Get holders
-    const holders = await getTokenAccounts(mint);
-    if (!holders || holders.length === 0) {
+    // Step 2: Get top 20 token accounts (1 RPC call)
+    const topAccounts = await getTopHolders(mint);
+    if (!topAccounts || topAccounts.length === 0) {
       return NextResponse.json({ error: "No holders found" }, { status: 404 });
     }
 
-    // Sort by balance desc, analyze top 50
-    const sorted = holders.sort((a, b) => b.amount - a.amount);
-    const totalSupply = sorted.reduce((s, h) => s + h.amount, 0);
-    const toAnalyze = sorted.slice(0, 50);
+    // Step 3: Resolve owners — do sequentially to avoid rate limit
+    // getTokenLargestAccounts returns token accounts, need to resolve owners
+    const holders: { owner: string; amount: number; decimals: number }[] = [];
     
+    for (const acc of topAccounts) {
+      try {
+        const info = await getTokenAccountOwner(acc.address);
+        if (info.owner) {
+          holders.push({
+            owner: info.owner,
+            amount: parseFloat(acc.uiAmountString || "0"),
+            decimals: acc.decimals || 6,
+          });
+        }
+        // Small delay between each
+        await new Promise((r) => setTimeout(r, 100));
+      } catch { /* skip */ }
+    }
+
+    if (holders.length === 0) {
+      return NextResponse.json({ error: "Could not resolve holder wallets" }, { status: 404 });
+    }
+
+    const totalSupply = holders.reduce((s, h) => s + h.amount, 0);
     const now = Date.now();
     const wallets: WalletAnalysis[] = [];
 
-    // Batch analyze wallets — process in parallel batches of 5 with delays
-    for (let i = 0; i < toAnalyze.length; i += 5) {
-      const batch = toAnalyze.slice(i, i + 5);
-      const results = await Promise.all(
-        batch.map(async (holder) => {
-          // Stagger within batch to avoid burst
-          const [firstTx, solBal, tokenCount] = await Promise.all([
-            getWalletFirstTx(holder.address),
-            getWalletSolBalance(holder.address),
-            getWalletTokenCount(holder.address),
-          ]);
-          
-          // Get tx count separately to reduce concurrent load
-          const txCount = await getWalletTxCount(holder.address);
+    // Step 4: Analyze each wallet — sequentially with delays
+    // Each wallet = ~3-4 RPC calls (sigs, balance, tokens)
+    // 20 wallets × 3 calls = ~60 calls, spread over time
+    for (let i = 0; i < holders.length; i++) {
+      const holder = holders[i];
+      try {
+        const info = await getWalletInfo(holder.owner);
+        
+        const walletAgeDays = info.firstTxTime
+          ? (now - info.firstTxTime) / (1000 * 60 * 60 * 24)
+          : 0;
 
-          const walletAgeDays = firstTx ? (now - firstTx) / (1000 * 60 * 60 * 24) : 0;
-          const holdDurationDays = walletAgeDays; // TODO: parse actual token buy time
-
-          return {
-            address: holder.address,
-            balance: holder.amount / Math.pow(10, holder.decimals),
-            walletAgeDays: Math.round(walletAgeDays * 10) / 10,
-            holdDurationDays: Math.round(holdDurationDays * 10) / 10,
-            totalTxCount: txCount,
-            isFresh: walletAgeDays < 7,
-            solBalance: Math.round(solBal * 1000) / 1000,
-            otherTokenCount: tokenCount,
-          };
-        })
-      );
-      wallets.push(...results);
-      
-      // Longer delay between batches to respect rate limits
-      if (i + 5 < toAnalyze.length) {
-        await new Promise((r) => setTimeout(r, 500));
+        wallets.push({
+          address: holder.owner,
+          balance: holder.amount,
+          walletAgeDays: Math.round(walletAgeDays * 10) / 10,
+          holdDurationDays: Math.round(walletAgeDays * 10) / 10,
+          totalTxCount: info.txCount,
+          isFresh: walletAgeDays < 7,
+          solBalance: Math.round(info.solBalance * 1000) / 1000,
+          otherTokenCount: info.tokenCount,
+        });
+      } catch (err) {
+        console.error(`Failed to analyze ${holder.owner}:`, err);
       }
+
+      // Rate limit: wait 300ms between wallets
+      if (i < holders.length - 1) {
+        await new Promise((r) => setTimeout(r, 300));
+      }
+    }
+
+    if (wallets.length === 0) {
+      return NextResponse.json({ error: "Analysis failed — rate limited" }, { status: 429 });
     }
 
     // Compute metrics
@@ -312,7 +264,6 @@ export async function POST(req: NextRequest) {
       singleTokenPct: Math.round((wallets.filter((w) => w.otherTokenCount <= 1).length / wallets.length) * 1000) / 10,
     };
 
-    // Distributions
     const ageBuckets = [
       { label: "< 1 day", max: 1 },
       { label: "1-7 days", max: 7 },
@@ -330,21 +281,20 @@ export async function POST(req: NextRequest) {
       { label: "30+ days", max: Infinity },
     ];
 
-    // Top holders with analysis
-    const topHolders = wallets.slice(0, 20).map((w) => ({
+    const topHolders = wallets.map((w) => ({
       address: w.address,
-      balancePct: Math.round((w.balance / (totalSupply / Math.pow(10, sorted[0]?.decimals || 6))) * 1000) / 10,
+      balancePct: totalSupply > 0 ? Math.round((w.balance / totalSupply) * 1000) / 10 : 0,
       walletAgeDays: w.walletAgeDays,
       holdDurationDays: w.holdDurationDays,
       totalTxCount: w.totalTxCount,
       isFresh: w.isFresh,
     }));
 
-    const result: AnalysisResult = {
+    const result = {
       mint,
       tokenName: meta.name,
       tokenSymbol: meta.symbol,
-      totalHolders: holders.length,
+      totalHolders: topAccounts.length,
       analyzedHolders: wallets.length,
       metrics,
       distribution: {
@@ -359,9 +309,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error("Analysis error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Analysis failed" },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Analysis failed";
+    const status = msg.includes("max usage") || msg.includes("429") ? 429 : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }
