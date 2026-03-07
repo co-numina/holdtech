@@ -999,7 +999,7 @@ export default function Home() {
                 </button>
               </div>
             ) : (
-              <button onClick={() => setVisible(true)} className="font-mono" style={{
+              <button data-wallet-connect onClick={() => setVisible(true)} className="font-mono" style={{
                 fontSize: "10px", fontWeight: 700, padding: "5px 14px", borderRadius: "8px",
                 background: "linear-gradient(135deg, #9945FF, #7c3aed)", color: "white",
                 border: "none", cursor: "pointer", letterSpacing: "0.5px",
@@ -1515,12 +1515,66 @@ export default function Home() {
             {deepScan && (
               <>
                 <div className="font-mono" style={{ fontSize: "10px", fontWeight: 600, color: "var(--accent-dark)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: "8px" }}>DEEP SCAN RESULTS</div>
+                {/* Gate: FREE tier sees blurred preview */}
+                {(!tierInfo || tierInfo.tier === "FREE") ? (
+                  <div style={{ position: "relative" }}>
+                    {/* Blurred preview */}
+                    <div style={{ filter: "blur(8px)", pointerEvents: "none", userSelect: "none", opacity: 0.5 }}>
+                      <ConcentrationBar concentration={deepScan.concentration} />
+                      <BundleDetection bundles={deepScan.bundles} bundleCount={deepScan.bundleCount} bundledWalletCount={deepScan.bundledWalletCount} />
+                      <FundingClusters clusters={deepScan.fundingClusters} clusterCount={deepScan.clusterCount} clusteredWalletCount={deepScan.clusteredWalletCount} />
+                    </div>
+                    {/* Unlock overlay */}
+                    <div style={{
+                      position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+                      alignItems: "center", justifyContent: "center", zIndex: 10,
+                      background: "radial-gradient(ellipse at center, rgba(var(--bg-rgb, 10,10,15), 0.85) 0%, transparent 70%)",
+                    }}>
+                      <div style={{
+                        padding: "28px 36px", borderRadius: "16px",
+                        background: "var(--bg-card)", border: "1px solid var(--border-accent)",
+                        textAlign: "center", maxWidth: "360px",
+                        boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+                      }}>
+                        <div style={{ fontSize: "28px", marginBottom: "12px" }}>🔒</div>
+                        <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--text)", marginBottom: "8px" }}>
+                          Deep Scan Locked
+                        </div>
+                        <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "16px" }}>
+                          Hold <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 700 }}>5,000,000 $HOLDTECH</span> to unlock full deep scan results including bundle detection, funding clusters, and buy timeline analysis.
+                        </div>
+                        {!tierInfo ? (
+                          <button onClick={() => setVisible(true)} style={{
+                            padding: "10px 24px", borderRadius: "10px", border: "none",
+                            background: "linear-gradient(135deg, var(--accent), var(--accent-dark))",
+                            color: "white", cursor: "pointer", fontSize: "13px", fontWeight: 700,
+                            width: "100%",
+                          }}>
+                            Connect Wallet
+                          </button>
+                        ) : (
+                          <div>
+                            <div className="font-mono" style={{ fontSize: "11px", color: "var(--text-muted)", marginBottom: "8px" }}>
+                              You hold: {tierInfo.balance.toLocaleString()} $HOLDTECH
+                            </div>
+                            <div className="font-mono" style={{ fontSize: "11px", color: "var(--accent)" }}>
+                              Need {tierInfo.needed.toLocaleString()} more to unlock
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                <>
                 <ConcentrationBar concentration={deepScan.concentration} />
                 <BundleDetection bundles={deepScan.bundles} bundleCount={deepScan.bundleCount} bundledWalletCount={deepScan.bundledWalletCount} />
                 <FundingClusters clusters={deepScan.fundingClusters} clusterCount={deepScan.clusterCount} clusteredWalletCount={deepScan.clusteredWalletCount} />
                 <BuyTimeline timeline={deepScan.buyTimeline} />
                 <SolDistChart dist={deepScan.solDistribution} />
                 <BubbleScatter wallets={result.wallets} totalSupply={totalSupply} />
+                </>
+                )}
               </>
             )}
 
