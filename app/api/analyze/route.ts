@@ -231,12 +231,14 @@ export async function POST(req: NextRequest) {
       } catch { /* skip */ }
     }
 
-    // If limit > 20, fetch more via DAS getTokenAccounts
+    // If limit > 20, fetch more via DAS getTokenAccounts (paginate all, then sort by balance)
     if (analyzeLimit > holders.length) {
       try {
         const existingOwners = new Set(holders.map(h => h.owner));
+        const extraHolders: { owner: string; amount: number; decimals: number }[] = [];
         let page = 1;
-        while (holders.length < analyzeLimit) {
+        const maxPages = 10; // Cap at 1000 accounts to sort from
+        while (page <= maxPages) {
           const dasRes = await fetch(HELIUS_RPC, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -250,17 +252,20 @@ export async function POST(req: NextRequest) {
           if (accounts.length === 0) break;
 
           for (const acc of accounts) {
-            if (holders.length >= analyzeLimit) break;
             const owner = acc.owner;
             if (!owner || existingOwners.has(owner)) continue;
             existingOwners.add(owner);
             const amount = acc.amount ? parseFloat(acc.amount) / Math.pow(10, acc.decimals || 6) : 0;
-            holders.push({ owner, amount, decimals: acc.decimals || 6 });
+            extraHolders.push({ owner, amount, decimals: acc.decimals || 6 });
           }
           page++;
           if (accounts.length < 100) break;
           await new Promise(r => setTimeout(r, 50));
         }
+        // Sort by balance descending and take only what we need
+        extraHolders.sort((a, b) => b.amount - a.amount);
+        const needed = analyzeLimit - holders.length;
+        holders.push(...extraHolders.slice(0, needed));
       } catch { /* keep what we have from top 20 */ }
     }
 
