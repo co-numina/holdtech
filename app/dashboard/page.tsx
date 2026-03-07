@@ -73,6 +73,7 @@ export default function Dashboard() {
   const [feedLoading, setFeedLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showManage, setShowManage] = useState(false);
+  const [feedLimit, setFeedLimit] = useState(50);
   const [darkMode, setDarkMode] = useState(false);
   const historyRef = useRef(history);
   historyRef.current = history;
@@ -214,7 +215,7 @@ export default function Dashboard() {
         if (res.ok) { const data = await res.json(); allEvents.push(...(data.events || [])); }
       }
       allEvents.sort((a, b) => b.timestamp - a.timestamp);
-      setFeedEvents(allEvents.slice(0, 200));
+      setFeedEvents(allEvents);
     } catch {}
     setFeedLoading(false);
   }, [bundlers]);
@@ -496,7 +497,10 @@ export default function Dashboard() {
             {feedLoading && feedEvents.length === 0 && <div style={{ textAlign: "center", padding: "32px", color: "var(--text-muted, #888)", fontSize: "13px" }}><div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(153,69,255,0.15)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "8px" }} /><br/>Loading transactions...</div>}
 
             {/* Feed */}
-            {feedEvents.length > 0 && feedEvents.map((ev, i) => (
+            {feedEvents.length > 0 && (
+              <div style={{ ...mono, fontSize: "10px", color: "var(--text-muted, #888)", marginBottom: "4px" }}>Showing {Math.min(feedLimit, feedEvents.length)} of {feedEvents.length} transactions</div>
+            )}
+            {feedEvents.length > 0 && feedEvents.slice(0, feedLimit).map((ev, i) => (
               <div key={`${ev.signature}-${i}`} style={{ ...card, display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px" }}>
                 <div style={{ width: 40, height: 40, borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: "rgba(153,69,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {ev.tokenImage ? <img src={ev.tokenImage} alt="" width={40} height={40} style={{ objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <span style={{ fontSize: "18px", opacity: 0.3 }}>🪙</span>}
@@ -519,6 +523,9 @@ export default function Dashboard() {
                 <a href={`https://solscan.io/tx/${ev.signature}`} target="_blank" rel="noopener" style={{ color: "#9945FF", textDecoration: "none", fontSize: "11px", flexShrink: 0 }}>↗</a>
               </div>
             ))}
+            {feedEvents.length > feedLimit && (
+              <button onClick={() => setFeedLimit(prev => prev + 50)} style={{ ...btnOut, alignSelf: "center", marginTop: "8px" }}>Load More ({feedEvents.length - feedLimit} remaining)</button>
+            )}
           </div>
         )}
 
