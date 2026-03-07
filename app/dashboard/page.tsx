@@ -928,7 +928,7 @@ export default function Dashboard() {
 
         .grid-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black 50%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%); }
 
-        .sidebar { width: 230px; flex-shrink: 0; padding: 20px 14px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border, rgba(153,69,255,0.06)); background: var(--card-bg, rgba(255,255,255,0.25)); backdrop-filter: blur(12px); }
+        .sidebar { width: 230px; flex-shrink: 0; padding: 20px 14px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--border, rgba(153,69,255,0.06)); background: var(--card-bg, rgba(255,255,255,0.25)); backdrop-filter: blur(12px); position: sticky; top: 0; height: 100vh; overflow-y: auto; }
         .sidebar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; padding: 6px 12px; margin-bottom: 20px; }
         .main-content { flex: 1; padding: 28px 36px; max-width: 900px; min-height: 100vh; }
 
