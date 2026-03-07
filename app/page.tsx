@@ -62,6 +62,7 @@ interface TokenInfo {
   holderCount: number | null;
   pairAddress: string | null;
   dexId: string | null;
+  pairCreatedAt: number | null;
   sparkline: number[];
 }
 
@@ -799,9 +800,13 @@ export default function Home() {
         fetch("/api/token-info", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) }),
       ]);
 
+      let tokenAgeHours: number | null = null;
       if (infoRes.ok) {
         const infoData = await infoRes.json();
         setTokenInfo(infoData);
+        if (infoData.pairCreatedAt) {
+          tokenAgeHours = (Date.now() - infoData.pairCreatedAt) / (1000 * 60 * 60);
+        }
       }
 
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
@@ -824,7 +829,7 @@ export default function Home() {
       } catch { /* use analyze count */ }
 
       setProgress(t.genVerdict);
-      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: realHolderCount, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
+      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: realHolderCount, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol, tokenAgeHours }) });
       if (vRes.ok) setVerdict(await vRes.json());
 
       setLoading(false); setProgress("");

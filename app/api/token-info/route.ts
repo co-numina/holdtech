@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       holderCount: pump?.holder_count || null,
       pairAddress: solPair?.pairAddress || null,
       dexId: solPair?.dexId || null,
+      pairCreatedAt: solPair?.pairCreatedAt || pump?.created_timestamp ? (pump?.created_timestamp * 1000) : null,
       // Sparkline data (will be populated below)
       sparkline: [] as number[],
     };
