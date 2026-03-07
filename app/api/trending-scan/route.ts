@@ -213,7 +213,6 @@ async function quickScore(mint: string): Promise<{ holderCount: number; freshPct
       if (text) {
         const coin = JSON.parse(text);
         // Use pump.fun data for a quick grade
-        const replyCount = coin.reply_count || 0;
         const graduated = coin.complete === true;
         const mcap = coin.usd_market_cap || 0;
 
@@ -243,11 +242,6 @@ async function quickScore(mint: string): Promise<{ holderCount: number; freshPct
 
         // Graduated = passed bonding curve = stronger signal
         if (graduated) { score += 15; }
-
-        // Engagement (reply count on pump.fun)
-        if (replyCount > 100) { score += 10; }
-        else if (replyCount > 20) { score += 5; }
-        else if (replyCount < 3) { score -= 10; }
 
         // Clamp and assign grade
         score = Math.max(10, Math.min(95, score));
