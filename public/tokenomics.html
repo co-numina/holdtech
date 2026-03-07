@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>$HOLDTECH Tokenomics</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050508;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .card {
+    width: 1200px;
+    min-height: 1500px;
+    background: #07070e;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #e0e0f0;
+  }
+
+  /* Ambient lighting */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: 200px;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(ellipse, rgba(153,69,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .card::after {
+    content: '';
+    position: absolute;
+    bottom: -100px;
+    right: 0;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(ellipse, rgba(20,241,149,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .top-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #9945FF, #14F195);
+  }
+
+  .content {
+    position: relative;
+    z-index: 1;
+    padding: 0 90px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 0 24px;
+  }
+  .logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 16px;
+    box-shadow: 0 0 60px rgba(153,69,255,0.15), 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .token-name {
+    margin-top: 16px;
+    font-size: 54px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .token-name span { color: #9945FF; }
+  .subtitle {
+    font-size: 17px;
+    color: #555568;
+    font-weight: 500;
+    margin-top: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  .divider {
+    width: 200px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(153,69,255,0.25), transparent);
+    margin: 24px auto;
+  }
+
+  /* Sections */
+  .section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 5px;
+    margin-bottom: 16px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .section-label.purple { color: #9945FF; }
+  .section-label.green { color: #14F195; }
+  .section-label.orange { color: #f97316; }
+
+  /* Why hold */
+  .why-hold {
+    padding: 10px 0 20px;
+  }
+  .why-text {
+    font-size: 22px;
+    font-weight: 500;
+    color: #b0b0c0;
+    line-height: 1.6;
+  }
+  .why-text strong {
+    color: #e0e0f0;
+    font-weight: 700;
+  }
+
+  /* Tiers */
+  .tiers {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+  .tier {
+    display: flex;
+    align-items: center;
+    padding: 20px 28px;
+    border-radius: 14px;
+    gap: 24px;
+    transition: transform 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tier::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background: radial-gradient(ellipse at left, var(--tier-color), transparent 60%);
+  }
+  .tier-free {
+    background: rgba(255,255,255,0.015);
+    border: 1px solid rgba(255,255,255,0.05);
+    --tier-color: #556677;
+  }
+  .tier-scout {
+    background: rgba(153,69,255,0.03);
+    border: 1px solid rgba(153,69,255,0.1);
+    border-left: 3px solid #9945FF;
+    --tier-color: #9945FF;
+  }
+  .tier-operator {
+    background: rgba(176,106,255,0.03);
+    border: 1px solid rgba(176,106,255,0.12);
+    border-left: 3px solid #b06aff;
+    --tier-color: #b06aff;
+  }
+  .tier-whale {
+    background: rgba(20,241,149,0.025);
+    border: 1px solid rgba(20,241,149,0.1);
+    border-left: 3px solid #14F195;
+    --tier-color: #14F195;
+  }
+  .tier-info {
+    min-width: 140px;
+  }
+  .tier-name {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tier-free .tier-name { color: #556677; }
+  .tier-scout .tier-name { color: #9945FF; }
+  .tier-operator .tier-name { color: #b06aff; }
+  .tier-whale .tier-name { color: #14F195; }
+  .tier-hold {
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 4px;
+    opacity: 0.6;
+  }
+  .tier-features {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+  .tier-feature {
+    font-size: 13px;
+    color: #808098;
+    padding: 5px 14px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.04);
+    font-weight: 500;
+  }
+  .tier-whale .tier-feature {
+    background: rgba(20,241,149,0.04);
+    border-color: rgba(20,241,149,0.08);
+    color: #90a098;
+  }
+
+  /* Flywheel */
+  .flywheel-section {
+    padding: 20px 0;
+  }
+  .flywheel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 20px 0;
+  }
+  .fly-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 28px;
+    border-radius: 14px;
+    min-width: 150px;
+    position: relative;
+  }
+  .fly-step::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+    background: rgba(255,255,255,0.01);
+  }
+  .fly-icon {
+    font-size: 34px;
+    position: relative;
+    z-index: 1;
+  }
+  .fly-label {
+    font-size: 14px;
+    font-weight: 800;
+    margin-top: 10px;
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.5px;
+  }
+  .fly-sub {
+    font-size: 12px;
+    color: #444458;
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+  }
+  .fly-arrow {
+    font-size: 24px;
+    color: #252538;
+    padding: 0 6px;
+    font-weight: 300;
+  }
+  .fly-loop {
+    font-size: 28px;
+    color: #9945FF;
+    font-weight: 900;
+    padding-left: 10px;
+    text-shadow: 0 0 20px rgba(153,69,255,0.3);
+  }
+  .burn-note {
+    text-align: center;
+    font-size: 15px;
+    color: #555558;
+    padding: 10px 40px;
+    line-height: 1.5;
+  }
+  .burn-note strong {
+    color: #f97316;
+    font-weight: 700;
+  }
+
+  /* Coming soon */
+  .roadmap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+  .roadmap-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px 22px;
+    border-radius: 12px;
+    background: rgba(153,69,255,0.02);
+    border: 1px solid rgba(153,69,255,0.06);
+  }
+  .roadmap-icon {
+    font-size: 28px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .roadmap-label {
+    font-size: 16px;
+    font-weight: 800;
+    color: #d0d0e0;
+    letter-spacing: 0.3px;
+  }
+  .roadmap-desc {
+    font-size: 13px;
+    color: #555568;
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 0 44px;
+    gap: 14px;
+  }
+  .cta-btn {
+    padding: 14px 48px;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #060610;
+    letter-spacing: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    box-shadow: 0 0 40px rgba(153,69,255,0.15);
+  }
+  .footer-sub {
+    font-size: 13px;
+    color: #333348;
+    letter-spacing: 1px;
+  }
+
+  .bottom-bar {
+    height: 4px;
+    background: linear-gradient(90deg, #9945FF, #14F195);
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="top-bar"></div>
+  <div class="content">
+
+    <div class="header">
+      <img src="/logo.png" class="logo" alt="HoldTech">
+      <div class="token-name">$HOLD<span>TECH</span></div>
+      <div class="subtitle">Holder quality intelligence for Solana</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WHY HOLD -->
+    <div class="why-hold">
+      <div class="section-label purple">WHY HOLD $HOLDTECH?</div>
+      <div class="why-text">
+        The scanner is <strong>free forever</strong>. Premium features — deep scans, batch scanning, API access, real-time alerts — are <strong>token-gated</strong>. Hold $HOLDTECH to unlock them.
+      </div>
+    </div>
+
+    <!-- TIERS -->
+    <div>
+      <div class="section-label green">TOKEN-GATED ACCESS</div>
+      <div class="tiers">
+        <div class="tier tier-free">
+          <div class="tier-info">
+            <div class="tier-name">FREE</div>
+            <div class="tier-hold" style="color:#444">No tokens needed</div>
+          </div>
+          <div class="tier-features">
+            <span class="tier-feature">Bundler feed</span>
+            <span class="tier-feature">Single scans</span>
+            <span class="tier-feature">3 watchlist slots</span>
+            <span class="tier-feature">Rate-limited batch</span>
+          </div>
+        </div>
+        <div class="tier tier-scout">
+          <div class="tier-info">
+            <div class="tier-name">SCOUT</div>
+            <div class="tier-hold" style="color:#9945FF">Hold 5M</div>
+          </div>
+          <div class="tier-features">
+            <span class="tier-feature">10 watchlist</span>
+            <span class="tier-feature">Batch 5 tokens</span>
+            <span class="tier-feature">Scan history</span>
+            <span class="tier-feature">All group filters</span>
+          </div>
+        </div>
+        <div class="tier tier-operator">
+          <div class="tier-info">
+            <div class="tier-name">OPERATOR</div>
+            <div class="tier-hold" style="color:#b06aff">Hold 10M</div>
+          </div>
+          <div class="tier-features">
+            <span class="tier-feature">50 watchlist</span>
+            <span class="tier-feature">Batch 20 tokens</span>
+            <span class="tier-feature">Bundler groups</span>
+            <span class="tier-feature">API access</span>
+            <span class="tier-feature">Priority RPC</span>
+          </div>
+        </div>
+        <div class="tier tier-whale">
+          <div class="tier-info">
+            <div class="tier-name">WHALE</div>
+            <div class="tier-hold" style="color:#14F195">Hold 20M</div>
+          </div>
+          <div class="tier-features">
+            <span class="tier-feature">200 watchlist</span>
+            <span class="tier-feature">Batch 50</span>
+            <span class="tier-feature">Raw data export</span>
+            <span class="tier-feature">Early features</span>
+            <span class="tier-feature">Unlimited</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- FLYWHEEL -->
+    <div class="flywheel-section">
+      <div class="section-label orange">🔥 BURN FLYWHEEL</div>
+      <div class="flywheel">
+        <div class="fly-step">
+          <div class="fly-icon">🔍</div>
+          <div class="fly-label" style="color:#c0c0d0">Users scan</div>
+          <div class="fly-sub">tokens</div>
+        </div>
+        <div class="fly-arrow">›</div>
+        <div class="fly-step">
+          <div class="fly-icon">🔥</div>
+          <div class="fly-label" style="color:#f97316">$HOLDTECH</div>
+          <div class="fly-sub">burned</div>
+        </div>
+        <div class="fly-arrow">›</div>
+        <div class="fly-step">
+          <div class="fly-icon">📉</div>
+          <div class="fly-label" style="color:#14F195">Supply</div>
+          <div class="fly-sub">shrinks</div>
+        </div>
+        <div class="fly-arrow">›</div>
+        <div class="fly-step">
+          <div class="fly-icon">📈</div>
+          <div class="fly-label" style="color:#b06aff">Value</div>
+          <div class="fly-sub">accrues</div>
+        </div>
+        <div class="fly-loop">↻</div>
+      </div>
+      <div class="burn-note">
+        Every premium scan <strong>burns tokens permanently</strong>. More users = less supply. The product drives the price.
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- COMING SOON -->
+    <div style="padding: 10px 0 10px;">
+      <div class="section-label purple">COMING SOON</div>
+      <div class="roadmap">
+        <div class="roadmap-item">
+          <div class="roadmap-icon">🤖</div>
+          <div>
+            <div class="roadmap-label">Telegram Bot</div>
+            <div class="roadmap-desc">Scan any token directly in your group chat</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-icon">🔌</div>
+          <div>
+            <div class="roadmap-label">Public API</div>
+            <div class="roadmap-desc">Build bots and tools on HoldTech data</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-icon">🔔</div>
+          <div>
+            <div class="roadmap-label">Real-time Alerts</div>
+            <div class="roadmap-desc">Get notified when holderbases change</div>
+          </div>
+        </div>
+        <div class="roadmap-item">
+          <div class="roadmap-icon">📊</div>
+          <div>
+            <div class="roadmap-label">Portfolio Scanner</div>
+            <div class="roadmap-desc">Scan every token in your wallet at once</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="divider"></div>
+      <div class="cta-btn">holdtech.fun</div>
+      <div class="footer-sub">The product is shipped. The flywheel is burning. 🛡️</div>
+    </div>
+
+  </div>
+  <div class="bottom-bar"></div>
+</div>
+</body>
+</html>
