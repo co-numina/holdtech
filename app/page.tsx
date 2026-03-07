@@ -642,10 +642,10 @@ export default function Home() {
         {/* ═══ NAV ═══ */}
         <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button onClick={() => { setResult(null); setVerdict(null); setDeepScan(null); setTokenInfo(null); setMint(""); setError(""); setDeepScanError(""); }} style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
               <img src="/logo.png" alt="HolderScope" width={28} height={28} style={{ objectFit: "contain" }} />
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
-            </div>
+            </button>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
