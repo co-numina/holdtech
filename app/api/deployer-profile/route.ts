@@ -83,83 +83,89 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
 }>> {
   const tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null }> = [];
   const seenMints = new Set<string>();
-  const PUMP_PROGRAM = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 
-  // Scan deployer's transaction history for pump.fun interactions
-  // Get all signatures (up to 3 pages)
-  let allSigs: any[] = [];
-  try {
-    let sigs = await heliusRpc("getSignaturesForAddress", [deployer, { limit: 1000 }]);
-    if (sigs) allSigs = sigs;
-    if (sigs && sigs.length === 1000) {
-      const more = await heliusRpc("getSignaturesForAddress", [deployer, { limit: 1000, before: sigs[sigs.length - 1].signature }]);
-      if (more) allSigs = allSigs.concat(more);
-    }
-  } catch {}
+  // Use Helius Enhanced Transactions API — pre-parsed, no individual tx fetches needed
+  // Page through full history to catch all deployments
+  let before = "";
+  let pages = 0;
+  const MAX_PAGES = 10; // 10 pages × 100 = up to 1000 txs
 
-  // Parse transactions to find pump.fun mints where this wallet is fee payer
-  // Process in batches of 10
-  const candidateMints: Map<string, number | null> = new Map();
-  
-  for (let i = 0; i < Math.min(allSigs.length, 500); i += 10) {
-    const batch = allSigs.slice(i, i + 10);
-    const results = await Promise.allSettled(
-      batch.map((sig: any) =>
-        heliusRpc("getTransaction", [sig.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }])
-          .then(tx => ({ tx, timestamp: sig.blockTime }))
-      )
-    );
+  while (pages < MAX_PAGES) {
+    try {
+      const url = `https://api.helius.xyz/v0/addresses/${deployer}/transactions?api-key=${HELIUS_API_KEY}&limit=100${before ? `&before=${before}` : ""}`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) break;
+      const txs: any[] = await res.json();
+      if (!txs || txs.length === 0) break;
 
-    for (const r of results) {
-      if (r.status !== "fulfilled" || !r.value?.tx) continue;
-      const { tx, timestamp } = r.value;
-      const ixs = tx.transaction?.message?.instructions || [];
-      
-      for (const ix of ixs) {
-        if (ix.programId !== PUMP_PROGRAM) continue;
-        const accounts: string[] = ix.accounts || [];
-        // In pump.fun create tx, the fee payer (deployer) is account[0] in the outer tx
-        // and the mint is one of the accounts that ends with "pump"
-        for (const acc of accounts) {
-          if (acc.endsWith("pump") && !seenMints.has(acc) && acc !== deployer) {
-            seenMints.add(acc);
-            candidateMints.set(acc, timestamp ? timestamp * 1000 : null);
+      for (const tx of txs) {
+        // Look for pump.fun CREATE transactions
+        if (tx.source === "PUMP_FUN" && tx.type === "CREATE") {
+          // Extract the mint from tokenTransfers
+          const transfers = tx.tokenTransfers || [];
+          for (const t of transfers) {
+            if (t.mint && t.mint.endsWith("pump") && !seenMints.has(t.mint)) {
+              seenMints.add(t.mint);
+            }
+          }
+        }
+
+        // Also check instructions for pump.fun program interactions (catches edge cases)
+        const allIxs = [
+          ...(tx.instructions || []),
+          ...(tx.instructions || []).flatMap((ix: any) => ix.innerInstructions || []),
+        ];
+        for (const ix of allIxs) {
+          const accounts: string[] = ix.accounts || [];
+          if (ix.programId === "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P") {
+            for (const acc of accounts) {
+              if (acc.endsWith("pump") && !seenMints.has(acc) && acc !== deployer) {
+                seenMints.add(acc);
+              }
+            }
           }
         }
       }
+
+      // Page forward
+      before = txs[txs.length - 1].signature;
+      if (txs.length < 100) break;
+      pages++;
+    } catch {
+      break;
     }
   }
 
-  // Now verify which mints were CREATED by this deployer (not just traded)
-  // Check pump.fun coin API for each — creator field must match
-  const mintEntries = Array.from(candidateMints.entries());
-  
-  for (let i = 0; i < mintEntries.length; i += 5) {
-    const batch = mintEntries.slice(i, i + 5);
+  // Verify each candidate via pump.fun API (creator must match)
+  // and fetch metadata in one pass
+  const candidateMints = Array.from(seenMints);
+
+  for (let i = 0; i < candidateMints.length; i += 5) {
+    const batch = candidateMints.slice(i, i + 5);
     const results = await Promise.allSettled(
-      batch.map(async ([mint, ts]) => {
+      batch.map(async (mint) => {
         try {
           const res = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`, {
             signal: AbortSignal.timeout(4000),
           });
-          if (!res.ok) return { mint, ts, coin: null };
+          if (!res.ok) return { mint, coin: null };
           const text = await res.text();
-          return { mint, ts, coin: text ? JSON.parse(text) : null };
+          return { mint, coin: text ? JSON.parse(text) : null };
         } catch {
-          return { mint, ts, coin: null };
+          return { mint, coin: null };
         }
       })
     );
 
     for (const r of results) {
       if (r.status !== "fulfilled" || !r.value) continue;
-      const { mint, ts, coin } = r.value;
+      const { mint, coin } = r.value;
       if (coin && coin.creator === deployer) {
         tokens.push({
           mint,
           name: coin.name || "Unknown",
           symbol: coin.symbol || "???",
-          deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : ts,
+          deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null,
           image: coin.image_uri || null,
         });
       } else if (!coin) {
@@ -173,7 +179,7 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
               mint,
               name: meta?.name || "Unknown",
               symbol: meta?.symbol || "???",
-              deployedAt: ts,
+              deployedAt: null,
               image: img,
             });
           }
