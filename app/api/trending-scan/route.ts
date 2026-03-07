@@ -290,9 +290,6 @@ export async function GET(req: NextRequest) {
     if (source === "all" || source === "pump_active") {
       tokens.push(...await getPumpMostTraded());
     }
-    if (source === "all" || source === "pump_volume") {
-      tokens.push(...await getPumpHighVolume());
-    }
     if (source === "all" || source === "dex_boosted") {
       tokens.push(...await getDexBoosted());
     }
