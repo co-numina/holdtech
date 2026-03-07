@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const HELIUS_API_KEY = "2e5afdba-52c8-47bb-a203-d7571a17ade5";
+const HELIUS_API_KEY = "65a496c3-0f36-4efe-a65a-67a716193997";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 // Use Helius enhanced API — 1 call gets parsed transaction history
@@ -228,7 +228,7 @@ export async function POST(req: NextRequest) {
             decimals: acc.decimals || 6,
           });
         }
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 50));
       } catch { /* skip */ }
     }
 
@@ -260,7 +260,7 @@ export async function POST(req: NextRequest) {
           }
           page++;
           if (accounts.length < 100) break;
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, 50));
         }
       } catch { /* keep what we have from top 20 */ }
     }
@@ -316,36 +316,35 @@ export async function POST(req: NextRequest) {
       } catch { /* skip */ }
     }
 
-    // Step 4: Analyze each wallet — sequentially with delays
-    // Each wallet = ~3-4 RPC calls (sigs, balance, tokens)
-    // 20 wallets × 3 calls = ~60 calls, spread over time
-    for (let i = 0; i < holders.length; i++) {
-      const holder = holders[i];
-      try {
-        const info = await getWalletInfo(holder.owner);
-        
-        const walletAgeDays = info.firstTxTime
-          ? (now - info.firstTxTime) / (1000 * 60 * 60 * 24)
-          : 0;
-
-        wallets.push({
-          address: holder.owner,
-          balance: holder.amount,
-          walletAgeDays: Math.round(walletAgeDays * 10) / 10,
-          holdDurationDays: Math.round(walletAgeDays * 10) / 10,
-          totalTxCount: info.txCount,
-          isFresh: walletAgeDays < 7,
-          solBalance: Math.round(info.solBalance * 1000) / 1000,
-          otherTokenCount: info.tokenCount,
-          isPool: isPoolOrProgram(holder.owner),
-        });
-      } catch (err) {
-        console.error(`Failed to analyze ${holder.owner}:`, err);
+    // Step 4: Analyze wallets in parallel batches of 5
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < holders.length; i += BATCH_SIZE) {
+      const batch = holders.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (holder) => {
+          const info = await getWalletInfo(holder.owner);
+          const walletAgeDays = info.firstTxTime
+            ? (now - info.firstTxTime) / (1000 * 60 * 60 * 24)
+            : 0;
+          return {
+            address: holder.owner,
+            balance: holder.amount,
+            walletAgeDays: Math.round(walletAgeDays * 10) / 10,
+            holdDurationDays: Math.round(walletAgeDays * 10) / 10,
+            totalTxCount: info.txCount,
+            isFresh: walletAgeDays < 7,
+            solBalance: Math.round(info.solBalance * 1000) / 1000,
+            otherTokenCount: info.tokenCount,
+            isPool: isPoolOrProgram(holder.owner),
+          };
+        })
+      );
+      for (const r of results) {
+        if (r.status === "fulfilled") wallets.push(r.value);
       }
-
-      // Rate limit: wait 300ms between wallets
-      if (i < holders.length - 1) {
-        await new Promise((r) => setTimeout(r, 300));
+      // Small delay between batches
+      if (i + BATCH_SIZE < holders.length) {
+        await new Promise((r) => setTimeout(r, 100));
       }
     }
 
