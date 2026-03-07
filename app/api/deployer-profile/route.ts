@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY || "2e5afdba-52c8-47bb-a203-d7571a17ade5";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
@@ -21,21 +23,29 @@ async function getDeployerFromMint(mint: string): Promise<string | null> {
       signal: AbortSignal.timeout(5000),
     });
     if (pumpRes.ok) {
-      const pumpData = await pumpRes.json();
-      if (pumpData.creator) return pumpData.creator;
+      const text = await pumpRes.text();
+      if (text) {
+        const pumpData = JSON.parse(text);
+        if (pumpData.creator) return pumpData.creator;
+      }
     }
   } catch {}
 
-  // Fallback: get oldest transaction for this mint
+  // Fallback: find the signer of the earliest transaction
+  // For pump.fun v2, the fee payer is the mint itself, so we need to find
+  // the actual signer (the user who created it)
   try {
+    // Get first page of sigs, then page to the oldest
     let sigs = await heliusRpc("getSignaturesForAddress", [mint, { limit: 1000 }]);
     if (!sigs || sigs.length === 0) return null;
 
-    // Page through to find the very oldest
-    while (sigs.length === 1000) {
+    // Only page up to 3 times to avoid timeout
+    let pages = 0;
+    while (sigs.length === 1000 && pages < 3) {
       const older = await heliusRpc("getSignaturesForAddress", [mint, { limit: 1000, before: sigs[sigs.length - 1].signature }]);
       if (!older || older.length === 0) break;
       sigs = older;
+      pages++;
     }
 
     const oldest = sigs[sigs.length - 1];
@@ -44,7 +54,17 @@ async function getDeployerFromMint(mint: string): Promise<string | null> {
     
     const keys = tx.transaction?.message?.accountKeys;
     if (Array.isArray(keys)) {
-      // Fee payer is the deployer
+      // Find the first signer that isn't the mint itself
+      const signers = keys.filter((k: any) => {
+        const pubkey = typeof k === "string" ? k : k?.pubkey;
+        const isSigner = typeof k === "string" ? true : k?.signer;
+        return isSigner && pubkey !== mint;
+      });
+      if (signers.length > 0) {
+        const s = signers[0];
+        return typeof s === "string" ? s : s?.pubkey || null;
+      }
+      // Fallback to first key
       const first = keys[0];
       return typeof first === "string" ? first : first?.pubkey || null;
     }
@@ -64,47 +84,52 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
   const tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null }> = [];
   const seenMints = new Set<string>();
 
-  // Primary: pump.fun created coins
-  try {
-    const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/user-created-coins/${deployer}?limit=50&offset=0&includeNsfw=true`, {
-      signal: AbortSignal.timeout(10000),
-    });
-    if (pumpRes.ok) {
-      const pumpData = await pumpRes.json();
-      if (Array.isArray(pumpData)) {
-        for (const coin of pumpData) {
-          if (coin.mint && !seenMints.has(coin.mint)) {
-            seenMints.add(coin.mint);
-            tokens.push({
-              mint: coin.mint,
-              name: coin.name || "Unknown",
-              symbol: coin.symbol || "???",
-              deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null,
-              image: coin.image_uri || null,
-            });
-          }
+  // Primary: pump.fun user-created-coins (works from Vercel edge)
+  for (let offset = 0; offset < 200; offset += 50) {
+    try {
+      const pumpRes = await fetch(
+        `https://frontend-api-v3.pump.fun/coins/user-created-coins/${deployer}?limit=50&offset=${offset}&includeNsfw=true`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (!pumpRes.ok) break;
+      const text = await pumpRes.text();
+      if (!text || text === "[]") break;
+      const pumpData = JSON.parse(text);
+      if (!Array.isArray(pumpData) || pumpData.length === 0) break;
+      for (const coin of pumpData) {
+        if (coin.mint && !seenMints.has(coin.mint)) {
+          seenMints.add(coin.mint);
+          tokens.push({
+            mint: coin.mint,
+            name: coin.name || "Unknown",
+            symbol: coin.symbol || "???",
+            deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null,
+            image: coin.image_uri || null,
+          });
         }
       }
-    }
-  } catch {}
+      if (pumpData.length < 50) break;
+    } catch { break; }
+  }
 
-  // Fallback: Helius enhanced transaction history
+  // Fallback: Helius enhanced transactions
   if (tokens.length === 0) {
     try {
-      const res = await fetch(`https://api.helius.xyz/v0/addresses/${deployer}/transactions?api-key=${HELIUS_API_KEY}&limit=100`, {
-        signal: AbortSignal.timeout(15000),
-      });
+      const res = await fetch(
+        `https://api.helius.xyz/v0/addresses/${deployer}/transactions?api-key=${HELIUS_API_KEY}&limit=100`,
+        { signal: AbortSignal.timeout(15000) }
+      );
       if (res.ok) {
         const txs = await res.json();
-        for (const tx of txs) {
-          if (tx.type === "CREATE" || tx.type === "TOKEN_MINT" || tx.description?.includes("create")) {
+        if (Array.isArray(txs)) {
+          for (const tx of txs) {
             const transfers = tx.tokenTransfers || [];
             for (const t of transfers) {
-              if (t.mint && !seenMints.has(t.mint)) {
+              if (t.mint && !seenMints.has(t.mint) && t.mint.endsWith("pump")) {
                 seenMints.add(t.mint);
                 tokens.push({
                   mint: t.mint,
-                  name: tx.description?.match(/\$(\w+)/)?.[1] || "Unknown",
+                  name: "Unknown",
                   symbol: "???",
                   deployedAt: tx.timestamp ? tx.timestamp * 1000 : null,
                   image: null,
