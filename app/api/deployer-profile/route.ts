@@ -74,14 +74,22 @@ async function getDeployerFromMint(mint: string): Promise<string | null> {
   }
 }
 
-async function getDeployedTokens(deployer: string): Promise<Array<{
+interface DeployedToken {
   mint: string;
   name: string;
   symbol: string;
   deployedAt: number | null;
   image: string | null;
-}>> {
-  const tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null }> = [];
+  athMarketCap: number | null;
+  athTimestamp: number | null;
+  timeToAthMs: number | null;
+  graduated: boolean;
+  currentMarketCap: number | null;
+  lastTradeTimestamp: number | null;
+}
+
+async function getDeployedTokens(deployer: string): Promise<DeployedToken[]> {
+  const tokens: DeployedToken[] = [];
   const seenMints = new Set<string>();
 
   // Use Helius Enhanced Transactions API — pre-parsed, no individual tx fetches needed
@@ -161,12 +169,20 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
       if (r.status !== "fulfilled" || !r.value) continue;
       const { mint, coin } = r.value;
       if (coin && coin.creator === deployer) {
+        const createdAt = coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null;
+        const athTimestamp = coin.ath_market_cap_timestamp || null;
         tokens.push({
           mint,
           name: coin.name || "Unknown",
           symbol: coin.symbol || "???",
-          deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null,
+          deployedAt: createdAt,
           image: coin.image_uri || null,
+          athMarketCap: coin.ath_market_cap || null,
+          athTimestamp,
+          timeToAthMs: (createdAt && athTimestamp) ? athTimestamp - createdAt : null,
+          graduated: coin.complete === true,
+          currentMarketCap: coin.usd_market_cap || null,
+          lastTradeTimestamp: coin.last_trade_timestamp || null,
         });
       } else if (!coin) {
         // pump.fun API didn't return data — try DAS for metadata
@@ -181,6 +197,12 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
               symbol: meta?.symbol || "???",
               deployedAt: null,
               image: img,
+              athMarketCap: null,
+              athTimestamp: null,
+              timeToAthMs: null,
+              graduated: false,
+              currentMarketCap: null,
+              lastTradeTimestamp: null,
             });
           }
         } catch {}
@@ -245,14 +267,38 @@ export async function POST(req: NextRequest) {
     const alive = tokenStatuses.filter(t => t.alive).length;
     const dead = total - alive;
     const rugRate = total > 0 ? Math.round((dead / total) * 100) : 0;
+    const graduated = tokenStatuses.filter(t => t.graduated).length;
+    const gradRate = total > 0 ? Math.round((graduated / total) * 100) : 0;
 
-    // Average lifespan for dead tokens (rough estimate from deploy timestamps)
-    let avgLifespanHours: number | null = null;
-    const deadWithTime = tokenStatuses.filter(t => !t.alive && t.deployedAt);
-    if (deadWithTime.length > 0) {
-      // For dead tokens, estimate lifespan as time from deploy to now (rough)
-      // In reality we'd check when liquidity was pulled, but this is a beta approximation
-      avgLifespanHours = null; // TODO: need historical data for accurate lifespan
+    // Average time to ATH (only tokens with valid data)
+    const athTimes = tokenStatuses
+      .filter(t => t.timeToAthMs && t.timeToAthMs > 0)
+      .map(t => t.timeToAthMs!);
+    const avgTimeToAthMs = athTimes.length > 0
+      ? Math.round(athTimes.reduce((a, b) => a + b, 0) / athTimes.length)
+      : null;
+
+    // Best launch (highest ATH)
+    const bestLaunch = tokenStatuses.reduce<typeof tokenStatuses[0] | null>((best, t) => {
+      if (!t.athMarketCap) return best;
+      if (!best || (t.athMarketCap > (best.athMarketCap || 0))) return t;
+      return best;
+    }, null);
+
+    // Average ATH market cap
+    const athCaps = tokenStatuses.filter(t => t.athMarketCap).map(t => t.athMarketCap!);
+    const avgAthMarketCap = athCaps.length > 0
+      ? Math.round(athCaps.reduce((a, b) => a + b, 0) / athCaps.length)
+      : null;
+
+    // Deploy velocity (tokens per week over active period)
+    let deployVelocity: number | null = null;
+    const withDates = tokenStatuses.filter(t => t.deployedAt).map(t => t.deployedAt!);
+    if (withDates.length >= 2) {
+      const oldest = Math.min(...withDates);
+      const newest = Math.max(...withDates);
+      const weeks = (newest - oldest) / (7 * 24 * 60 * 60 * 1000);
+      deployVelocity = weeks > 0 ? Math.round((withDates.length / weeks) * 10) / 10 : null;
     }
 
     return NextResponse.json({
@@ -261,7 +307,12 @@ export async function POST(req: NextRequest) {
       alive,
       dead,
       rugRate,
-      avgLifespanHours,
+      graduated,
+      gradRate,
+      avgTimeToAthMs,
+      avgAthMarketCap,
+      bestLaunch: bestLaunch ? { mint: bestLaunch.mint, symbol: bestLaunch.symbol, name: bestLaunch.name, athMarketCap: bestLaunch.athMarketCap } : null,
+      deployVelocity,
       tokens: tokenStatuses,
       currentToken: mint,
     });

@@ -766,7 +766,7 @@ export default function Home() {
   const [deepScan, setDeepScan] = useState<DeepScanResult | null>(null);
   const [deepScanLoading, setDeepScanLoading] = useState(false);
   const [deepScanError, setDeepScanError] = useState("");
-  const [deployerProfile, setDeployerProfile] = useState<{ deployer: string; totalLaunches: number; alive: number; dead: number; rugRate: number; currentToken: string; tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null; alive: boolean; liquidity: number | null }> } | null>(null);
+  const [deployerProfile, setDeployerProfile] = useState<{ deployer: string; totalLaunches: number; alive: number; dead: number; rugRate: number; graduated: number; gradRate: number; avgTimeToAthMs: number | null; avgAthMarketCap: number | null; bestLaunch: { mint: string; symbol: string; name: string; athMarketCap: number | null } | null; deployVelocity: number | null; currentToken: string; tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null; alive: boolean; liquidity: number | null; athMarketCap: number | null; graduated: boolean; timeToAthMs: number | null }> } | null>(null);
   const [deployerLoading, setDeployerLoading] = useState(false);
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
@@ -1546,6 +1546,51 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {/* Extended stats row */}
+                  <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "28px", fontWeight: 900, color: deployerProfile.gradRate > 30 ? "var(--green)" : deployerProfile.gradRate > 10 ? "#eab308" : "var(--text-muted)" }}>{deployerProfile.gradRate}%</div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>GRAD RATE</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "22px", fontWeight: 900, color: "var(--text)" }}>
+                        {deployerProfile.avgTimeToAthMs ? (() => {
+                          const mins = Math.round(deployerProfile.avgTimeToAthMs! / 60000);
+                          return mins < 60 ? `${mins}m` : `${Math.round(mins / 60 * 10) / 10}h`;
+                        })() : "—"}
+                      </div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>AVG TIME TO ATH</div>
+                    </div>
+                    <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                      <div className="font-mono" style={{ fontSize: "22px", fontWeight: 900, color: "var(--accent)" }}>
+                        {deployerProfile.avgAthMarketCap ? `$${deployerProfile.avgAthMarketCap > 1000 ? `${(deployerProfile.avgAthMarketCap / 1000).toFixed(1)}K` : Math.round(deployerProfile.avgAthMarketCap)}` : "—"}
+                      </div>
+                      <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>AVG ATH MCAP</div>
+                    </div>
+                    {deployerProfile.deployVelocity !== null && (
+                      <div style={{ flex: 1, padding: "14px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)", textAlign: "center" }}>
+                        <div className="font-mono" style={{ fontSize: "22px", fontWeight: 900, color: deployerProfile.deployVelocity > 5 ? "var(--red)" : "var(--text)" }}>{deployerProfile.deployVelocity}/w</div>
+                        <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600, letterSpacing: "1px", marginTop: "4px" }}>DEPLOY FREQ</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Best launch callout */}
+                  {deployerProfile.bestLaunch && deployerProfile.bestLaunch.athMarketCap && (
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "12px", background: "rgba(153,69,255,0.04)", border: "1px solid rgba(153,69,255,0.12)", marginBottom: "20px" }}>
+                      <span style={{ fontSize: "16px" }}>🏆</span>
+                      <div style={{ flex: 1 }}>
+                        <span className="font-mono" style={{ fontSize: "11px", color: "var(--text-muted)", fontWeight: 600 }}>BEST LAUNCH</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "2px" }}>
+                          <span className="font-mono" style={{ fontSize: "14px", fontWeight: 800, color: "var(--text)" }}>${deployerProfile.bestLaunch.symbol}</span>
+                          <span className="font-mono" style={{ fontSize: "14px", fontWeight: 800, color: "var(--accent)" }}>
+                            ATH ${deployerProfile.bestLaunch.athMarketCap > 1000000 ? `${(deployerProfile.bestLaunch.athMarketCap / 1000000).toFixed(2)}M` : deployerProfile.bestLaunch.athMarketCap > 1000 ? `${(deployerProfile.bestLaunch.athMarketCap / 1000).toFixed(1)}K` : Math.round(deployerProfile.bestLaunch.athMarketCap)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Token list */}
                   {deployerProfile.tokens.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -1571,7 +1616,16 @@ export default function Home() {
                               {token.mint === deployerProfile.currentToken && (
                                 <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "rgba(153,69,255,0.1)", color: "var(--accent)" }}>CURRENT</span>
                               )}
+                              {token.graduated && (
+                                <span style={{ fontSize: "9px", fontWeight: 700, padding: "2px 6px", borderRadius: "4px", background: "rgba(20,241,149,0.1)", color: "var(--green)" }}>GRADUATED</span>
+                              )}
                             </div>
+                            {token.athMarketCap && (
+                              <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+                                ATH ${token.athMarketCap > 1000000 ? `${(token.athMarketCap / 1000000).toFixed(2)}M` : token.athMarketCap > 1000 ? `${(token.athMarketCap / 1000).toFixed(1)}K` : Math.round(token.athMarketCap)}
+                                {token.timeToAthMs ? ` · ${Math.round(token.timeToAthMs / 60000)}m` : ""}
+                              </div>
+                            )}
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {token.deployedAt && (
