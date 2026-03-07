@@ -768,6 +768,7 @@ export default function Home() {
   const [deepScanError, setDeepScanError] = useState("");
   const [deployerProfile, setDeployerProfile] = useState<{ deployer: string; totalLaunches: number; alive: number; dead: number; rugRate: number; graduated: number; gradRate: number; avgTimeToAthMs: number | null; avgAthMarketCap: number | null; bestLaunch: { mint: string; symbol: string; name: string; athMarketCap: number | null } | null; deployVelocity: number | null; currentToken: string; tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null; alive: boolean; liquidity: number | null; athMarketCap: number | null; graduated: boolean; timeToAthMs: number | null }> } | null>(null);
   const [deployerLoading, setDeployerLoading] = useState(false);
+  const [deployerOverlap, setDeployerOverlap] = useState<{ pairs: Array<{ tokenA: { symbol: string }; tokenB: { symbol: string }; sharedWallets: number; overlapScore: number }>; coordination: string; maxOverlap: number } | null>(null);
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
   const [analyzeLimit, setAnalyzeLimit] = useState(20);
@@ -801,7 +802,7 @@ export default function Home() {
     const addr = mint.trim();
     if (!addr) return;
     const useLimit = limit || analyzeLimit;
-    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setDeployerProfile(null); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
+    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setDeployerProfile(null); setDeployerOverlap(null); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
     setTokenInfo(null);
 
     try {
@@ -858,7 +859,20 @@ export default function Home() {
       setDeployerLoading(true);
       fetch("/api/deployer-profile", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: data.mint }) })
         .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) setDeployerProfile(d); })
+        .then(d => {
+          if (d) {
+            setDeployerProfile(d);
+            // Auto-check holder overlap if deployer has 2+ tokens
+            const tokenMints = (d.tokens || []).map((t: any) => t.mint).filter(Boolean);
+            if (tokenMints.length >= 2) {
+              const overlapMints = tokenMints.slice(0, 5); // Max 5
+              fetch("/api/holder-overlap", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mints: overlapMints }) })
+                .then(r => r.ok ? r.json() : null)
+                .then(o => { if (o) setDeployerOverlap(o); })
+                .catch(() => {});
+            }
+          }
+        })
         .catch(() => {})
         .finally(() => setDeployerLoading(false));
 
@@ -1592,6 +1606,33 @@ export default function Home() {
                             ATH ${deployerProfile.bestLaunch.athMarketCap > 1000000 ? `${(deployerProfile.bestLaunch.athMarketCap / 1000000).toFixed(2)}M` : deployerProfile.bestLaunch.athMarketCap > 1000 ? `${(deployerProfile.bestLaunch.athMarketCap / 1000).toFixed(1)}K` : Math.round(deployerProfile.bestLaunch.athMarketCap)}
                           </span>
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Holder overlap across deployer's tokens */}
+                  {deployerOverlap && deployerOverlap.pairs.length > 0 && (
+                    <div style={{ padding: "14px 16px", borderRadius: "12px", marginBottom: "20px", background: deployerOverlap.coordination === "CRITICAL" || deployerOverlap.coordination === "HIGH" ? "rgba(239,68,68,0.04)" : "rgba(153,69,255,0.04)", border: `1px solid ${deployerOverlap.coordination === "CRITICAL" || deployerOverlap.coordination === "HIGH" ? "rgba(239,68,68,0.12)" : "rgba(153,69,255,0.12)"}` }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+                        <span style={{ fontSize: "16px" }}>{deployerOverlap.coordination === "CRITICAL" ? "🚨" : deployerOverlap.coordination === "HIGH" ? "⚠️" : "🔗"}</span>
+                        <span className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--text-muted)", letterSpacing: "1px" }}>HOLDER OVERLAP</span>
+                        <span className="font-mono" style={{ fontSize: "13px", fontWeight: 800, marginLeft: "auto", color: deployerOverlap.coordination === "CRITICAL" || deployerOverlap.coordination === "HIGH" ? "var(--red)" : deployerOverlap.maxOverlap >= 20 ? "#eab308" : "var(--green)" }}>
+                          {deployerOverlap.maxOverlap}% max
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        {deployerOverlap.pairs.filter(p => p.sharedWallets > 0).slice(0, 5).map((pair, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px" }}>
+                            <span className="font-mono" style={{ color: "var(--text-muted)" }}>${pair.tokenA.symbol}</span>
+                            <span style={{ color: "var(--text-muted)" }}>↔</span>
+                            <span className="font-mono" style={{ color: "var(--text-muted)" }}>${pair.tokenB.symbol}</span>
+                            <div style={{ flex: 1, height: "4px", borderRadius: "2px", background: "var(--bg-card-alt)", overflow: "hidden", margin: "0 4px" }}>
+                              <div style={{ height: "100%", width: `${Math.min(pair.overlapScore, 100)}%`, borderRadius: "2px", background: pair.overlapScore >= 40 ? "var(--red)" : pair.overlapScore >= 20 ? "#eab308" : "var(--accent)" }} />
+                            </div>
+                            <span className="font-mono" style={{ fontSize: "10px", fontWeight: 800, color: pair.overlapScore >= 40 ? "var(--red)" : pair.overlapScore >= 20 ? "#eab308" : "var(--text)" }}>{pair.overlapScore}%</span>
+                            <span className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>{pair.sharedWallets} shared</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
