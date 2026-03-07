@@ -173,7 +173,7 @@ const T = {
     tierFree: "FREE",
     tierFreeDesc: "Bundler feed · Single scans · 3 watchlist slots · Rate-limited batch.",
     tierScout: "SCOUT",
-    tierScoutHold: "Hold 5M $HOLDTECH",
+    tierScoutHold: "Hold 3M $HOLDTECH",
     tierScoutDesc: "10 watchlist · Batch 5 tokens · Scan history · All group filters",
     tierOperator: "OPERATOR",
     tierOperatorHold: "Hold 10M $HOLDTECH",
@@ -284,7 +284,7 @@ const T = {
     tierFree: "免费",
     tierFreeDesc: "捆绑者动态 · 单次扫描 · 3个关注位 · 有频率限制。",
     tierScout: "侦察兵",
-    tierScoutHold: "持有 5M $HOLDTECH",
+    tierScoutHold: "持有 3M $HOLDTECH",
     tierScoutDesc: "10个关注位 · 批量5个 · 扫描历史 · 全部分组过滤",
     tierOperator: "操作员",
     tierOperatorHold: "持有 10M $HOLDTECH",
@@ -1541,7 +1541,7 @@ export default function Home() {
                           Deep Scan Locked
                         </div>
                         <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "16px" }}>
-                          Hold <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 700 }}>5,000,000 $HOLDTECH</span> to unlock full deep scan results including bundle detection, funding clusters, and buy timeline analysis.
+                          Hold <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 700 }}>3,000,000 $HOLDTECH</span> to unlock full deep scan results including bundle detection, funding clusters, and buy timeline analysis.
                         </div>
                         {!tierInfo ? (
                           <button onClick={() => setVisible(true)} style={{
@@ -1611,7 +1611,7 @@ export default function Home() {
                     }}>
                       <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--text)", marginBottom: "6px" }}>🔒 Deployer Intel Locked</div>
                       <div style={{ fontSize: "11px", color: "var(--text-muted)", lineHeight: 1.6, marginBottom: "12px" }}>
-                        Hold <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 700 }}>5M $HOLDTECH</span> to unlock deployer history, rug rate, graduation stats, and holder overlap.
+                        Hold <span className="font-mono" style={{ color: "var(--accent)", fontWeight: 700 }}>3M $HOLDTECH</span> to unlock deployer history, rug rate, graduation stats, and holder overlap.
                       </div>
                       {!tierInfo ? (
                         <button onClick={() => setVisible(true)} style={{
@@ -1621,7 +1621,7 @@ export default function Home() {
                         }}>Connect Wallet</button>
                       ) : (
                         <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>
-                          {tierInfo.balance.toLocaleString()} / 5,000,000 $HOLDTECH
+                          {tierInfo.balance.toLocaleString()} / 3,000,000 $HOLDTECH
                         </div>
                       )}
                     </div>

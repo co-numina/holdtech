@@ -8,7 +8,7 @@ const DECIMALS = 6;
 const TIERS = [
   { name: "WHALE", min: 20_000_000 },
   { name: "OPERATOR", min: 10_000_000 },
-  { name: "SCOUT", min: 5_000_000 },
+  { name: "SCOUT", min: 3_000_000 },
   { name: "FREE", min: 0 },
 ];
 
