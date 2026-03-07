@@ -1,7 +1,7 @@
 // HoldTech Content Script
 // Detects Solana token addresses on supported pages and injects quality badges
 
-const API = "https://holder-quality.vercel.app/api";
+const API = "https://holdtech.fun/api";
 const CACHE_TTL = 300000; // 5 min
 const cache = {};
 
@@ -79,7 +79,7 @@ function createBadge(data) {
         <div class="hs-metric"><span class="hs-label">Top 5</span><span class="hs-val">${top5Pct ?? "—"}%</span></div>
         <div class="hs-metric"><span class="hs-label">Fresh</span><span class="hs-val">${freshPct ?? "—"}%</span></div>
       </div>
-      <a class="hs-full-link" href="https://holder-quality.vercel.app?mint=${data.mint}" target="_blank">Full analysis →</a>
+      <a class="hs-full-link" href="https://holdtech.fun?mint=${data.mint}" target="_blank">Full analysis →</a>
     </div>
   `;
   return badge;

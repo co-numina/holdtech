@@ -1,4 +1,4 @@
-const API = "https://holder-quality.vercel.app/api";
+const API = "https://holdtech.fun/api";
 const content = document.getElementById("content");
 const input = document.getElementById("mint-input");
 const btn = document.getElementById("scan-btn");
@@ -116,7 +116,7 @@ function renderResult(data) {
           </div>
         </div>
         ${summary ? `<div class="verdict-text">${summary}</div>` : ""}
-        <a class="view-full" href="https://holder-quality.vercel.app?mint=${mint}" target="_blank">View full analysis →</a>
+        <a class="view-full" href="https://holdtech.fun?mint=${mint}" target="_blank">View full analysis →</a>
       </div>
     </div>
   `;

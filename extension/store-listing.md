@@ -48,7 +48,7 @@ Productivity (or Developer Tools)
 English
 
 ## Website
-https://holder-quality.vercel.app
+https://holdtech.fun
 
 ## Privacy Policy
-No personal data is collected, stored, or transmitted. The extension only communicates with the HoldTech API (holder-quality.vercel.app) to fetch token analysis results. No cookies, no tracking, no analytics.
+No personal data is collected, stored, or transmitted. The extension only communicates with the HoldTech API (holdtech.fun) to fetch token analysis results. No cookies, no tracking, no analytics.

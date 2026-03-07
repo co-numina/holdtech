@@ -10,7 +10,7 @@ export default function Privacy() {
 
       <div style={{ fontSize: "14px", lineHeight: 1.8, color: "#444" }}>
         <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a2e", marginTop: "24px", marginBottom: "8px" }}>Overview</h2>
-        <p>HoldTech is a Solana token holder quality analysis tool. We do not collect, store, or sell any personal data. This policy covers both the website (holder-quality.vercel.app) and the HoldTech Chrome extension.</p>
+        <p>HoldTech is a Solana token holder quality analysis tool. We do not collect, store, or sell any personal data. This policy covers both the website (holdtech.fun) and the HoldTech Chrome extension.</p>
 
         <h2 style={{ fontSize: "16px", fontWeight: 700, color: "#1a1a2e", marginTop: "24px", marginBottom: "8px" }}>Data We Collect</h2>
         <p><strong>None.</strong> We do not collect personal information, browsing history, IP addresses, cookies, or analytics data of any kind.</p>
@@ -22,7 +22,7 @@ export default function Privacy() {
         <p>The HoldTech Chrome extension:</p>
         <ul style={{ marginLeft: "20px", marginTop: "8px" }}>
           <li>Uses the <strong>storage</strong> permission solely to cache recent scan results locally on your device for up to 5 minutes</li>
-          <li>Communicates only with the HoldTech API (holder-quality.vercel.app) to fetch analysis results</li>
+          <li>Communicates only with the HoldTech API (holdtech.fun) to fetch analysis results</li>
           <li>Does not access, read, or modify any page content beyond injecting the HoldTech score badge on supported sites</li>
           <li>Does not execute any remote code — all scripts are bundled locally</li>
           <li>Does not collect or transmit any personal data, browsing history, or credentials</li>

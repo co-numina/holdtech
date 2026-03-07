@@ -5,7 +5,7 @@
   "description": "X-ray any Solana token's holder quality. Stop being the drillpig.",
   "permissions": ["storage"],
   "host_permissions": [
-    "https://holder-quality.vercel.app/*"
+    "https://holdtech.fun/*"
   ],
   "action": {
     "default_popup": "src/popup.html",
