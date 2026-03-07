@@ -932,6 +932,7 @@ export default function Home() {
             </a>
           </div>
           {/* Right: Wallet + controls */}
+          <div style={{ display: "flex", alignItems: "center", gap: "4px", flexShrink: 0 }}>
             <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holdtech-lang", next); }}
               className="font-mono"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "8px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "11px", fontWeight: 700, transition: "all 0.15s" }}
