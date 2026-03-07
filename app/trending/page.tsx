@@ -30,7 +30,6 @@ const sourceLabels: Record<string, { label: string; color: string }> = {
   pump_hot: { label: "TOP MCAP", color: "#9945FF" },
   pump_live: { label: "LIVE NOW", color: "#14F195" },
   pump_graduated: { label: "GRADUATED", color: "#00d4ff" },
-  pump_active: { label: "MOST ACTIVE", color: "#b06aff" },
   pump_volume: { label: "HIGH VOLUME", color: "#ff6b9d" },
   dex_boosted: { label: "BOOSTED", color: "#ffa500" },
 };
@@ -121,7 +120,6 @@ export default function TrendingPage() {
           {[
             { key: "all", label: "ALL" },
             { key: "pump_graduated", label: "GRADUATED" },
-            { key: "pump_active", label: "MOST ACTIVE" },
             { key: "pump_hot", label: "TOP MCAP" },
             { key: "pump_volume", label: "HIGH VOLUME" },
             { key: "pump_live", label: "LIVE NOW" },
