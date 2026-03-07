@@ -162,7 +162,7 @@ export default function Dashboard() {
       const w = a.wallets || []; const supply = a.totalSupply || 1;
       const top5 = w.slice(0, 5).reduce((s: number, x: any) => s + (x.balance || 0), 0);
       const totalHolders = holderCount || (a.totalHolders > a.analyzedHolders ? a.totalHolders : null) || a.analyzedHolders;
-      const vR = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: a.metrics, totalHolders, analyzedHolders: a.analyzedHolders, tokenSymbol: a.tokenSymbol }) });
+      const vR = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: a.metrics, totalHolders, analyzedHolders: a.analyzedHolders, tokenSymbol: a.tokenSymbol, mint: a.mint }) });
       const v = vR.ok ? await vR.json() : null;
       return {
         mint, symbol: a.tokenSymbol || mint.slice(0, 6), score: v?.score ?? 0, grade: v?.grade || "?",

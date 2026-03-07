@@ -832,7 +832,7 @@ export default function Home() {
       } catch { /* use analyze count */ }
 
       setProgress(t.genVerdict);
-      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: realHolderCount, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol, tokenAgeHours }) });
+      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: realHolderCount, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol, tokenAgeHours, mint: data.mint }) });
       if (vRes.ok) setVerdict(await vRes.json());
 
       setLoading(false); setProgress("");
