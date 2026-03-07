@@ -823,6 +823,11 @@ export default function Home() {
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
             </button>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
+            <a href="/docs" className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              DOCS
+            </a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holderscope-lang", next); }}
