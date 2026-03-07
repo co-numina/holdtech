@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const HELIUS_API_KEY = "65a496c3-0f36-4efe-a65a-67a716193997";
+const HELIUS_API_KEY = "93201fd9-930c-42c2-8298-e42dcbcf4cb3";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 // Use Helius enhanced API — 1 call gets parsed transaction history
@@ -317,7 +317,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Step 4: Analyze wallets in parallel batches of 5
-    const BATCH_SIZE = 5;
+    const BATCH_SIZE = 10;
     for (let i = 0; i < holders.length; i += BATCH_SIZE) {
       const batch = holders.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
       }
       // Small delay between batches
       if (i + BATCH_SIZE < holders.length) {
-        await new Promise((r) => setTimeout(r, 100));
+        await new Promise((r) => setTimeout(r, 50));
       }
     }
 
