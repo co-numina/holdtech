@@ -155,7 +155,7 @@ function TokenCard({ info }: { info: TokenInfo }) {
   const pctStr = (v: number | null) => v === null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 
   return (
-    <div className="glass xray-scan" style={{ borderRadius: "20px", overflow: "hidden" }}>
+    <div className="glass" style={{ borderRadius: "20px", overflow: "hidden" }}>
       <div style={{ padding: "20px 24px", display: "flex", gap: "20px", alignItems: "center" }}>
         {/* Token image */}
         {info.image ? (
@@ -721,7 +721,7 @@ export default function Home() {
         {/* ═══ THESIS ═══ */}
         {!result && !loading && (
           <>
-            <div className="reveal glass xray-scan" style={{ marginBottom: "24px", borderRadius: "20px", overflow: "hidden" }}>
+            <div className="reveal glass" style={{ marginBottom: "24px", borderRadius: "20px", overflow: "hidden" }}>
               <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                 <EyeIcon size={20} color="white" />
                 <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Why holderbase quality matters</span>
@@ -896,7 +896,7 @@ export default function Home() {
 
             {/* Verdict card */}
             {verdict && (
-              <div className="glass xray-scan" style={{ borderRadius: "20px", overflow: "hidden" }}>
+              <div className="glass" style={{ borderRadius: "20px", overflow: "hidden" }}>
                 <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                   <ShieldIcon size={20} color="white" />
                   <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Holderbase Verdict</span>
