@@ -120,6 +120,19 @@ async function runScan(mint, limit = 20) {
     const totalSupplyRaw = parseFloat(supplyResult?.value?.uiAmountString || "0");
     if (!topAccounts?.length) return null;
 
+    // Quick holder count: single DAS page (covers up to 1000 holders)
+    // For tokens with >1000, we just report 1000+ — exact count comes from advanced API
+    let totalHolderCount = 0;
+    try {
+      const p1Res = await fetch(HELIUS_RPC, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: "hc-1", method: "getTokenAccounts", params: { mint, limit: 1000, page: 1, options: { showZeroBalance: false } } }),
+      });
+      const p1Data = await p1Res.json();
+      totalHolderCount = p1Data.result?.token_accounts?.length || 0;
+      // If exactly 1000, there are more — but we don't paginate. Advanced API will override if available.
+    } catch { totalHolderCount = topAccounts.length; }
+
     // Resolve owners
     const holders = [];
     for (const acc of topAccounts) {
@@ -233,7 +246,7 @@ async function runScan(mint, limit = 20) {
 
     return {
       mint, tokenName: name, tokenSymbol: symbol,
-      totalHolders: topAccounts.length, analyzedHolders: wallets.length,
+      totalHolders: totalHolderCount || topAccounts.length, analyzedHolders: wallets.length,
       metrics, distribution: { walletAge: bucketize(ages, ageBuckets), holdDuration: bucketize(holds, holdBuckets) },
       topHolders, totalSupply, timestamp: now,
     };
@@ -417,7 +430,7 @@ async function main() {
           console.log(`  ✗ ${token.symbol} (${token.source}) — failed [${elapsed}s]`);
           return { ...token, holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
         }
-        // Use real holder count from advanced API if available
+        // Use pump.fun advanced API for holder count (fast, no DAS pagination)
         const adv = advancedHolders.get(token.mint);
         const realHolderCount = adv?.numHolders || scan.totalHolders;
         const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint);
