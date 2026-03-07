@@ -743,32 +743,43 @@ export default function Dashboard() {
           {tab === "scan" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               <div style={{ ...M, fontSize: "20px", fontWeight: 800, letterSpacing: "-0.02em" }}>Scan Token</div>
-              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan()} placeholder="Paste token mint address..." className="scan-input" spellCheck={false} />
-                <button onClick={handleScan} disabled={scanning} className="btn-primary" style={{ ...M, padding: "13px 28px", fontSize: "12px", opacity: scanning ? 0.5 : 1 }}>{scanning ? progress || "..." : "SCAN"}</button>
+              <div style={{ ...M, fontSize: "12px", color: "var(--text-muted, #888)", marginBottom: "4px" }}>
+                Full scan with verdict, deep analysis, bundle detection, funding traces, and charts.
               </div>
-              {scanning && <div style={{ ...card({ padding: "40px", textAlign: "center" }) }}><div className="spinner" /><div style={{ ...M, fontSize: "12px", color: "var(--text-muted, #888)", marginTop: "12px" }}>{progress}</div></div>}
-              {scanResult && (
-                <div style={{ ...card({ padding: "24px" }) }}>
-                  <div className="scan-result-header">
-                    <div>
-                      <div style={{ fontSize: "22px", fontWeight: 800 }}>{scanResult.symbol}</div>
-                      <div style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)", marginTop: "2px" }}>{scanResult.mint}</div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                      <button onClick={() => addWatch(scanResult)} style={pill(false)}>+ Watch</button>
-                      <a href={`/?mint=${scanResult.mint}`} target="_blank" style={{ ...pill(false), textDecoration: "none" }}>Full Report →</a>
-                      <div style={{ ...M, fontSize: "36px", fontWeight: 800, color: gc(scanResult.grade), background: `${gc(scanResult.grade)}12`, padding: "4px 20px", borderRadius: "14px" }}>{scanResult.grade}</div>
-                    </div>
-                  </div>
-                  <div className="metrics-grid">
-                    {[{ l: "Score", v: `${scanResult.score}/100` }, { l: "Holders", v: scanResult.holders.toLocaleString() }, { l: "Top 5", v: `${scanResult.top5Pct}%` }, { l: "Fresh", v: `${scanResult.freshPct}%` }, { l: "Avg Age", v: `${scanResult.avgAge}d` }].map(m => (
-                      <div key={m.l} style={{ background: metricBg, borderRadius: "12px", padding: "14px" }}>
-                        <div style={{ ...M, fontSize: "8px", fontWeight: 700, color: "var(--text-muted, #888)", letterSpacing: "0.1em", textTransform: "uppercase" }}>{m.l}</div>
-                        <div style={{ ...M, fontSize: "22px", fontWeight: 800, marginTop: "4px" }}>{m.v}</div>
+              <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && scanInput.trim()) window.open(`/?mint=${scanInput.trim()}`, "_blank"); }} placeholder="Paste token mint address..." className="scan-input" spellCheck={false} />
+                <button onClick={() => { if (scanInput.trim()) window.open(`/?mint=${scanInput.trim()}`, "_blank"); }} disabled={!scanInput.trim()} className="btn-primary" style={{ ...M, padding: "13px 28px", fontSize: "12px", opacity: !scanInput.trim() ? 0.5 : 1 }}>FULL SCAN →</button>
+              </div>
+
+              {/* Recent scans for quick re-access */}
+              {history.length > 0 && (
+                <div style={{ ...card({ padding: "20px" }) }}>
+                  <div style={{ ...M, fontSize: "11px", fontWeight: 700, color: "var(--text-muted, #888)", marginBottom: "12px" }}>RECENT SCANS</div>
+                  {history.slice(0, 10).map((h, i) => (
+                    <div key={h.mint + i} style={{
+                      display: "flex", alignItems: "center", gap: "12px", padding: "10px 0",
+                      borderTop: i > 0 ? `1px solid var(--border, rgba(153,69,255,0.06))` : "none", cursor: "pointer",
+                    }} onClick={() => window.open(`/?mint=${h.mint}`, "_blank")}>
+                      <span style={{ ...M, fontSize: "18px", fontWeight: 800, color: gc(h.grade), minWidth: "32px" }}>{h.grade}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 700 }}>{h.symbol}</div>
+                        <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 8)}...{h.mint.slice(-6)}</div>
                       </div>
-                    ))}
-                  </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ ...M, fontSize: "12px", fontWeight: 700 }}>{h.score}/100</div>
+                        <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.holders.toLocaleString()} holders · {timeAgo(h.timestamp)}</div>
+                      </div>
+                      <span style={{ ...M, fontSize: "11px", color: "var(--accent, #9945FF)", opacity: 0.6 }}>→</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {history.length === 0 && (
+                <div style={{ ...card({ padding: "48px", textAlign: "center" }) }}>
+                  <div style={{ fontSize: "36px", marginBottom: "10px", opacity: 0.3 }}>⊕</div>
+                  <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px" }}>No scans yet</div>
+                  <div style={{ fontSize: "12px", color: "var(--text-muted, #888)" }}>Paste a token address above for a full holderbase analysis</div>
                 </div>
               )}
             </div>
@@ -812,7 +823,7 @@ export default function Dashboard() {
                   <div style={{ ...M, fontSize: "11px", fontWeight: 700, marginBottom: "12px" }}>RECENT SCANS</div>
                   {recentScans.length === 0 && <div style={{ fontSize: "12px", color: "var(--text-muted, #aaa)", padding: "12px 0" }}>No scans yet. <button onClick={() => setTab("scan")} style={{ background: "none", border: "none", color: "#9945FF", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}>Start scanning →</button></div>}
                   {recentScans.map((h, i) => (
-                    <div key={h.mint + i} onClick={() => { setScanInput(h.mint); setTab("scan"); }} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderTop: i > 0 ? "1px solid var(--border, rgba(0,0,0,0.04))" : "none", cursor: "pointer" }}>
+                    <div key={h.mint + i} onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderTop: i > 0 ? "1px solid var(--border, rgba(0,0,0,0.04))" : "none", cursor: "pointer" }}>
                       <span style={{ ...M, fontSize: "16px", fontWeight: 800, color: gc(h.grade), minWidth: "28px" }}>{h.grade}</span>
                       <div style={{ flex: 1 }}><div style={{ fontSize: "12px", fontWeight: 600 }}>{h.symbol}</div><div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.score}/100 · {h.holders.toLocaleString()} holders</div></div>
                       <span style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)" }}>{timeAgo(h.timestamp)}</span>
@@ -846,7 +857,7 @@ export default function Dashboard() {
                     <div><div style={{ fontSize: "15px", fontWeight: 700 }}>{w.symbol}</div><div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{w.lastScore}/100 · {w.lastHolders.toLocaleString()} holders · added {timeAgo(w.addedAt)}</div></div>
                   </div>
                   <div style={{ display: "flex", gap: "6px" }}>
-                    <button onClick={() => { setScanInput(w.mint); setTab("scan"); }} style={{ ...M, padding: "7px 14px", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)", color: "#9945FF", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Rescan</button>
+                    <button onClick={() => window.open(`/?mint=${w.mint}`, "_blank")} style={{ ...M, padding: "7px 14px", background: darkMode ? "rgba(153,69,255,0.12)" : "rgba(153,69,255,0.06)", color: "#9945FF", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Rescan</button>
                     <button onClick={() => rmWatch(w.mint)} style={{ ...M, padding: "7px 14px", background: "rgba(239,68,68,0.04)", color: "#ef4444", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Remove</button>
                   </div>
                 </div>
@@ -869,7 +880,7 @@ export default function Dashboard() {
               {history.length === 0 && <div style={{ ...card({ padding: "60px", textAlign: "center" }) }}><div style={{ fontSize: "36px", marginBottom: "10px", opacity: 0.3 }}>◷</div><div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "4px" }}>No scans yet</div></div>}
               {filteredHistory.length > 0 && <div className="history-grid-header"><span></span><span>Token</span><span>Score</span><span>Holders</span><span>Top 5</span><span>Fresh</span><span>When</span></div>}
               {filteredHistory.map((h, i) => (
-                <div key={h.mint + i} onClick={() => { setScanInput(h.mint); setTab("scan"); }} className="history-row" style={card()}>
+                <div key={h.mint + i} onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} className="history-row" style={card()}>
                   <span style={{ ...M, fontSize: "16px", fontWeight: 800, color: gc(h.grade) }}>{h.grade}</span>
                   <div><div style={{ fontSize: "12px", fontWeight: 600 }}>{h.symbol}</div><div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 6)}..{h.mint.slice(-4)}</div></div>
                   <span style={{ ...M, fontSize: "13px", fontWeight: 700 }}>{h.score}</span>
