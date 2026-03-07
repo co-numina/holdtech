@@ -899,6 +899,17 @@ export default function Home() {
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLD</span><span style={{ color: "var(--text-muted)" }}>TECH</span></span>
             </button>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
+            <button onClick={() => { navigator.clipboard.writeText("ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump"); const el = document.getElementById("ca-copied"); if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1500); } }}
+              className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", background: "rgba(20,241,149,0.06)", border: "1px solid rgba(20,241,149,0.15)", color: "var(--green)", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
+              <span>CA: ENvMg...Jpump</span>
+              <span style={{ fontSize: "10px" }}>📋</span>
+              <span id="ca-copied" style={{ position: "absolute", top: "-22px", left: "50%", transform: "translateX(-50%)", fontSize: "9px", color: "var(--green)", background: "var(--bg-card)", padding: "2px 6px", borderRadius: "4px", opacity: 0, transition: "opacity 0.2s", whiteSpace: "nowrap", pointerEvents: "none" }}>Copied!</span>
+            </button>
+            <a href="https://x.com/i/communities/2030252676374794575" target="_blank" rel="noopener" className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              COMMUNITY
+            </a>
             <a href="/docs" className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
               onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
