@@ -893,9 +893,11 @@ export default function Home() {
 
         {/* ═══ SEARCH BAR ═══ */}
         <div className="reveal" style={{ marginBottom: "32px" }}>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <div style={{ flex: 1, position: "relative" }}>
-              <SearchIcon size={16} color="var(--text-muted)" />
+          <div style={{ display: "flex", gap: "8px", alignItems: "stretch" }}>
+            <div style={{ flex: 1, position: "relative", display: "flex", alignItems: "center" }}>
+              <div style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none", display: "flex" }}>
+                <SearchIcon size={16} color="var(--text-muted)" />
+              </div>
               <input
                 type="text" value={mint} onChange={e => setMint(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !loading && analyze()}
@@ -908,7 +910,7 @@ export default function Home() {
                 style={{
                   width: "100%", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
                   border: "2px solid rgba(255,255,255,0.5)", borderRadius: "14px",
-                  padding: "14px 16px 14px 16px", fontSize: "13px", color: "var(--text)", outline: "none",
+                  padding: "14px 16px 14px 42px", fontSize: "13px", color: "var(--text)", outline: "none",
                   boxShadow: "0 4px 16px rgba(153,69,255,0.04), inset 0 1px 0 rgba(255,255,255,0.4)",
                 }}
                 onFocus={e => { e.currentTarget.style.borderColor = "var(--accent-dark)"; }}
@@ -918,7 +920,7 @@ export default function Home() {
             <button
               onClick={() => analyze()} disabled={loading || !mint.trim()}
               style={{
-                padding: "14px 28px", borderRadius: "14px", fontWeight: 700, fontSize: "14px", border: "none", cursor: loading || !mint.trim() ? "default" : "pointer",
+                padding: "0 28px", borderRadius: "14px", fontWeight: 700, fontSize: "14px", border: "none", cursor: loading || !mint.trim() ? "default" : "pointer",
                 background: loading || !mint.trim() ? "var(--bg-card-alt)" : "linear-gradient(135deg, var(--accent-bright), var(--accent-dark))",
                 color: loading || !mint.trim() ? "var(--text-muted)" : "var(--bg)", boxShadow: loading || !mint.trim() ? "none" : "0 4px 16px var(--accent-glow)",
               }}
