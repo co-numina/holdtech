@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #fafbff;
-  --bg-card: #ffffff;
-  --bg-card-alt: #f4f5fb;
-  --bg-deep: #eef0f8;
-  --text: #1a1a2e;
-  --text-secondary: #4a4a6a;
-  --text-muted: #8b8ba8;
+  --bg: #0e0e1a;
+  --bg-card: #16162a;
+  --bg-card-alt: #1c1c34;
+  --bg-deep: #0a0a14;
+  --text: #e8eaf0;
+  --text-secondary: #9a9ab8;
+  --text-muted: #5c5c7a;
   --accent: #9945FF;
   --accent-dark: #7c3aed;
   --accent-bright: #b06aff;
-  --accent-glow: rgba(153, 69, 255, 0.15);
+  --accent-glow: rgba(153, 69, 255, 0.2);
   --green: #14F195;
-  --green-text: #059669;
+  --green-text: #14F195;
   --yellow: #f59e0b;
   --red: #ef4444;
-  --border: rgba(153, 69, 255, 0.1);
-  --border-accent: rgba(153, 69, 255, 0.2);
+  --border: rgba(153, 69, 255, 0.12);
+  --border-accent: rgba(153, 69, 255, 0.25);
   --gradient-solana: linear-gradient(135deg, #9945FF, #14F195);
   --gradient-solana-soft: linear-gradient(135deg, rgba(153,69,255,0.08), rgba(20,241,149,0.08));
 }
@@ -37,11 +37,11 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(153, 69, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(153, 69, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(153, 69, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(153, 69, 255, 0.12) 1px, transparent 1px);
   background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 0%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 100% 80% at 50% 0%, black 0%, transparent 70%);
 }
 
 * { box-sizing: border-box; }
