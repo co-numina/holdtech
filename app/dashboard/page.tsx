@@ -64,7 +64,7 @@ export default function Dashboard() {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
   const [tokenBalance, setTokenBalance] = useState<number>(0);
-  const [tab, setTab] = useState<"scan" | "watchlist" | "history" | "batch">("scan");
+  const [tab, setTab] = useState<"scan" | "watchlist" | "history" | "batch" | "bundlers">("scan");
   const [scanInput, setScanInput] = useState("");
   const [batchInput, setBatchInput] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -74,6 +74,9 @@ export default function Dashboard() {
   const [history, setHistory] = useState<ScanResult[]>([]);
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [progress, setProgress] = useState("");
+  const [bundlers, setBundlers] = useState<{ address: string; label: string; addedAt: number; seenIn: string[] }[]>([]);
+  const [bundlerInput, setBundlerInput] = useState("");
+  const [bundlerLabel, setBundlerLabel] = useState("");
   const historyRef = useRef(history);
   historyRef.current = history;
 
@@ -82,8 +85,10 @@ export default function Dashboard() {
     try {
       const h = JSON.parse(localStorage.getItem("holdtech-history") || "[]");
       const w = JSON.parse(localStorage.getItem("holdtech-watchlist") || "[]");
+      const b = JSON.parse(localStorage.getItem("holdtech-bundlers") || "[]");
       setHistory(h);
       setWatchlist(w);
+      setBundlers(b);
     } catch {}
   }, []);
 
@@ -116,15 +121,31 @@ export default function Dashboard() {
       const analysis = await analyzeRes.json();
       const countData = countRes.ok ? await countRes.json() : { count: null };
 
-      const verdictRes = await fetch("/api/ai-verdict", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wallets: analysis.wallets, totalSupply: analysis.totalSupply, holderCount: countData.count, tokenSymbol: analysis.tokenSymbol }),
-      });
-      const verdict = verdictRes.ok ? await verdictRes.json() : null;
-
       const w = analysis.wallets || [];
       const supply = analysis.totalSupply || 1;
       const top5 = w.slice(0, 5).reduce((s: number, x: any) => s + (x.balance || 0), 0);
+      const wLen = w.length || 1;
+
+      // Compute metrics matching what ai-verdict expects
+      const metrics = {
+        avgWalletAgeDays: parseFloat((w.reduce((s: number, x: any) => s + (x.walletAgeDays || 0), 0) / wLen).toFixed(1)),
+        medianWalletAgeDays: parseFloat((w.map((x: any) => x.walletAgeDays || 0).sort((a: number, b: number) => a - b)[Math.floor(wLen / 2)] || 0).toFixed(1)),
+        freshWalletPct: parseFloat(((w.filter((x: any) => x.walletAgeDays !== undefined && x.walletAgeDays < 7).length / wLen) * 100).toFixed(1)),
+        veryFreshWalletPct: parseFloat(((w.filter((x: any) => x.walletAgeDays !== undefined && x.walletAgeDays < 1).length / wLen) * 100).toFixed(1)),
+        diamondHandsPct: parseFloat(((w.filter((x: any) => (x.holdDurationDays || 0) > 2).length / wLen) * 100).toFixed(1)),
+        veteranHolderPct: parseFloat(((w.filter((x: any) => (x.walletAgeDays || 0) >= 90).length / wLen) * 100).toFixed(1)),
+        ogHolderPct: parseFloat(((w.filter((x: any) => (x.walletAgeDays || 0) >= 180).length / wLen) * 100).toFixed(1)),
+        avgTxCount: parseFloat((w.reduce((s: number, x: any) => s + (x.txCount || 0), 0) / wLen).toFixed(0)),
+        lowActivityPct: parseFloat(((w.filter((x: any) => (x.txCount || 0) < 10).length / wLen) * 100).toFixed(1)),
+        avgSolBalance: parseFloat((w.reduce((s: number, x: any) => s + (x.solBalance || 0), 0) / wLen).toFixed(2)),
+        singleTokenPct: parseFloat(((w.filter((x: any) => (x.tokenCount || 0) <= 1).length / wLen) * 100).toFixed(1)),
+      };
+
+      const verdictRes = await fetch("/api/ai-verdict", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ metrics, totalHolders: countData.count || wLen, analyzedHolders: wLen, tokenSymbol: analysis.tokenSymbol }),
+      });
+      const verdict = verdictRes.ok ? await verdictRes.json() : null;
 
       return {
         mint,
@@ -247,8 +268,8 @@ export default function Dashboard() {
 
         {/* TABS */}
         <div style={{ display: "flex", gap: "8px", padding: "16px 0" }}>
-          {(["scan", "watchlist", "history", "batch"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={S.tab(tab === t)}>{t.toUpperCase()}{t === "watchlist" && ` (${watchlist.length})`}{t === "history" && ` (${history.length})`}</button>
+          {(["scan", "watchlist", "history", "batch", "bundlers"] as const).map(t => (
+            <button key={t} onClick={() => setTab(t)} style={S.tab(tab === t)}>{t === "bundlers" ? "🔩 BUNDLERS" : t.toUpperCase()}{t === "watchlist" && ` (${watchlist.length})`}{t === "history" && ` (${history.length})`}{t === "bundlers" && ` (${bundlers.length})`}</button>
           ))}
         </div>
 
@@ -396,6 +417,87 @@ export default function Dashboard() {
                     <span style={{ ...S.mono, fontSize: "12px", color: r.freshPct > 40 ? "#ef4444" : "#666" }}>{r.freshPct}%</span>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── BUNDLERS TAB ── */}
+        {tab === "bundlers" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={S.card}>
+              <div style={{ ...S.mono, fontSize: "11px", fontWeight: 700, color: "#1a1a2e", marginBottom: "4px" }}>TRACK BUNDLER WALLETS</div>
+              <div style={{ fontSize: "11px", color: "#888", marginBottom: "12px" }}>
+                Add known bundler/cabal wallet addresses. When you scan a token, these will be cross-referenced against the holder list.
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+                <input value={bundlerInput} onChange={e => setBundlerInput(e.target.value)} placeholder="Wallet address..." style={{ ...S.input, flex: 2 }} spellCheck={false} />
+                <input value={bundlerLabel} onChange={e => setBundlerLabel(e.target.value)} placeholder="Label (optional)" style={{ ...S.input, flex: 1 }} />
+                <button onClick={() => {
+                  const addr = bundlerInput.trim();
+                  if (!addr || addr.length < 32 || bundlers.find(b => b.address === addr)) return;
+                  const newB = [...bundlers, { address: addr, label: bundlerLabel.trim() || addr.slice(0, 8), addedAt: Date.now(), seenIn: [] }];
+                  setBundlers(newB);
+                  localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+                  setBundlerInput("");
+                  setBundlerLabel("");
+                }} style={S.btn}>ADD</button>
+              </div>
+              <div style={{ fontSize: "10px", color: "#aaa" }}>
+                Tip: Deep scan results show funding wallets — add those here to track them across tokens.
+              </div>
+            </div>
+
+            {bundlers.length === 0 && (
+              <div style={{ textAlign: "center", padding: "48px", color: "#aaa", fontSize: "13px" }}>
+                <div style={{ fontSize: "32px", marginBottom: "8px", opacity: 0.5 }}>🔩</div>
+                No bundler wallets tracked yet.
+              </div>
+            )}
+
+            {bundlers.length > 0 && (
+              <div style={S.card}>
+                <div style={{ ...S.mono, fontSize: "11px", fontWeight: 700, color: "#1a1a2e", marginBottom: "12px" }}>TRACKED WALLETS ({bundlers.length})</div>
+                {bundlers.map((b, i) => (
+                  <div key={b.address} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderTop: i > 0 ? "1px solid rgba(153,69,255,0.06)" : "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#ef4444", flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#1a1a2e" }}>{b.label}</div>
+                        <div style={{ ...S.mono, fontSize: "10px", color: "#888" }}>{b.address.slice(0, 12)}...{b.address.slice(-8)}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <span style={{ fontSize: "10px", color: "#aaa" }}>{timeAgo(b.addedAt)}</span>
+                      <a href={`https://solscan.io/account/${b.address}`} target="_blank" style={{ ...S.btnOutline, textDecoration: "none", fontSize: "9px" }}>Solscan ↗</a>
+                      <button onClick={() => {
+                        const newB = bundlers.filter(x => x.address !== b.address);
+                        setBundlers(newB);
+                        localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+                      }} style={{ ...S.btnOutline, color: "#ef4444", borderColor: "rgba(239,68,68,0.25)", fontSize: "9px" }}>Remove</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {bundlers.length > 0 && (
+              <div style={S.card}>
+                <div style={{ ...S.mono, fontSize: "11px", fontWeight: 700, color: "#1a1a2e", marginBottom: "8px" }}>BULK IMPORT</div>
+                <div style={{ fontSize: "11px", color: "#888", marginBottom: "8px" }}>Paste multiple wallet addresses (one per line)</div>
+                <textarea id="bulk-bundlers" placeholder={"Wallet addresses...\nOne per line"} style={{ ...S.input, minHeight: "80px", resize: "vertical" }} spellCheck={false} />
+                <button onClick={() => {
+                  const el = document.getElementById("bulk-bundlers") as HTMLTextAreaElement;
+                  if (!el) return;
+                  const addrs = el.value.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length >= 32);
+                  const existing = new Set(bundlers.map(b => b.address));
+                  const newOnes = addrs.filter(a => !existing.has(a)).map(a => ({ address: a, label: a.slice(0, 8), addedAt: Date.now(), seenIn: [] as string[] }));
+                  if (!newOnes.length) return;
+                  const newB = [...bundlers, ...newOnes];
+                  setBundlers(newB);
+                  localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+                  el.value = "";
+                }} style={{ ...S.btn, marginTop: "8px" }}>IMPORT {bundlers.length > 0 ? "MORE" : "ALL"}</button>
               </div>
             )}
           </div>
