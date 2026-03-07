@@ -126,34 +126,23 @@ export default function Dashboard() {
       if (!analyzeRes.ok) return null;
       const analysis = await analyzeRes.json();
       const countData = countRes.ok ? await countRes.json() : { count: null };
+      // Use pre-computed metrics from the API (same as homepage)
+      const metrics = analysis.metrics;
       const w = analysis.wallets || [];
       const supply = analysis.totalSupply || 1;
-      const wLen = w.length || 1;
       const top5 = w.slice(0, 5).reduce((s: number, x: any) => s + (x.balance || 0), 0);
-      const metrics = {
-        avgWalletAgeDays: parseFloat((w.reduce((s: number, x: any) => s + (x.walletAgeDays || 0), 0) / wLen).toFixed(1)),
-        medianWalletAgeDays: parseFloat((w.map((x: any) => x.walletAgeDays || 0).sort((a: number, b: number) => a - b)[Math.floor(wLen / 2)] || 0).toFixed(1)),
-        freshWalletPct: parseFloat(((w.filter((x: any) => x.walletAgeDays !== undefined && x.walletAgeDays < 7).length / wLen) * 100).toFixed(1)),
-        veryFreshWalletPct: parseFloat(((w.filter((x: any) => x.walletAgeDays !== undefined && x.walletAgeDays < 1).length / wLen) * 100).toFixed(1)),
-        diamondHandsPct: parseFloat(((w.filter((x: any) => (x.holdDurationDays || 0) > 2).length / wLen) * 100).toFixed(1)),
-        veteranHolderPct: parseFloat(((w.filter((x: any) => (x.walletAgeDays || 0) >= 90).length / wLen) * 100).toFixed(1)),
-        ogHolderPct: parseFloat(((w.filter((x: any) => (x.walletAgeDays || 0) >= 180).length / wLen) * 100).toFixed(1)),
-        avgTxCount: parseFloat((w.reduce((s: number, x: any) => s + (x.txCount || 0), 0) / wLen).toFixed(0)),
-        lowActivityPct: parseFloat(((w.filter((x: any) => (x.txCount || 0) < 10).length / wLen) * 100).toFixed(1)),
-        avgSolBalance: parseFloat((w.reduce((s: number, x: any) => s + (x.solBalance || 0), 0) / wLen).toFixed(2)),
-        singleTokenPct: parseFloat(((w.filter((x: any) => (x.tokenCount || 0) <= 1).length / wLen) * 100).toFixed(1)),
-      };
+
       const verdictRes = await fetch("/api/ai-verdict", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metrics, totalHolders: countData.count || wLen, analyzedHolders: wLen, tokenSymbol: analysis.tokenSymbol }),
+        body: JSON.stringify({ metrics, totalHolders: countData.count || analysis.analyzedHolders, analyzedHolders: analysis.analyzedHolders, tokenSymbol: analysis.tokenSymbol }),
       });
       const verdict = verdictRes.ok ? await verdictRes.json() : null;
       return {
         mint, symbol: analysis.tokenSymbol || mint.slice(0, 6), score: verdict?.score ?? 0,
-        grade: verdict?.grade || "?", holders: countData.count || w.length,
+        grade: verdict?.grade || "?", holders: countData.count || analysis.totalHolders || w.length,
         top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)),
-        freshPct: w.length > 0 ? parseFloat(((w.filter((x: any) => x.walletAgeDays !== undefined && x.walletAgeDays < 7).length / w.length) * 100).toFixed(0)) : 0,
-        avgAge: w.length > 0 ? Math.round(w.reduce((s: number, x: any) => s + (x.walletAgeDays || 0), 0) / w.length) : 0,
+        freshPct: metrics?.freshWalletPct ?? 0,
+        avgAge: Math.round(metrics?.avgWalletAgeDays ?? 0),
         timestamp: Date.now(),
       };
     } catch { return null; }
