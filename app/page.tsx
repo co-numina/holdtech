@@ -184,6 +184,19 @@ const T = {
     scopeTrajectory: "TRAJECTORY",
     scopeTrajectoryDesc: "Snapshots are noise. Track holder quality over time — see concentration shifting, bundles accumulating, distribution improving. The trend is the signal.",
     scopeCTA: "CA dropping soon",
+    extTitle: "CHROME EXTENSION",
+    extTagline: "Scan tokens without leaving the page.",
+    extDesc: "Auto-injects holder quality scores on pump.fun, DexScreener, Birdeye, and Solscan. Click the icon anywhere to paste a CA and get an instant grade.",
+    extHow: "How to install",
+    extStep1: '1. Download the extension from <a href="https://github.com/co-numina/holder-scope/tree/main/extension" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">GitHub</a>',
+    extStep2: "2. Go to chrome://extensions → enable Developer Mode",
+    extStep3: '3. Click "Load unpacked" → select the extension folder',
+    extFeature1: "POPUP SCANNER",
+    extFeature1Desc: "Click the icon on any page. Paste a CA, get grade + score + concentration + fresh wallet % in seconds.",
+    extFeature2: "AUTO-INJECT",
+    extFeature2Desc: "Visit a token on pump.fun or DexScreener — the score badge appears automatically. No copy-pasting needed.",
+    extFeature3: "SPA-AWARE",
+    extFeature3Desc: "Works with single-page apps. Navigate between tokens and the badge updates. Results cached for 5 minutes.",
     freshWallets: "Fresh Wallets (<7d)",
     under24h: "under 24hrs",
     veteranHolders: "Veteran Holders (90d+)",
@@ -282,6 +295,19 @@ const T = {
     scopeTrajectory: "趋势追踪",
     scopeTrajectoryDesc: "快照只是噪音。追踪持有者质量随时间的变化——看到集中度转移、捆绑累积、分布改善。趋势才是信号。",
     scopeCTA: "CA即将公布",
+    extTitle: "浏览器插件",
+    extTagline: "不离开页面即可扫描代币。",
+    extDesc: "在pump.fun、DexScreener、Birdeye和Solscan上自动注入持有者质量评分。点击图标随时粘贴CA获取即时评级。",
+    extHow: "安装方法",
+    extStep1: '1. 从 <a href="https://github.com/co-numina/holder-scope/tree/main/extension" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline">GitHub</a> 下载插件',
+    extStep2: "2. 打开 chrome://extensions → 开启开发者模式",
+    extStep3: '3. 点击"加载已解压的扩展程序" → 选择 extension 文件夹',
+    extFeature1: "弹窗扫描",
+    extFeature1Desc: "在任何页面点击图标。粘贴CA，几秒内获得评级、分数、集中度和新钱包比例。",
+    extFeature2: "自动注入",
+    extFeature2Desc: "在pump.fun或DexScreener上访问代币——评分徽章自动出现，无需复制粘贴。",
+    extFeature3: "SPA适配",
+    extFeature3Desc: "支持单页应用。切换代币时徽章自动更新。结果缓存5分钟。",
     freshWallets: "新钱包 (<7天)",
     under24h: "24小时内",
     veteranHolders: "老持有者 (90天+)",
@@ -1120,6 +1146,38 @@ export default function Home() {
               {/* CTA */}
               <div style={{ textAlign: "center", padding: "16px", borderRadius: "12px", border: "1px dashed var(--border-accent)", background: "rgba(153,69,255,0.03)" }}>
                 <div className="font-mono" style={{ fontSize: "14px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.1em" }}>{t.scopeCTA}</div>
+              </div>
+            </div>
+
+            {/* ═══ CHROME EXTENSION ═══ */}
+            <div className="reveal" style={{ marginBottom: "32px" }}>
+              <div style={{ textAlign: "center", marginBottom: "20px" }}>
+                <div style={{ fontSize: "24px", marginBottom: "6px" }}>🧩</div>
+                <div className="font-mono" style={{ fontSize: "18px", fontWeight: 800, color: "var(--accent)" }}>{t.extTitle}</div>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", marginTop: "4px" }}>{t.extTagline}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px", maxWidth: "480px", margin: "4px auto 0" }}>{t.extDesc}</div>
+              </div>
+
+              {/* Feature cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "16px" }}>
+                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.extFeature1}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.extFeature1Desc}</div>
+                </div>
+                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--green)", marginBottom: "6px" }}>{t.extFeature2}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.extFeature2Desc}</div>
+                </div>
+                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
+                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.extFeature3}</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.extFeature3Desc}</div>
+                </div>
+              </div>
+
+              {/* Install steps */}
+              <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid var(--border)", background: "var(--card-bg)" }}>
+                <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--text)", marginBottom: "10px" }}>{t.extHow}</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: `${t.extStep1}<br/>${t.extStep2}<br/>${t.extStep3}` }} />
               </div>
             </div>
 
