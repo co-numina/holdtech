@@ -25,7 +25,7 @@ interface ScanResult {
   mint: string; symbol: string; score: number; grade: string;
   holders: number; top5Pct: number; freshPct: number; avgAge: number; timestamp: number;
   metrics?: ScanMetrics; distribution?: { walletAge: DistBucket[]; holdDuration: DistBucket[]; };
-  topHolders?: TopHolder[]; verdict?: ScanVerdict;
+  topHolders?: TopHolder[]; verdict?: ScanVerdict; tokenImage?: string;
 }
 interface WatchlistItem {
   mint: string; symbol: string; lastScore: number; lastGrade: string;
@@ -127,11 +127,16 @@ export default function Dashboard() {
       const aR = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) });
       if (!aR.ok) return null;
       const a = await aR.json();
-      // Fetch holder count separately — don't let it block or fail the scan
+      // Fetch holder count + token image in parallel
       let holderCount: number | null = null;
+      let tokenImage: string | undefined;
       try {
-        const cR = await fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) });
+        const [cR, imgR] = await Promise.all([
+          fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) }),
+          fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`).catch(() => null),
+        ]);
         if (cR.ok) { const c = await cR.json(); holderCount = c.holderCount || c.count || null; }
+        if (imgR?.ok) { const d = await imgR.json(); const p = d.pairs?.[0]; tokenImage = p?.info?.imageUrl || p?.baseToken?.imageUrl || undefined; }
       } catch {}
       const w = a.wallets || []; const supply = a.totalSupply || 1;
       const top5 = w.slice(0, 5).reduce((s: number, x: any) => s + (x.balance || 0), 0);
@@ -143,7 +148,7 @@ export default function Dashboard() {
         holders: totalHolders, top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)),
         freshPct: a.metrics?.freshWalletPct ?? 0, avgAge: Math.round(a.metrics?.avgWalletAgeDays ?? 0),
         timestamp: Date.now(), metrics: a.metrics || undefined, distribution: a.distribution || undefined,
-        topHolders: a.topHolders || undefined, verdict: v || undefined,
+        topHolders: a.topHolders || undefined, verdict: v || undefined, tokenImage,
       };
     } catch { return null; }
   }, []);
@@ -780,6 +785,9 @@ export default function Dashboard() {
                         </div>
                         <div style={{ ...M, fontSize: "20px", fontWeight: 900, color: gc(scanResult.grade), marginTop: "2px" }}>{scanResult.grade}</div>
                       </div>
+                      {scanResult.tokenImage && (
+                        <img src={scanResult.tokenImage} alt={scanResult.symbol} style={{ width: 44, height: 44, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                      )}
                       <div style={{ flex: 1 }}>
                         <div style={{ ...M, fontSize: "16px", fontWeight: 800 }}>{scanResult.symbol}</div>
                         <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)", fontFamily: "var(--mono)" }}>{scanResult.mint}</div>
