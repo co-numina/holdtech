@@ -1,5 +1,8 @@
 "use client";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
+import { useTier } from "./hooks/useTier";
 
 // ============================================================
 // TYPES
@@ -771,6 +774,9 @@ export default function Home() {
   const [shareCard, setShareCard] = useState<{ url: string; symbol: string } | null>(null);
   const [shareCopied, setShareCopied] = useState(false);
   const [shareLoading, setShareLoading] = useState(true);
+  const { publicKey, disconnect, connected } = useWallet();
+  const { setVisible } = useWalletModal();
+  const { tierInfo } = useTier();
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -922,6 +928,38 @@ export default function Home() {
             </a>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            {/* Wallet connect */}
+            {connected && publicKey ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {tierInfo && tierInfo.tier !== "FREE" && (
+                  <span className="font-mono" style={{
+                    fontSize: "9px", fontWeight: 800, letterSpacing: "1px",
+                    padding: "3px 8px", borderRadius: "6px",
+                    background: tierInfo.tier === "WHALE" ? "rgba(20,241,149,0.1)" : tierInfo.tier === "OPERATOR" ? "rgba(176,106,255,0.1)" : "rgba(153,69,255,0.1)",
+                    color: tierInfo.tier === "WHALE" ? "#14F195" : tierInfo.tier === "OPERATOR" ? "#b06aff" : "#9945FF",
+                    border: `1px solid ${tierInfo.tier === "WHALE" ? "rgba(20,241,149,0.2)" : tierInfo.tier === "OPERATOR" ? "rgba(176,106,255,0.2)" : "rgba(153,69,255,0.2)"}`,
+                  }}>{tierInfo.tier}</span>
+                )}
+                <button onClick={() => disconnect()} className="font-mono" style={{
+                  fontSize: "10px", fontWeight: 700, padding: "5px 12px", borderRadius: "8px",
+                  background: "rgba(153,69,255,0.08)", color: "#9945FF",
+                  border: "1px solid rgba(153,69,255,0.15)", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "6px",
+                }}>
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#14F195", display: "inline-block" }} />
+                  {publicKey.toBase58().slice(0, 4)}...{publicKey.toBase58().slice(-4)}
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setVisible(true)} className="font-mono" style={{
+                fontSize: "10px", fontWeight: 700, padding: "5px 14px", borderRadius: "8px",
+                background: "linear-gradient(135deg, #9945FF, #7c3aed)", color: "white",
+                border: "none", cursor: "pointer", letterSpacing: "0.5px",
+              }}>
+                Connect Wallet
+              </button>
+            )}
+            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
             <button onClick={() => { const next = lang === "en" ? "zh" : "en"; setLang(next); localStorage.setItem("holdtech-lang", next); }}
               className="font-mono"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "12px", fontWeight: 700, transition: "all 0.15s" }}
