@@ -202,77 +202,179 @@ async function getDexBoosted(): Promise<TrendingToken[]> {
   } catch { return []; }
 }
 
-async function quickScore(mint: string): Promise<{ holderCount: number; freshPct: number; avgWalletAgeDays: number; grade: string; score: number; sniperCount?: number; topHoldersPct?: number; devHoldingsPct?: number }> {
-  // Try pump.fun frontend API first — has holder count, market cap, completion status
+// Known pool/program addresses — exclude from holder quality metrics
+const KNOWN_PROGRAMS = new Set([
+  "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1", "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",
+  "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C", "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",
+  "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc", "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP",
+  "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo", "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB",
+  "PSwapMdSai8tjrEXcxFeQth87xC4rRsa4VA5mhGhXkP", "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+  "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp18W", "39azUYFWPz3VHgKCf3VChUwbpURdCHRxjWVowf5jUJjg",
+]);
+
+async function heliusRpc(method: string, params: unknown[]) {
+  const res = await fetch(HELIUS_RPC, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    signal: AbortSignal.timeout(6000),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+  return data.result;
+}
+
+async function getWalletInfo(wallet: string): Promise<{ solBalance: number; firstTxTime: number | null; txCount: number; tokenCount: number }> {
+  const [sigsResult, balResult, tokensResult] = await Promise.allSettled([
+    heliusRpc("getSignaturesForAddress", [wallet, { limit: 1000 }]),
+    heliusRpc("getBalance", [wallet]),
+    heliusRpc("getTokenAccountsByOwner", [wallet, { programId: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" }, { encoding: "jsonParsed" }]),
+  ]);
+  const sigs = sigsResult.status === "fulfilled" ? (sigsResult.value || []) : [];
+  const bal = balResult.status === "fulfilled" ? (balResult.value || 0) : 0;
+  const tokens = tokensResult.status === "fulfilled" ? (tokensResult.value?.value || []) : [];
+  const oldest = sigs.length > 0 ? sigs[sigs.length - 1]?.blockTime : null;
+  return {
+    solBalance: typeof bal === "number" ? bal / 1e9 : 0,
+    firstTxTime: oldest ? oldest * 1000 : null,
+    txCount: sigs.length,
+    tokenCount: tokens.length,
+  };
+}
+
+// Same scoring logic as ai-verdict — keeps trending grades consistent with individual scans
+function computeVerdict(metrics: {
+  freshWalletPct: number; veryFreshWalletPct: number; veteranHolderPct: number;
+  ogHolderPct: number; lowActivityPct: number; singleTokenPct: number;
+  avgTxCount: number; avgSolBalance: number; avgWalletAgeDays: number;
+}, holderCount: number): { grade: string; score: number; freshPct: number; avgWalletAgeDays: number } {
+  let score = 50;
+
+  // Fresh wallets
+  if (metrics.freshWalletPct > 80) score -= 30;
+  else if (metrics.freshWalletPct > 60) score -= 22;
+  else if (metrics.freshWalletPct > 40) score -= 12;
+  else if (metrics.freshWalletPct < 20) score += 10;
+
+  // Very fresh
+  if (metrics.veryFreshWalletPct > 50) score -= 20;
+  else if (metrics.veryFreshWalletPct > 30) score -= 12;
+  else if (metrics.veryFreshWalletPct > 15) score -= 5;
+
+  // Veterans
+  if (metrics.veteranHolderPct > 40) score += 15;
+  else if (metrics.veteranHolderPct > 20) score += 8;
+  else if (metrics.veteranHolderPct < 10) score -= 10;
+
+  // OG
+  if (metrics.ogHolderPct > 30) score += 10;
+  else if (metrics.ogHolderPct > 15) score += 5;
+
+  // Low activity
+  if (metrics.lowActivityPct > 70) score -= 20;
+  else if (metrics.lowActivityPct > 50) score -= 15;
+  else if (metrics.lowActivityPct > 30) score -= 8;
+  else if (metrics.lowActivityPct < 15) score += 8;
+
+  // Single token
+  if (metrics.singleTokenPct > 60) score -= 22;
+  else if (metrics.singleTokenPct > 40) score -= 15;
+  else if (metrics.singleTokenPct > 20) score -= 8;
+
+  // Tx count
+  if (metrics.avgTxCount > 500) score += 8;
+  else if (metrics.avgTxCount < 50) score -= 5;
+
+  // SOL balance
+  if (metrics.avgSolBalance > 5) score += 5;
+  else if (metrics.avgSolBalance < 0.5) score -= 8;
+
+  score = Math.max(0, Math.min(100, score));
+  let grade: string;
+  if (score >= 80) grade = "A";
+  else if (score >= 65) grade = "B";
+  else if (score >= 50) grade = "C";
+  else if (score >= 35) grade = "D";
+  else grade = "F";
+
+  return { grade, score, freshPct: metrics.freshWalletPct, avgWalletAgeDays: metrics.avgWalletAgeDays };
+}
+
+async function quickScore(mint: string): Promise<{ holderCount: number; freshPct: number; avgWalletAgeDays: number; grade: string; score: number }> {
   try {
-    const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`, {
-      signal: AbortSignal.timeout(4000),
-    });
-    if (pumpRes.ok) {
-      const text = await pumpRes.text();
-      if (text) {
-        const coin = JSON.parse(text);
-        // Use pump.fun data for a quick grade
-        const graduated = coin.complete === true;
-        const mcap = coin.usd_market_cap || 0;
+    // Step 1: Get top 10 holder token accounts
+    const topAccounts = await heliusRpc("getTokenLargestAccounts", [mint]);
+    const accounts = topAccounts?.value || [];
+    if (accounts.length === 0) return { holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
 
-        // Get holder count from DAS (fast, one call)
-        let holderCount = 0;
-        try {
-          const hRes = await fetch(HELIUS_RPC, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 1000 } }),
-            signal: AbortSignal.timeout(5000),
-          });
-          const hData = await hRes.json();
-          holderCount = hData.result?.token_accounts?.length || 0;
-        } catch {}
+    // Step 2: Resolve owners from token accounts (batch via getMultipleAccounts)
+    const accountAddresses = accounts.slice(0, 10).map((a: any) => a.address);
+    const multiRes = await heliusRpc("getMultipleAccounts", [accountAddresses, { encoding: "jsonParsed" }]);
+    const accountInfos = multiRes || [];
 
-        // Grade based on holder count + graduation + engagement
-        let grade = "C";
-        let score = 50;
-
-        // Holder count signals
-        if (holderCount > 500) { score += 20; }
-        else if (holderCount > 200) { score += 10; }
-        else if (holderCount > 50) { score += 0; }
-        else if (holderCount > 20) { score -= 10; }
-        else { score -= 25; }
-
-        // Graduated = passed bonding curve = stronger signal
-        if (graduated) { score += 15; }
-
-        // Clamp and assign grade
-        score = Math.max(10, Math.min(95, score));
-        if (score >= 80) grade = "A";
-        else if (score >= 65) grade = "B";
-        else if (score >= 45) grade = "C";
-        else if (score >= 30) grade = "D";
-        else grade = "F";
-
-        return { holderCount, freshPct: 0, avgWalletAgeDays: 0, grade, score };
+    const holders: { owner: string; amount: number }[] = [];
+    for (let i = 0; i < accountInfos.length; i++) {
+      const info = accountInfos[i];
+      if (!info) continue;
+      const parsed = info.data?.parsed?.info;
+      if (parsed?.owner) {
+        holders.push({ owner: parsed.owner, amount: parseFloat(parsed.tokenAmount?.uiAmountString || "0") });
       }
     }
-  } catch {}
 
-  // Fallback: just get holder count from DAS
-  try {
-    const res = await fetch(HELIUS_RPC, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 1000 } }),
-      signal: AbortSignal.timeout(5000),
-    });
-    const data = await res.json();
-    const holderCount = data.result?.token_accounts?.length || 0;
+    // Filter out pools (first holder often pool + known programs)
+    const humanHolders = holders.filter((h, i) => !KNOWN_PROGRAMS.has(h.owner) && (i > 0 || !KNOWN_PROGRAMS.has(h.owner)));
+    // Also skip first holder if it looks like a pool (top holder of graduated tokens)
+    const toAnalyze = humanHolders.length > 0 ? humanHolders : holders;
 
-    let grade = "C", score = 50;
-    if (holderCount > 500) { score = 70; grade = "B"; }
-    else if (holderCount > 100) { score = 55; grade = "C"; }
-    else if (holderCount < 20) { score = 25; grade = "D"; }
+    // Get holder count from DAS
+    let holderCount = accounts.length;
+    try {
+      const hRes = await fetch(HELIUS_RPC, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 1000 } }),
+        signal: AbortSignal.timeout(5000),
+      });
+      const hData = await hRes.json();
+      holderCount = hData.result?.token_accounts?.length || holderCount;
+    } catch {}
 
-    return { holderCount, freshPct: 0, avgWalletAgeDays: 0, grade, score };
+    // Step 3: Analyze wallets — same as main scan but only top 10
+    const now = Date.now();
+    const walletData: { ageDays: number; txCount: number; tokenCount: number; solBalance: number }[] = [];
+
+    // Analyze in parallel (all at once — only 10 wallets, 3 calls each = 30 calls)
+    const results = await Promise.allSettled(
+      toAnalyze.slice(0, 10).map(async (h) => {
+        const info = await getWalletInfo(h.owner);
+        const ageDays = info.firstTxTime ? (now - info.firstTxTime) / (1000 * 60 * 60 * 24) : 0;
+        return { ageDays, txCount: info.txCount, tokenCount: info.tokenCount, solBalance: info.solBalance };
+      })
+    );
+    for (const r of results) {
+      if (r.status === "fulfilled") walletData.push(r.value);
+    }
+
+    if (walletData.length === 0) return { holderCount, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
+
+    // Step 4: Compute same metrics as main analyze endpoint
+    const total = walletData.length;
+    const ages = walletData.map(w => w.ageDays);
+    const metrics = {
+      freshWalletPct: Math.round((walletData.filter(w => w.ageDays < 7).length / total) * 1000) / 10,
+      veryFreshWalletPct: Math.round((walletData.filter(w => w.ageDays < 1).length / total) * 1000) / 10,
+      veteranHolderPct: Math.round((walletData.filter(w => w.ageDays > 90).length / total) * 1000) / 10,
+      ogHolderPct: Math.round((walletData.filter(w => w.ageDays > 180).length / total) * 1000) / 10,
+      lowActivityPct: Math.round((walletData.filter(w => w.txCount < 10).length / total) * 1000) / 10,
+      singleTokenPct: Math.round((walletData.filter(w => w.tokenCount <= 1).length / total) * 1000) / 10,
+      avgTxCount: Math.round(walletData.reduce((s, w) => s + w.txCount, 0) / total),
+      avgSolBalance: Math.round((walletData.reduce((s, w) => s + w.solBalance, 0) / total) * 100) / 100,
+      avgWalletAgeDays: Math.round((ages.reduce((s, v) => s + v, 0) / ages.length) * 10) / 10,
+    };
+
+    // Step 5: Same verdict scoring as ai-verdict
+    return { holderCount, ...computeVerdict(metrics, holderCount) };
   } catch {
     return { holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
   }
@@ -309,29 +411,16 @@ export async function GET(req: NextRequest) {
       return true;
     });
 
-    // Score top 15 (to stay within edge timeout)
-    const toScore = tokens.slice(0, 15);
+    // Score top 8 tokens — each runs real holder analysis (~30 RPC calls each)
+    // Must fit within 25s edge timeout
+    const toScore = tokens.slice(0, 8);
     const scored: ScoredToken[] = [];
 
-    // Score in batches of 5
-    for (let i = 0; i < toScore.length; i += 5) {
-      const batch = toScore.slice(i, i + 5);
+    // Score in batches of 4 (parallel wallet analysis)
+    for (let i = 0; i < toScore.length; i += 4) {
+      const batch = toScore.slice(i, i + 4);
       const results = await Promise.allSettled(
         batch.map(async (token) => {
-          // If advanced API already gave us holder data, use it for a fast grade
-          if (token.numHolders && token.topHoldersPct !== undefined) {
-            const topPct = token.topHoldersPct;
-            const sniperPct = token.sniperOwnedPct || 0;
-            let grade = "A", score = 85;
-            if (topPct > 80 || sniperPct > 30) { grade = "F"; score = 15; }
-            else if (topPct > 60 || sniperPct > 20) { grade = "D"; score = 35; }
-            else if (topPct > 40) { grade = "C"; score = 55; }
-            else if (topPct > 25) { grade = "B"; score = 72; }
-            if (token.numHolders < 15) { score = Math.max(score - 20, 10); grade = score < 30 ? "F" : score < 50 ? "D" : grade; }
-            if (token.devHoldingsPct && token.devHoldingsPct > 10) { score = Math.max(score - 15, 10); }
-            return { ...token, holderCount: token.numHolders, freshPct: 0, avgWalletAgeDays: 0, grade, score };
-          }
-          // Otherwise do the full RPC-based quickScore
           const scoreData = await quickScore(token.mint);
           return { ...token, ...scoreData };
         })
