@@ -162,6 +162,22 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
           deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : ts,
           image: coin.image_uri || null,
         });
+      } else if (!coin) {
+        // pump.fun API didn't return data — try DAS for metadata
+        try {
+          const dasRes = await heliusRpc("getAsset", [mint]);
+          if (dasRes) {
+            const meta = dasRes.content?.metadata;
+            const img = dasRes.content?.links?.image || dasRes.content?.files?.[0]?.uri || null;
+            tokens.push({
+              mint,
+              name: meta?.name || "Unknown",
+              symbol: meta?.symbol || "???",
+              deployedAt: ts,
+              image: img,
+            });
+          }
+        } catch {}
       }
     }
   }
