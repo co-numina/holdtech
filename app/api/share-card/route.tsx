@@ -11,34 +11,39 @@ function gc(g: string) {
   return "#ef4444";
 }
 
-function scoreBg(score: number) {
-  if (score >= 80) return "#14F195";
-  if (score >= 65) return "#4ade80";
-  if (score >= 50) return "#eab308";
-  if (score >= 35) return "#f97316";
-  return "#ef4444";
-}
-
-function metricColor(label: string, value: number) {
-  if (label === "FRESH") return value > 60 ? "#ef4444" : value > 40 ? "#f97316" : value > 20 ? "#eab308" : "#14F195";
-  if (label === "VETERANS") return value > 40 ? "#14F195" : value > 20 ? "#4ade80" : value > 10 ? "#eab308" : "#ef4444";
-  if (label === "LOW ACT") return value > 50 ? "#ef4444" : value > 30 ? "#f97316" : value > 15 ? "#eab308" : "#14F195";
-  if (label === "1-TOKEN") return value > 40 ? "#ef4444" : value > 20 ? "#f97316" : "#14F195";
-  if (label === "💎 HANDS") return value > 60 ? "#14F195" : value > 30 ? "#4ade80" : "#eab308";
-  if (label === "AVG SOL") return value < 0.5 ? "#ef4444" : value < 2 ? "#eab308" : "#14F195";
-  return "#e0e0f0";
-}
-
-function barWidth(label: string, value: number) {
-  if (label === "FRESH") return Math.min(value, 100);
-  if (label === "VETERANS") return Math.min(value, 100);
-  if (label === "LOW ACT") return Math.min(value, 100);
-  if (label === "1-TOKEN") return Math.min(value, 100);
-  if (label === "💎 HANDS") return Math.min(value, 100);
-  if (label === "AVG AGE") return Math.min(value / 3, 100); // 300d = full
-  if (label === "AVG TXS") return Math.min(value / 10, 100); // 1000 = full
-  if (label === "AVG SOL") return Math.min(value / 10 * 100, 100); // 10 SOL = full
-  return 50;
+function metricStatus(label: string, value: number): { color: string; tag: string } {
+  if (label === "FRESH WALLETS") {
+    if (value > 60) return { color: "#ef4444", tag: "HIGH RISK" };
+    if (value > 40) return { color: "#f97316", tag: "ELEVATED" };
+    if (value > 20) return { color: "#eab308", tag: "MODERATE" };
+    return { color: "#14F195", tag: "LOW" };
+  }
+  if (label === "VETERANS 90D+") {
+    if (value > 40) return { color: "#14F195", tag: "STRONG" };
+    if (value > 20) return { color: "#4ade80", tag: "DECENT" };
+    return { color: "#ef4444", tag: "WEAK" };
+  }
+  if (label === "LOW ACTIVITY") {
+    if (value > 50) return { color: "#ef4444", tag: "BURNERS" };
+    if (value > 30) return { color: "#f97316", tag: "ELEVATED" };
+    return { color: "#14F195", tag: "CLEAN" };
+  }
+  if (label === "SINGLE TOKEN") {
+    if (value > 40) return { color: "#ef4444", tag: "SYBIL" };
+    if (value > 20) return { color: "#f97316", tag: "ELEVATED" };
+    return { color: "#14F195", tag: "CLEAN" };
+  }
+  if (label === "DIAMOND HANDS") {
+    if (value > 60) return { color: "#14F195", tag: "STRONG" };
+    if (value > 30) return { color: "#eab308", tag: "MIXED" };
+    return { color: "#ef4444", tag: "WEAK" };
+  }
+  if (label === "AVG SOL BAL") {
+    if (value >= 5) return { color: "#14F195", tag: "FUNDED" };
+    if (value >= 1) return { color: "#eab308", tag: "LIGHT" };
+    return { color: "#ef4444", tag: "DUST" };
+  }
+  return { color: "#888", tag: "" };
 }
 
 export async function GET(req: NextRequest) {
@@ -58,155 +63,177 @@ export async function GET(req: NextRequest) {
   const tokenImage = p.get("image") || "";
   const top5Pct = parseFloat(p.get("top5Pct") || "0");
   const mint = p.get("mint") || "";
-  const now = new Date();
-  const timestamp = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,"0")}-${String(now.getUTCDate()).padStart(2,"0")} ${String(now.getUTCHours()).padStart(2,"0")}:${String(now.getUTCMinutes()).padStart(2,"0")} UTC`;
 
   const color = gc(grade);
-  const scoreLabel = score >= 80 ? "STRONG ORGANIC BASE" : score >= 65 ? "SOLID HOLDERBASE" : score >= 50 ? "MIXED SIGNALS" : score >= 35 ? "WEAK — HIGH SYBIL RISK" : "CRITICAL — SYBIL PATTERN";
+  const scoreLabel = score >= 80 ? "STRONG ORGANIC BASE" : score >= 65 ? "SOLID HOLDERBASE" : score >= 50 ? "MIXED SIGNALS" : score >= 35 ? "WEAK — SYBIL RISK" : "CRITICAL — SYBIL";
 
-  const metrics: { label: string; value: number; display: string; suffix: string }[] = [
-    { label: "FRESH", value: freshPct, display: `${freshPct}`, suffix: "%" },
-    { label: "VETERANS", value: veteranPct, display: `${veteranPct}`, suffix: "%" },
-    { label: "LOW ACT", value: lowActivityPct, display: `${lowActivityPct}`, suffix: "%" },
-    { label: "1-TOKEN", value: singleTokenPct, display: `${singleTokenPct}`, suffix: "%" },
-    { label: "💎 HANDS", value: diamondPct, display: `${diamondPct}`, suffix: "%" },
-    { label: "AVG AGE", value: avgAge, display: `${avgAge}`, suffix: "d" },
-    { label: "AVG TXS", value: avgTxs, display: `${Math.round(avgTxs)}`, suffix: "" },
-    { label: "AVG SOL", value: avgSol, display: `${avgSol}`, suffix: "" },
+  const now = new Date();
+  const ts = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,"0")}-${String(now.getUTCDate()).padStart(2,"0")} ${String(now.getUTCHours()).padStart(2,"0")}:${String(now.getUTCMinutes()).padStart(2,"0")} UTC`;
+
+  // 6 key metrics with semantic meaning
+  const metrics = [
+    { label: "FRESH WALLETS", value: freshPct, display: `${freshPct}%` },
+    { label: "VETERANS 90D+", value: veteranPct, display: `${veteranPct}%` },
+    { label: "LOW ACTIVITY", value: lowActivityPct, display: `${lowActivityPct}%` },
+    { label: "SINGLE TOKEN", value: singleTokenPct, display: `${singleTokenPct}%` },
+    { label: "DIAMOND HANDS", value: diamondPct, display: `${diamondPct}%` },
+    { label: "AVG SOL BAL", value: avgSol, display: `${avgSol} SOL` },
   ];
+
+  const logoUrl = "https://holdtech.fun/logo.png";
 
   return new ImageResponse(
     (
       <div style={{
         width: 1200, height: 630, display: "flex", flexDirection: "column",
-        background: "#08080f", fontFamily: "monospace", color: "#e0e0f0",
+        background: "linear-gradient(145deg, #0a0a14 0%, #0d0b1a 40%, #0a0a14 100%)",
+        fontFamily: "monospace", color: "#e0e0f0",
         position: "relative", overflow: "hidden",
       }}>
-        {/* Subtle grid */}
+        {/* Background grid */}
         <div style={{
           position: "absolute", inset: 0, display: "flex",
-          backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)",
-          backgroundSize: "30px 30px",
+          backgroundImage: "linear-gradient(rgba(153,69,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
         }} />
 
-        {/* Accent glow behind score */}
+        {/* Score glow */}
         <div style={{
-          position: "absolute", left: "60px", top: "120px", width: "280px", height: "280px",
-          borderRadius: "50%", background: `radial-gradient(circle, ${color}15, transparent 70%)`,
+          position: "absolute", left: "380px", top: "80px", width: "440px", height: "440px",
+          borderRadius: "50%", background: `radial-gradient(circle, ${color}08, transparent 60%)`,
           display: "flex",
         }} />
 
-        {/* Top bar */}
+        {/* ═══ HEADER ═══ */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "24px 40px", position: "relative",
-          borderBottom: "1px solid rgba(153,69,255,0.1)",
+          padding: "20px 36px", position: "relative",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "22px", fontWeight: 900, color: "#9945FF" }}>HOLD</span>
-            <span style={{ fontSize: "22px", fontWeight: 900, color: "#555" }}>TECH</span>
-            <div style={{ display: "flex", marginLeft: "8px", padding: "3px 10px", borderRadius: "4px", background: "rgba(153,69,255,0.12)", border: "1px solid rgba(153,69,255,0.25)" }}>
-              <span style={{ fontSize: "9px", fontWeight: 700, color: "#9945FF", letterSpacing: "0.15em" }}>SCAN REPORT</span>
-            </div>
+            <img src={logoUrl} width={28} height={28} style={{ borderRadius: "6px" }} />
+            <span style={{ fontSize: "20px", fontWeight: 900, color: "#9945FF" }}>HOLD</span>
+            <span style={{ fontSize: "20px", fontWeight: 900, color: "#555" }}>TECH</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ fontSize: "12px", color: "#333", letterSpacing: "0.05em" }}>holdtech.fun</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <span style={{ fontSize: "11px", color: "#333" }}>{ts}</span>
+            <div style={{ padding: "3px 10px", borderRadius: "4px", background: `${color}15`, border: `1px solid ${color}30`, display: "flex" }}>
+              <span style={{ fontSize: "10px", fontWeight: 800, color, letterSpacing: "0.12em" }}>{scoreLabel}</span>
+            </div>
           </div>
         </div>
 
-        {/* Main content */}
-        <div style={{ display: "flex", flex: 1, padding: "28px 40px", gap: "36px", position: "relative" }}>
+        {/* ═══ MAIN: centered hero ═══ */}
+        <div style={{ display: "flex", flex: 1, padding: "0 36px", gap: "0", position: "relative" }}>
 
-          {/* Left column: Token + Score hero */}
-          <div style={{ display: "flex", flexDirection: "column", width: "320px", flexShrink: 0, justifyContent: "center" }}>
+          {/* CENTER: Score hero */}
+          <div style={{
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            width: "400px", flexShrink: 0,
+          }}>
             {/* Token identity */}
-            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "20px" }}>
               {tokenImage ? (
-                <img src={tokenImage} width={52} height={52} style={{ borderRadius: "50%", border: `2px solid ${color}44` }} />
+                <img src={tokenImage} width={56} height={56} style={{ borderRadius: "50%", border: `3px solid ${color}40` }} />
               ) : (
-                <div style={{ width: 52, height: 52, borderRadius: "50%", background: `${color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 900, color, border: `2px solid ${color}44` }}>
+                <div style={{ width: 56, height: 56, borderRadius: "50%", background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 900, color, border: `3px solid ${color}40` }}>
                   {symbol.charAt(0)}
                 </div>
               )}
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1 }}>${symbol}</span>
-                <span style={{ fontSize: "12px", color: "#555", marginTop: "3px" }}>{holders.toLocaleString()} holders</span>
-                {mint && <span style={{ fontSize: "9px", color: "#333", marginTop: "2px", fontFamily: "monospace" }}>{mint.slice(0, 6)}...{mint.slice(-4)}</span>}
+                <span style={{ fontSize: "36px", fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>${symbol}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
+                  <span style={{ fontSize: "14px", color: "#666" }}>{holders.toLocaleString()} holders</span>
+                  {mint && <span style={{ fontSize: "10px", color: "#333" }}>{mint.slice(0, 4)}...{mint.slice(-4)}</span>}
+                </div>
               </div>
             </div>
 
-            {/* Score hero */}
-            <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-              <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {/* Score ring */}
-                <div style={{
-                  width: 120, height: 120, borderRadius: "50%",
-                  border: `4px solid ${color}`,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: `${color}10`,
-                  boxShadow: `0 0 40px ${color}20, inset 0 0 30px ${color}08`,
-                }}>
-                  <span style={{ fontSize: "52px", fontWeight: 900, color, lineHeight: 1 }}>{score}</span>
-                </div>
+            {/* SCORE — the hero */}
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              {/* Score circle */}
+              <div style={{
+                width: 140, height: 140, borderRadius: "50%",
+                background: `linear-gradient(135deg, ${color}20, ${color}08)`,
+                border: `5px solid ${color}`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: `0 0 50px ${color}25, 0 0 100px ${color}10`,
+              }}>
+                <span style={{ fontSize: "64px", fontWeight: 900, color, lineHeight: 1 }}>{score}</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "64px", fontWeight: 900, color, lineHeight: 1, letterSpacing: "-0.04em" }}>{grade}</span>
-                <span style={{ fontSize: "11px", fontWeight: 700, color: `${color}aa`, letterSpacing: "0.1em", marginTop: "4px" }}>{scoreLabel}</span>
+              {/* Grade */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <span style={{ fontSize: "80px", fontWeight: 900, color, lineHeight: 1, letterSpacing: "-0.05em" }}>{grade}</span>
               </div>
             </div>
 
-            {/* Top 5 concentration if available */}
-            {top5Pct > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "20px" }}>
-                <span style={{ fontSize: "10px", color: "#444", fontWeight: 700, letterSpacing: "0.1em" }}>TOP 5 HOLD</span>
-                <div style={{ flex: 1, height: "6px", borderRadius: "3px", background: "rgba(153,69,255,0.08)", overflow: "hidden", display: "flex" }}>
-                  <div style={{ width: `${Math.min(top5Pct, 100)}%`, height: "100%", borderRadius: "3px", background: top5Pct > 50 ? "#ef4444" : top5Pct > 30 ? "#f97316" : "#9945FF" }} />
+            {/* Quick stats row */}
+            <div style={{ display: "flex", gap: "20px", marginTop: "20px" }}>
+              {[
+                { label: "AVG AGE", value: `${avgAge}d` },
+                { label: "AVG TXS", value: `${Math.round(avgTxs)}` },
+                { label: "TOP 5", value: `${top5Pct}%` },
+              ].map(s => (
+                <div key={s.label} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <span style={{ fontSize: "22px", fontWeight: 900, color: "#ccc", lineHeight: 1 }}>{s.value}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#444", letterSpacing: "0.1em", marginTop: "4px" }}>{s.label}</span>
                 </div>
-                <span style={{ fontSize: "12px", fontWeight: 800, color: top5Pct > 50 ? "#ef4444" : "#9945FF" }}>{top5Pct}%</span>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
 
-          {/* Right column: Metrics with visual bars */}
-          <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: "8px", justifyContent: "center" }}>
+          {/* RIGHT: Metric bars with semantic tags */}
+          <div style={{
+            display: "flex", flexDirection: "column", flex: 1, justifyContent: "center",
+            gap: "6px", paddingLeft: "24px",
+            borderLeft: "1px solid rgba(153,69,255,0.08)",
+          }}>
             {metrics.map((m) => {
-              const mc = metricColor(m.label, m.value);
-              const bw = barWidth(m.label, m.value);
+              const st = metricStatus(m.label, m.value);
+              const barPct = m.label === "AVG SOL BAL" ? Math.min(m.value / 10 * 100, 100) : Math.min(m.value, 100);
               return (
                 <div key={m.label} style={{
-                  display: "flex", alignItems: "center", gap: "12px",
-                  padding: "10px 16px",
-                  background: "rgba(255,255,255,0.02)",
-                  borderRadius: "8px",
-                  border: "1px solid rgba(153,69,255,0.06)",
+                  display: "flex", alignItems: "center", gap: "10px",
+                  padding: "12px 18px",
+                  background: `${st.color}06`,
+                  borderRadius: "10px",
+                  border: `1px solid ${st.color}15`,
                 }}>
-                  <span style={{ fontSize: "10px", fontWeight: 700, color: "#555", letterSpacing: "0.1em", width: "80px", flexShrink: 0 }}>{m.label}</span>
-                  <div style={{ flex: 1, height: "8px", borderRadius: "4px", background: "rgba(255,255,255,0.04)", overflow: "hidden", display: "flex" }}>
-                    <div style={{ width: `${bw}%`, height: "100%", borderRadius: "4px", background: `linear-gradient(90deg, ${mc}88, ${mc})` }} />
+                  {/* Label */}
+                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#555", letterSpacing: "0.08em", width: "110px", flexShrink: 0 }}>{m.label}</span>
+                  {/* Bar */}
+                  <div style={{ flex: 1, height: "10px", borderRadius: "5px", background: "rgba(255,255,255,0.04)", overflow: "hidden", display: "flex" }}>
+                    <div style={{
+                      width: `${barPct}%`, height: "100%", borderRadius: "5px",
+                      background: `linear-gradient(90deg, ${st.color}66, ${st.color})`,
+                    }} />
                   </div>
-                  <span style={{ fontSize: "20px", fontWeight: 900, color: mc, minWidth: "70px", textAlign: "right", lineHeight: 1 }}>
-                    {m.display}<span style={{ fontSize: "12px", fontWeight: 600, color: `${mc}88` }}>{m.suffix}</span>
+                  {/* Value */}
+                  <span style={{ fontSize: "22px", fontWeight: 900, color: st.color, minWidth: "75px", textAlign: "right", lineHeight: 1 }}>
+                    {m.display}
                   </span>
+                  {/* Tag */}
+                  <div style={{ display: "flex", padding: "3px 8px", borderRadius: "4px", background: `${st.color}18` }}>
+                    <span style={{ fontSize: "9px", fontWeight: 800, color: st.color, letterSpacing: "0.1em" }}>{st.tag}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Bottom bar */}
+        {/* ═══ FOOTER ═══ */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 40px 20px", position: "relative",
+          padding: "14px 36px", position: "relative",
+          borderTop: "1px solid rgba(153,69,255,0.06)",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <span style={{ fontSize: "10px", color: "#333", letterSpacing: "0.08em" }}>SOLANA TOKEN INTELLIGENCE</span>
-            <div style={{ width: "1px", height: "10px", background: "#222", display: "flex" }} />
-            <span style={{ fontSize: "10px", color: "#333" }}>Powered by Helius · DexScreener · {timestamp}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <img src={logoUrl} width={16} height={16} style={{ borderRadius: "3px", opacity: 0.6 }} />
+            <span style={{ fontSize: "11px", color: "#444", fontWeight: 600 }}>holdtech.fun</span>
+            <span style={{ fontSize: "11px", color: "#222" }}>·</span>
+            <span style={{ fontSize: "10px", color: "#333" }}>Solana Token Intelligence</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color, display: "flex" }} />
-            <span style={{ fontSize: "10px", color: "#444", fontWeight: 700 }}>holdtech.fun/dashboard</span>
-          </div>
+          <span style={{ fontSize: "10px", color: "#333" }}>Powered by Helius · DexScreener</span>
         </div>
       </div>
     ),
