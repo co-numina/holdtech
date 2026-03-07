@@ -1594,7 +1594,7 @@ export default function Home() {
                   {/* Token list */}
                   {deployerProfile.tokens.length > 0 && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", fontWeight: 600, marginBottom: "4px" }}>LAUNCH HISTORY</div>
+                      <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)", letterSpacing: "1px", fontWeight: 600, marginBottom: "4px" }}>LAUNCH HISTORY{deployerProfile.totalLaunches > deployerProfile.tokens.length ? ` (${deployerProfile.tokens.length} of ${deployerProfile.totalLaunches})` : ""}</div>
                       {deployerProfile.tokens.map((token) => (
                         <div key={token.mint} style={{
                           display: "flex", alignItems: "center", gap: "12px",

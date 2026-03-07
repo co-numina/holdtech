@@ -96,7 +96,7 @@ async function getDeployedTokens(deployer: string): Promise<DeployedToken[]> {
   // Page through full history to catch all deployments
   let before = "";
   let pages = 0;
-  const MAX_PAGES = 10; // 10 pages × 100 = up to 1000 txs
+  const MAX_PAGES = 30; // 30 pages × 100 = up to 3000 txs (covers ~500+ deploys)
 
   while (pages < MAX_PAGES) {
     try {
@@ -251,9 +251,50 @@ export async function POST(req: NextRequest) {
     // Step 2: Get all tokens they've deployed
     const deployedTokens = await getDeployedTokens(deployer);
 
-    // Step 3: Check status of each (limited to first 20 to avoid rate limits)
+    // Ensure the scanned token is always in the list
+    if (!deployedTokens.find(t => t.mint === mint)) {
+      // Fetch it directly from pump.fun
+      try {
+        const res = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`, { signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+          const text = await res.text();
+          if (text) {
+            const coin = JSON.parse(text);
+            const createdAt = coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null;
+            const athTimestamp = coin.ath_market_cap_timestamp || null;
+            deployedTokens.push({
+              mint,
+              name: coin.name || "Unknown",
+              symbol: coin.symbol || "???",
+              deployedAt: createdAt,
+              image: coin.image_uri || null,
+              athMarketCap: coin.ath_market_cap || null,
+              athTimestamp,
+              timeToAthMs: (createdAt && athTimestamp) ? athTimestamp - createdAt : null,
+              graduated: coin.complete === true,
+              currentMarketCap: coin.usd_market_cap || null,
+              lastTradeTimestamp: coin.last_trade_timestamp || null,
+            });
+          }
+        }
+      } catch {}
+    }
+
+    // Step 3: Check status — prioritize current token + newest 19
+    // Sort by deploy time first to pick the right window
+    deployedTokens.sort((a, b) => (b.deployedAt || 0) - (a.deployedAt || 0));
+
+    // Build display list: always include current token + newest tokens (up to 20 total)
+    const currentIdx = deployedTokens.findIndex(t => t.mint === mint);
+    const displaySet = new Set<number>();
+    if (currentIdx >= 0) displaySet.add(currentIdx);
+    for (let i = 0; i < deployedTokens.length && displaySet.size < 20; i++) {
+      displaySet.add(i);
+    }
+    const displayTokens = Array.from(displaySet).sort((a, b) => a - b).map(i => deployedTokens[i]);
+
     const tokenStatuses = await Promise.all(
-      deployedTokens.slice(0, 20).map(async (token) => {
+      displayTokens.map(async (token) => {
         const status = await checkTokenStatus(token.mint);
         return { ...token, ...status };
       })
@@ -262,38 +303,39 @@ export async function POST(req: NextRequest) {
     // Sort by deploy time (newest first)
     tokenStatuses.sort((a, b) => (b.deployedAt || 0) - (a.deployedAt || 0));
 
-    // Calculate stats
-    const total = tokenStatuses.length;
-    const alive = tokenStatuses.filter(t => t.alive).length;
+    // Calculate stats from ALL deployed tokens (not just displayed)
+    const total = deployedTokens.length;
+    // Use pump.fun data for alive/dead on full set (graduated or has currentMarketCap > 0 = alive estimate)
+    const alive = deployedTokens.filter(t => t.graduated || (t.currentMarketCap && t.currentMarketCap > 500)).length;
     const dead = total - alive;
     const rugRate = total > 0 ? Math.round((dead / total) * 100) : 0;
-    const graduated = tokenStatuses.filter(t => t.graduated).length;
+    const graduated = deployedTokens.filter(t => t.graduated).length;
     const gradRate = total > 0 ? Math.round((graduated / total) * 100) : 0;
 
-    // Average time to ATH (only tokens with valid data)
-    const athTimes = tokenStatuses
+    // Average time to ATH (only tokens with valid data — use full set)
+    const athTimes = deployedTokens
       .filter(t => t.timeToAthMs && t.timeToAthMs > 0)
       .map(t => t.timeToAthMs!);
     const avgTimeToAthMs = athTimes.length > 0
       ? Math.round(athTimes.reduce((a, b) => a + b, 0) / athTimes.length)
       : null;
 
-    // Best launch (highest ATH)
-    const bestLaunch = tokenStatuses.reduce<typeof tokenStatuses[0] | null>((best, t) => {
+    // Best launch (highest ATH — use full set)
+    const bestLaunch = deployedTokens.reduce<DeployedToken | null>((best, t) => {
       if (!t.athMarketCap) return best;
       if (!best || (t.athMarketCap > (best.athMarketCap || 0))) return t;
       return best;
     }, null);
 
-    // Average ATH market cap
-    const athCaps = tokenStatuses.filter(t => t.athMarketCap).map(t => t.athMarketCap!);
+    // Average ATH market cap (full set)
+    const athCaps = deployedTokens.filter(t => t.athMarketCap).map(t => t.athMarketCap!);
     const avgAthMarketCap = athCaps.length > 0
       ? Math.round(athCaps.reduce((a, b) => a + b, 0) / athCaps.length)
       : null;
 
-    // Deploy velocity (tokens per week over active period)
+    // Deploy velocity (tokens per week over active period — full set)
     let deployVelocity: number | null = null;
-    const withDates = tokenStatuses.filter(t => t.deployedAt).map(t => t.deployedAt!);
+    const withDates = deployedTokens.filter(t => t.deployedAt).map(t => t.deployedAt!);
     if (withDates.length >= 2) {
       const oldest = Math.min(...withDates);
       const newest = Math.max(...withDates);
