@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  .marquee {
+    width: 1280px;
+    height: 800px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16162a 50%, #0f0f1e 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .marquee::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 30% 20%, rgba(153,69,255,0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, rgba(20,241,149,0.1) 0%, transparent 50%);
+  }
+  .marquee .logo-text {
+    font-family: 'Courier New', monospace;
+    font-size: 72px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 1;
+  }
+  .marquee .tagline {
+    font-size: 28px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 16px;
+    position: relative;
+    z-index: 1;
+    font-weight: 500;
+  }
+  .marquee .sub {
+    font-size: 18px;
+    color: rgba(255,255,255,0.35);
+    margin-top: 12px;
+    position: relative;
+    z-index: 1;
+  }
+  .marquee .features {
+    display: flex;
+    gap: 40px;
+    margin-top: 48px;
+    position: relative;
+    z-index: 1;
+  }
+  .marquee .feature {
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 15px;
+  }
+  .marquee .feature .icon { font-size: 32px; margin-bottom: 8px; }
+  .marquee .feature strong { color: rgba(255,255,255,0.8); }
+
+  .small {
+    width: 440px;
+    height: 280px;
+    background: linear-gradient(135deg, #1a1a2e, #0f0f1e);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .small::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 50%, rgba(153,69,255,0.12) 0%, transparent 70%);
+  }
+  .small .logo-text {
+    font-family: 'Courier New', monospace;
+    font-size: 32px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    z-index: 1;
+  }
+  .small .tagline {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 8px;
+    position: relative;
+    z-index: 1;
+  }
+</style>
+</head>
+<body>
+  <div class="marquee" id="marquee">
+    <div class="logo-text">🔬 HOLDERSCOPE</div>
+    <div class="tagline">X-ray any Solana token's holder quality</div>
+    <div class="sub">Detect bundles · Flag fresh wallets · Score concentration · AI verdict</div>
+    <div class="features">
+      <div class="feature"><div class="icon">🧩</div><strong>Auto-inject</strong><br>on pump.fun &<br>DexScreener</div>
+      <div class="feature"><div class="icon">⚡</div><strong>Instant grades</strong><br>A–F score in<br>seconds</div>
+      <div class="feature"><div class="icon">🔩</div><strong>Bundle detection</strong><br>Same slot, same<br>funding source</div>
+      <div class="feature"><div class="icon">🛡️</div><strong>Open source</strong><br>No tracking<br>No accounts</div>
+    </div>
+  </div>
+  <br><br>
+  <div class="small" id="small">
+    <div class="logo-text">🔬 HOLDERSCOPE</div>
+    <div class="tagline">Stop being the drillpig.</div>
+  </div>
+</body>
+</html>
