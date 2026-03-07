@@ -83,63 +83,87 @@ async function getDeployedTokens(deployer: string): Promise<Array<{
 }>> {
   const tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null }> = [];
   const seenMints = new Set<string>();
+  const PUMP_PROGRAM = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 
-  // Primary: pump.fun user-created-coins (works from Vercel edge)
-  for (let offset = 0; offset < 200; offset += 50) {
-    try {
-      const pumpRes = await fetch(
-        `https://frontend-api-v3.pump.fun/coins/user-created-coins/${deployer}?limit=50&offset=${offset}&includeNsfw=true`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (!pumpRes.ok) break;
-      const text = await pumpRes.text();
-      if (!text || text === "[]") break;
-      const pumpData = JSON.parse(text);
-      if (!Array.isArray(pumpData) || pumpData.length === 0) break;
-      for (const coin of pumpData) {
-        if (coin.mint && !seenMints.has(coin.mint)) {
-          seenMints.add(coin.mint);
-          tokens.push({
-            mint: coin.mint,
-            name: coin.name || "Unknown",
-            symbol: coin.symbol || "???",
-            deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : null,
-            image: coin.image_uri || null,
-          });
-        }
-      }
-      if (pumpData.length < 50) break;
-    } catch { break; }
-  }
+  // Scan deployer's transaction history for pump.fun interactions
+  // Get all signatures (up to 3 pages)
+  let allSigs: any[] = [];
+  try {
+    let sigs = await heliusRpc("getSignaturesForAddress", [deployer, { limit: 1000 }]);
+    if (sigs) allSigs = sigs;
+    if (sigs && sigs.length === 1000) {
+      const more = await heliusRpc("getSignaturesForAddress", [deployer, { limit: 1000, before: sigs[sigs.length - 1].signature }]);
+      if (more) allSigs = allSigs.concat(more);
+    }
+  } catch {}
 
-  // Fallback: Helius enhanced transactions
-  if (tokens.length === 0) {
-    try {
-      const res = await fetch(
-        `https://api.helius.xyz/v0/addresses/${deployer}/transactions?api-key=${HELIUS_API_KEY}&limit=100`,
-        { signal: AbortSignal.timeout(15000) }
-      );
-      if (res.ok) {
-        const txs = await res.json();
-        if (Array.isArray(txs)) {
-          for (const tx of txs) {
-            const transfers = tx.tokenTransfers || [];
-            for (const t of transfers) {
-              if (t.mint && !seenMints.has(t.mint) && t.mint.endsWith("pump")) {
-                seenMints.add(t.mint);
-                tokens.push({
-                  mint: t.mint,
-                  name: "Unknown",
-                  symbol: "???",
-                  deployedAt: tx.timestamp ? tx.timestamp * 1000 : null,
-                  image: null,
-                });
-              }
-            }
+  // Parse transactions to find pump.fun mints where this wallet is fee payer
+  // Process in batches of 10
+  const candidateMints: Map<string, number | null> = new Map();
+  
+  for (let i = 0; i < Math.min(allSigs.length, 500); i += 10) {
+    const batch = allSigs.slice(i, i + 10);
+    const results = await Promise.allSettled(
+      batch.map((sig: any) =>
+        heliusRpc("getTransaction", [sig.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }])
+          .then(tx => ({ tx, timestamp: sig.blockTime }))
+      )
+    );
+
+    for (const r of results) {
+      if (r.status !== "fulfilled" || !r.value?.tx) continue;
+      const { tx, timestamp } = r.value;
+      const ixs = tx.transaction?.message?.instructions || [];
+      
+      for (const ix of ixs) {
+        if (ix.programId !== PUMP_PROGRAM) continue;
+        const accounts: string[] = ix.accounts || [];
+        // In pump.fun create tx, the fee payer (deployer) is account[0] in the outer tx
+        // and the mint is one of the accounts that ends with "pump"
+        for (const acc of accounts) {
+          if (acc.endsWith("pump") && !seenMints.has(acc) && acc !== deployer) {
+            seenMints.add(acc);
+            candidateMints.set(acc, timestamp ? timestamp * 1000 : null);
           }
         }
       }
-    } catch {}
+    }
+  }
+
+  // Now verify which mints were CREATED by this deployer (not just traded)
+  // Check pump.fun coin API for each — creator field must match
+  const mintEntries = Array.from(candidateMints.entries());
+  
+  for (let i = 0; i < mintEntries.length; i += 5) {
+    const batch = mintEntries.slice(i, i + 5);
+    const results = await Promise.allSettled(
+      batch.map(async ([mint, ts]) => {
+        try {
+          const res = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`, {
+            signal: AbortSignal.timeout(4000),
+          });
+          if (!res.ok) return { mint, ts, coin: null };
+          const text = await res.text();
+          return { mint, ts, coin: text ? JSON.parse(text) : null };
+        } catch {
+          return { mint, ts, coin: null };
+        }
+      })
+    );
+
+    for (const r of results) {
+      if (r.status !== "fulfilled" || !r.value) continue;
+      const { mint, ts, coin } = r.value;
+      if (coin && coin.creator === deployer) {
+        tokens.push({
+          mint,
+          name: coin.name || "Unknown",
+          symbol: coin.symbol || "???",
+          deployedAt: coin.created_timestamp ? new Date(coin.created_timestamp).getTime() : ts,
+          image: coin.image_uri || null,
+        });
+      }
+    }
   }
 
   return tokens;
@@ -178,9 +202,11 @@ export async function POST(req: NextRequest) {
     if (!mint) return NextResponse.json({ error: "Missing mint" }, { status: 400 });
 
     // Step 1: Find the deployer
-    const deployer = await getDeployerFromMint(mint);
+    // First try to get deployer from token mint, if that fails treat input as deployer wallet
+    let deployer = await getDeployerFromMint(mint);
     if (!deployer) {
-      return NextResponse.json({ error: "Could not identify deployer" }, { status: 404 });
+      // Maybe the input IS the deployer wallet
+      deployer = mint;
     }
 
     // Step 2: Get all tokens they've deployed
