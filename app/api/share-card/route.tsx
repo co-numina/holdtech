@@ -116,7 +116,7 @@ export async function GET(req: NextRequest) {
         {/* Dark overlay to ensure text readability */}
         <div style={{
           position: "absolute", inset: 0, display: "flex",
-          background: "linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.5) 100%)",
+          background: "linear-gradient(135deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.68) 100%)",
         }} />
         {/* Score glow */}
         <div style={{
