@@ -620,7 +620,7 @@ export default function Home() {
         {/* ═══ LOADING ═══ */}
         {loading && (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
-            <div style={{ display: "inline-block", width: 32, height: 32, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "scan-line 1s linear infinite", marginBottom: "16px" }} />
+            <div style={{ display: "inline-block", width: 32, height: 32, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "16px" }} />
             <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{progress}</div>
             <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Analyzing top 100 holders — takes ~15-20 seconds</div>
           </div>
@@ -786,7 +786,7 @@ export default function Home() {
             {/* Deep scan loading */}
             {deepScanLoading && (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
-                <div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "scan-line 1s linear infinite", marginBottom: "12px" }} />
+                <div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "12px" }} />
                 <div style={{ fontSize: "13px", color: "var(--accent-dark)" }}>Running deep scan...</div>
                 <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Analyzing bundles, funding sources, and buy patterns</div>
               </div>
