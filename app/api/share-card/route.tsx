@@ -11,43 +11,58 @@ function gc(g: string) {
   return "#ef4444";
 }
 
-// Returns color + tag based on metric meaning
-// "inverted" metrics: lower = better (fresh wallets, low activity, single token)
-// "normal" metrics: higher = better (veterans, diamond hands)
+function badgeStyle(tag: string): { bg: string; fg: string } {
+  switch (tag) {
+    case "DIAMOND": return { bg: "#0a2a4a", fg: "#60C0FF" };
+    case "STRONG": return { bg: "#0a2a1a", fg: "#14F195" };
+    case "CLEAN": return { bg: "#1a2228", fg: "#8899aa" };
+    case "DECENT": return { bg: "#2a2a12", fg: "#C4A830" };
+    case "SOLID": return { bg: "#0a2a1a", fg: "#4ade80" };
+    case "OK": return { bg: "#1a2228", fg: "#8899aa" };
+    case "SOME": case "LOW": return { bg: "#2a2210", fg: "#eab308" };
+    case "CAUTION": case "ELEVATED": case "HIGH": return { bg: "#2a1a10", fg: "#f97316" };
+    case "LIGHT": return { bg: "#2a2210", fg: "#C4A830" };
+    case "WEAK": case "PAPER": return { bg: "#2a1a10", fg: "#f97316" };
+    case "DANGER": case "SYBIL": case "BURNERS": case "ABSENT": case "DUST": return { bg: "#2a0a0a", fg: "#ef4444" };
+    case "FUNDED": return { bg: "#0a2a1a", fg: "#14F195" };
+    default: return { bg: "#1a1a2a", fg: "#888" };
+  }
+}
+
 function metricStatus(label: string, value: number): { color: string; tag: string } {
   if (label === "FRESH WALLETS") {
-    if (value <= 10) return { color: "#14F195", tag: "CLEAN" };
+    if (value <= 10) return { color: "#8899aa", tag: "CLEAN" };
     if (value <= 30) return { color: "#4ade80", tag: "OK" };
     if (value <= 50) return { color: "#eab308", tag: "CAUTION" };
     return { color: "#ef4444", tag: "DANGER" };
   }
   if (label === "VETERANS 90D+") {
     if (value >= 50) return { color: "#14F195", tag: "STRONG" };
-    if (value >= 25) return { color: "#4ade80", tag: "DECENT" };
+    if (value >= 25) return { color: "#4ade80", tag: "SOLID" };
     if (value >= 10) return { color: "#eab308", tag: "LOW" };
     return { color: "#ef4444", tag: "ABSENT" };
   }
   if (label === "LOW ACTIVITY") {
-    if (value <= 15) return { color: "#14F195", tag: "CLEAN" };
+    if (value <= 15) return { color: "#8899aa", tag: "CLEAN" };
     if (value <= 30) return { color: "#eab308", tag: "SOME" };
     if (value <= 50) return { color: "#f97316", tag: "HIGH" };
     return { color: "#ef4444", tag: "BURNERS" };
   }
   if (label === "SINGLE TOKEN") {
-    if (value <= 10) return { color: "#14F195", tag: "CLEAN" };
+    if (value <= 10) return { color: "#8899aa", tag: "CLEAN" };
     if (value <= 25) return { color: "#eab308", tag: "SOME" };
     if (value <= 40) return { color: "#f97316", tag: "HIGH" };
     return { color: "#ef4444", tag: "SYBIL" };
   }
   if (label === "DIAMOND HANDS") {
-    if (value >= 60) return { color: "#14F195", tag: "DIAMOND" };
+    if (value >= 60) return { color: "#60C0FF", tag: "DIAMOND" };
     if (value >= 35) return { color: "#4ade80", tag: "SOLID" };
     if (value >= 15) return { color: "#eab308", tag: "WEAK" };
     return { color: "#ef4444", tag: "PAPER" };
   }
   if (label === "AVG SOL BAL") {
     if (value >= 5) return { color: "#14F195", tag: "FUNDED" };
-    if (value >= 1) return { color: "#4ade80", tag: "DECENT" };
+    if (value >= 1) return { color: "#C4A830", tag: "DECENT" };
     if (value >= 0.3) return { color: "#eab308", tag: "LIGHT" };
     return { color: "#ef4444", tag: "DUST" };
   }
@@ -73,10 +88,10 @@ export async function GET(req: NextRequest) {
   const mint = p.get("mint") || "";
 
   const color = gc(grade);
-  const scoreLabel = score >= 80 ? "STRONG ORGANIC BASE" : score >= 65 ? "SOLID HOLDERBASE" : score >= 50 ? "MIXED SIGNALS" : score >= 35 ? "WEAK — SYBIL RISK" : "CRITICAL — SYBIL";
+  const scoreLabel = score >= 80 ? "STRONG" : score >= 65 ? "SOLID" : score >= 50 ? "MIXED" : score >= 35 ? "WEAK" : "CRITICAL";
 
   const now = new Date();
-  const ts = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,"0")}-${String(now.getUTCDate()).padStart(2,"0")} ${String(now.getUTCHours()).padStart(2,"0")}:${String(now.getUTCMinutes()).padStart(2,"0")} UTC`;
+  const ts = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,"0")}-${String(now.getUTCDate()).padStart(2,"0")}`;
 
   const metrics = [
     { label: "FRESH WALLETS", value: freshPct, display: `${freshPct}%`, barPct: Math.min(freshPct, 100) },
@@ -84,7 +99,7 @@ export async function GET(req: NextRequest) {
     { label: "LOW ACTIVITY", value: lowActivityPct, display: `${lowActivityPct}%`, barPct: Math.min(lowActivityPct, 100) },
     { label: "SINGLE TOKEN", value: singleTokenPct, display: `${singleTokenPct}%`, barPct: Math.min(singleTokenPct, 100) },
     { label: "DIAMOND HANDS", value: diamondPct, display: `${diamondPct}%`, barPct: Math.min(diamondPct, 100) },
-    { label: "AVG SOL BAL", value: avgSol, display: `${avgSol} SOL`, barPct: Math.min((avgSol / 10) * 100, 100) },
+    { label: "AVG SOL BAL", value: avgSol, display: `${avgSol}`, barPct: Math.min((avgSol / 10) * 100, 100) },
   ];
 
   const logoUrl = "https://holdtech.fun/logo.png";
@@ -93,151 +108,156 @@ export async function GET(req: NextRequest) {
     (
       <div style={{
         width: 1200, height: 630, display: "flex", flexDirection: "column",
-        background: "linear-gradient(160deg, #08080f 0%, #0e0b18 50%, #08080f 100%)",
-        fontFamily: "monospace", color: "#e0e0f0",
+        background: "#0a0e12", fontFamily: "monospace", color: "#e0e0f0",
         position: "relative", overflow: "hidden",
       }}>
-        {/* Grid bg */}
+        {/* Background depth layers */}
+        {/* Radial glow - brand color, offset */}
+        <div style={{
+          position: "absolute", left: "50px", top: "80px", width: "500px", height: "500px",
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${color}0c, transparent 70%)`,
+          display: "flex",
+        }} />
+        {/* Secondary warm glow top-right */}
+        <div style={{
+          position: "absolute", right: "-100px", top: "-100px", width: "500px", height: "500px",
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(153,69,255,0.04), transparent 70%)",
+          display: "flex",
+        }} />
+        {/* Vignette */}
         <div style={{
           position: "absolute", inset: 0, display: "flex",
-          backgroundImage: "linear-gradient(rgba(153,69,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.025) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
+          background: "radial-gradient(ellipse at 35% 50%, transparent 30%, rgba(0,0,0,0.35) 100%)",
         }} />
-
-        {/* Score glow */}
+        {/* Subtle grid */}
         <div style={{
-          position: "absolute", left: "120px", top: "140px", width: "300px", height: "300px",
-          borderRadius: "50%", background: `radial-gradient(circle, ${color}0a, transparent 70%)`,
-          display: "flex",
+          position: "absolute", inset: 0, display: "flex", opacity: 0.4,
+          backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
         }} />
 
         {/* ═══ HEADER ═══ */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "18px 36px", position: "relative",
-          borderBottom: "1px solid rgba(153,69,255,0.08)",
+          padding: "20px 44px", position: "relative",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src={logoUrl} width={26} height={26} style={{ borderRadius: "5px" }} />
-            <span style={{ fontSize: "18px", fontWeight: 900, color: "#9945FF" }}>HOLD</span>
-            <span style={{ fontSize: "18px", fontWeight: 900, color: "#444" }}>TECH</span>
-            <div style={{ marginLeft: "6px", padding: "2px 8px", borderRadius: "3px", background: "rgba(153,69,255,0.1)", border: "1px solid rgba(153,69,255,0.2)", display: "flex" }}>
-              <span style={{ fontSize: "8px", fontWeight: 800, color: "#9945FF", letterSpacing: "0.15em" }}>HOLDER QUALITY SCORE</span>
-            </div>
+            <img src={logoUrl} width={24} height={24} style={{ borderRadius: "5px" }} />
+            <span style={{ fontSize: "16px", fontWeight: 900, color: "#9945FF" }}>HOLD</span>
+            <span style={{ fontSize: "16px", fontWeight: 900, color: "#3a3a4a" }}>TECH</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <span style={{ fontSize: "10px", color: "#333" }}>{ts}</span>
-            <div style={{ padding: "3px 10px", borderRadius: "4px", background: `${color}12`, border: `1px solid ${color}25`, display: "flex" }}>
-              <span style={{ fontSize: "9px", fontWeight: 800, color, letterSpacing: "0.1em" }}>{scoreLabel}</span>
-            </div>
-          </div>
+          <span style={{ fontSize: "11px", color: "#2a2a3a" }}>{ts} · holdtech.fun</span>
         </div>
 
         {/* ═══ MAIN ═══ */}
-        <div style={{ display: "flex", flex: 1, position: "relative" }}>
+        <div style={{ display: "flex", flex: 1, position: "relative", padding: "0 44px" }}>
 
-          {/* LEFT: Token + Score */}
+          {/* LEFT: Score hero */}
           <div style={{
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            width: "380px", flexShrink: 0, padding: "0 20px",
+            display: "flex", flexDirection: "column", justifyContent: "center",
+            width: "400px", flexShrink: 0,
           }}>
             {/* Token */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "28px" }}>
               {tokenImage ? (
-                <img src={tokenImage} width={48} height={48} style={{ borderRadius: "50%", border: `2px solid ${color}50` }} />
+                <img src={tokenImage} width={52} height={52} style={{ borderRadius: "50%", border: `2px solid ${color}40` }} />
               ) : (
-                <div style={{ width: 48, height: 48, borderRadius: "50%", background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", fontWeight: 900, color, border: `2px solid ${color}50` }}>
+                <div style={{ width: 52, height: 52, borderRadius: "50%", background: `${color}12`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "22px", fontWeight: 900, color, border: `2px solid ${color}40` }}>
                   {symbol.charAt(0)}
                 </div>
               )}
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontSize: "30px", fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1 }}>${symbol}</span>
-                <span style={{ fontSize: "13px", color: "#555", marginTop: "3px" }}>{holders.toLocaleString()} holders</span>
+                <span style={{ fontSize: "38px", fontWeight: 900, letterSpacing: "-0.03em", lineHeight: 1, color: "#ffffff" }}>${symbol}</span>
+                <span style={{ fontSize: "14px", color: "#556", marginTop: "4px" }}>{holders.toLocaleString()} holders</span>
               </div>
             </div>
 
-            {/* Score */}
-            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            {/* THE SCORE — bold filled anchor */}
+            <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+              {/* Filled score circle */}
               <div style={{
-                width: 110, height: 110, borderRadius: "50%",
-                background: `linear-gradient(135deg, ${color}18, ${color}08)`,
-                border: `4px solid ${color}`,
+                width: 120, height: 120, borderRadius: "50%",
+                background: `linear-gradient(135deg, ${color}, ${color}cc)`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 40px ${color}20`,
+                boxShadow: `0 0 50px ${color}30, 0 0 100px ${color}15`,
               }}>
-                <span style={{ fontSize: "50px", fontWeight: 900, color, lineHeight: 1 }}>{score}</span>
+                <span style={{ fontSize: "56px", fontWeight: 900, color: "#0a0e12", lineHeight: 1 }}>{score}</span>
               </div>
-              <span style={{ fontSize: "72px", fontWeight: 900, color, lineHeight: 1, letterSpacing: "-0.05em" }}>{grade}</span>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <span style={{ fontSize: "80px", fontWeight: 900, color, lineHeight: 0.85, letterSpacing: "-0.05em" }}>{grade}</span>
+                <span style={{ fontSize: "13px", fontWeight: 800, color: "#4a4a5a", letterSpacing: "0.12em", marginTop: "6px" }}>{scoreLabel}</span>
+              </div>
             </div>
 
-            {/* Sub-stats in a contained row */}
+            {/* Quick stats */}
             <div style={{
-              display: "flex", gap: "2px", marginTop: "22px",
-              background: "rgba(255,255,255,0.02)", borderRadius: "8px",
-              border: "1px solid rgba(153,69,255,0.06)", padding: "10px 4px",
+              display: "flex", gap: "0px", marginTop: "28px",
+              borderRadius: "8px", border: "1px solid rgba(255,255,255,0.04)",
             }}>
               {[
                 { label: "AVG AGE", value: `${avgAge}d` },
                 { label: "AVG TXS", value: `${Math.round(avgTxs)}` },
-                { label: "TOP 5%", value: `${top5Pct}%` },
+                { label: "TOP 5", value: `${top5Pct}%` },
               ].map((s, i) => (
                 <div key={s.label} style={{
                   display: "flex", flexDirection: "column", alignItems: "center",
-                  padding: "0 16px",
-                  borderLeft: i > 0 ? "1px solid rgba(153,69,255,0.08)" : "none",
+                  padding: "12px 22px", flex: 1,
+                  borderLeft: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  background: "rgba(255,255,255,0.015)",
                 }}>
-                  <span style={{ fontSize: "20px", fontWeight: 900, color: "#ccc", lineHeight: 1 }}>{s.value}</span>
-                  <span style={{ fontSize: "8px", fontWeight: 700, color: "#444", letterSpacing: "0.1em", marginTop: "4px" }}>{s.label}</span>
+                  <span style={{ fontSize: "22px", fontWeight: 900, color: "#ddd", lineHeight: 1 }}>{s.value}</span>
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#3a3a4a", letterSpacing: "0.12em", marginTop: "5px" }}>{s.label}</span>
                 </div>
               ))}
             </div>
 
             {/* CA */}
             {mint && (
-              <span style={{ fontSize: "10px", color: "#2a2a3a", marginTop: "10px", fontFamily: "monospace" }}>
+              <span style={{ fontSize: "10px", color: "#222", marginTop: "12px", fontFamily: "monospace", letterSpacing: "0.05em" }}>
                 {mint.slice(0, 8)}...{mint.slice(-6)}
               </span>
             )}
           </div>
 
-          {/* RIGHT: Metrics */}
+          {/* RIGHT: Metrics — clean rows with tier-colored badges */}
           <div style={{
             display: "flex", flexDirection: "column", flex: 1, justifyContent: "center",
-            gap: "5px", padding: "0 36px 0 0",
-            borderLeft: "1px solid rgba(153,69,255,0.06)",
-            marginLeft: "0", paddingLeft: "28px",
+            gap: "8px", paddingLeft: "36px",
+            borderLeft: "1px solid rgba(255,255,255,0.03)",
           }}>
             {metrics.map((m) => {
               const st = metricStatus(m.label, m.value);
+              const bs = badgeStyle(st.tag);
               return (
                 <div key={m.label} style={{
-                  display: "flex", alignItems: "center", gap: "10px",
-                  padding: "11px 16px",
-                  background: `${st.color}05`,
-                  borderRadius: "8px",
-                  border: `1px solid ${st.color}12`,
+                  display: "flex", alignItems: "center", gap: "14px",
+                  padding: "13px 0",
+                  borderBottom: "1px solid rgba(255,255,255,0.025)",
                 }}>
-                  {/* Label */}
-                  <span style={{ fontSize: "11px", fontWeight: 700, color: "#555", letterSpacing: "0.06em", width: "110px", flexShrink: 0 }}>{m.label}</span>
-                  {/* Bar */}
-                  <div style={{ flex: 1, height: "10px", borderRadius: "5px", background: "rgba(255,255,255,0.03)", display: "flex" }}>
+                  {/* Label — muted */}
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "#5a6270", letterSpacing: "0.04em", width: "120px", flexShrink: 0 }}>{m.label}</span>
+                  {/* Bar — thin, glowing */}
+                  <div style={{ flex: 1, height: "5px", borderRadius: "3px", background: "rgba(255,255,255,0.03)", display: "flex" }}>
                     {m.barPct > 0 && (
                       <div style={{
-                        width: `${Math.max(m.barPct, 2)}%`, height: "100%", borderRadius: "5px",
-                        background: `linear-gradient(90deg, ${st.color}55, ${st.color})`,
+                        width: `${Math.max(m.barPct, 3)}%`, height: "100%", borderRadius: "3px",
+                        background: `linear-gradient(90deg, ${st.color}44, ${st.color})`,
+                        boxShadow: `0 0 8px ${st.color}30`,
                       }} />
                     )}
                   </div>
-                  {/* Value */}
-                  <span style={{ fontSize: "20px", fontWeight: 900, color: st.color, minWidth: "80px", textAlign: "right", lineHeight: 1 }}>
+                  {/* Value — bold white */}
+                  <span style={{ fontSize: "22px", fontWeight: 900, color: "#fff", minWidth: "70px", textAlign: "right", lineHeight: 1 }}>
                     {m.display}
                   </span>
-                  {/* Tag */}
+                  {/* Badge — tier colored */}
                   <div style={{
-                    display: "flex", padding: "3px 8px", borderRadius: "4px",
-                    background: `${st.color}15`, minWidth: "62px", justifyContent: "center",
+                    display: "flex", padding: "4px 10px", borderRadius: "4px",
+                    background: bs.bg, minWidth: "72px", justifyContent: "center",
                   }}>
-                    <span style={{ fontSize: "9px", fontWeight: 800, color: st.color, letterSpacing: "0.08em" }}>{st.tag}</span>
+                    <span style={{ fontSize: "10px", fontWeight: 800, color: bs.fg, letterSpacing: "0.08em" }}>{st.tag}</span>
                   </div>
                 </div>
               );
@@ -248,14 +268,13 @@ export async function GET(req: NextRequest) {
         {/* ═══ FOOTER ═══ */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "12px 36px", position: "relative",
-          borderTop: "1px solid rgba(153,69,255,0.06)",
+          padding: "14px 44px", position: "relative",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <img src={logoUrl} width={14} height={14} style={{ borderRadius: "3px", opacity: 0.5 }} />
-            <span style={{ fontSize: "11px", color: "#3a3a4a", fontWeight: 600 }}>holdtech.fun</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <img src={logoUrl} width={12} height={12} style={{ borderRadius: "2px", opacity: 0.4 }} />
+            <span style={{ fontSize: "10px", color: "#2a2a3a" }}>Solana Token Intelligence</span>
           </div>
-          <span style={{ fontSize: "9px", color: "#2a2a3a" }}>Powered by Helius · DexScreener</span>
+          <span style={{ fontSize: "9px", color: "#1a1a2a" }}>Powered by Helius · DexScreener</span>
         </div>
       </div>
     ),
