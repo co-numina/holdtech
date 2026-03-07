@@ -23,14 +23,6 @@ export async function GET(req: NextRequest) {
       }
 
       const age = Date.now() - cached.timestamp;
-      const isStale = age > 300_000; // > 5 min
-
-      // If stale, trigger background refresh (fire and forget)
-      if (isStale) {
-        const refreshUrl = new URL("/api/trending-refresh", req.nextUrl.origin);
-        fetch(refreshUrl.toString()).catch(() => {});
-      }
-
       return NextResponse.json({
         tokens,
         timestamp: cached.timestamp,
@@ -40,10 +32,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // No cache — trigger refresh and return empty with status
-    const refreshUrl = new URL("/api/trending-refresh", req.nextUrl.origin);
-    fetch(refreshUrl.toString()).catch(() => {});
-
+    // No cache — local scanner hasn't run yet
     return NextResponse.json({
       tokens: [],
       timestamp: Date.now(),

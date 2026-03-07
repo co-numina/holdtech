@@ -890,6 +890,24 @@ export default function Home() {
     }
   }, [mint, analyzeLimit]);
 
+  // Auto-scan from URL query param (e.g. /?mint=xxx from trending page)
+  const autoScanned = useRef(false);
+  useEffect(() => {
+    if (autoScanned.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlMint = params.get("mint");
+    if (urlMint) {
+      autoScanned.current = true;
+      setMint(urlMint);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (autoScanned.current && mint && !loading && !result) {
+      analyze();
+    }
+  }, [mint]);
+
   const totalSupply = result ? result.totalSupply : 0;
   const t = T[lang];
 
