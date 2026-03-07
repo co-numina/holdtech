@@ -11,7 +11,7 @@ const TIERS = [
   { name: "FREE", min: 0, color: "#888" },
   { name: "SCOUT", min: 5_000_000, color: "#9945FF" },
   { name: "OPERATOR", min: 10_000_000, color: "#9945FF" },
-  { name: "WHALE", min: 50_000_000, color: "#14F195" },
+  { name: "WHALE", min: 20_000_000, color: "#14F195" },
 ];
 
 interface ScanResult {
