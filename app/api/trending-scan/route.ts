@@ -13,6 +13,15 @@ interface TrendingToken {
   marketCap: number;
   source: "pump_hot" | "pump_live" | "pump_graduated" | "pump_active" | "pump_volume" | "dex_boosted";
   boostAmount?: number;
+  sniperCount?: number;
+  volume?: number;
+  topHoldersPct?: number;
+  devHoldingsPct?: number;
+  numHolders?: number;
+  buyTxns?: number;
+  sellTxns?: number;
+  athMarketCap?: number | null;
+  sniperOwnedPct?: number;
 }
 
 interface ScoredToken extends TrendingToken {
@@ -60,6 +69,44 @@ async function getPumpLive(): Promise<TrendingToken[]> {
 }
 
 async function getPumpGraduated(): Promise<TrendingToken[]> {
+  // Use advanced API v2 — returns holder data, sniper counts, volume inline
+  try {
+    const res = await fetch("https://advanced-api-v2.pump.fun/coins/graduated?limit=15", {
+      headers: { "Accept": "application/json", "Origin": "https://pump.fun" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) {
+      // Fallback to frontend API
+      return getPumpGraduatedFallback();
+    }
+    const data = await res.json();
+    const coins = data.coins || data || [];
+    if (!Array.isArray(coins)) return getPumpGraduatedFallback();
+
+    return coins.slice(0, 15).map((c: any) => ({
+      mint: c.coinMint || c.mint,
+      name: c.name || "Unknown",
+      symbol: c.ticker || c.symbol || "???",
+      image: c.imageUrl || c.image_uri || null,
+      marketCap: Math.round((c.marketCap || 0) * (c.currentMarketPrice || 1)),
+      source: "pump_graduated" as const,
+      // Extra fields from advanced API
+      sniperCount: c.sniperCount || 0,
+      volume: c.volume || 0,
+      topHoldersPct: Math.round((c.topHoldersPercentage || 0) * 100),
+      devHoldingsPct: Math.round((c.devHoldingsPercentage || 0) * 100),
+      numHolders: c.numHolders || 0,
+      buyTxns: c.buyTransactions || 0,
+      sellTxns: c.sellTransactions || 0,
+      athMarketCap: c.allTimeHighMarketCap || null,
+      sniperOwnedPct: Math.round((c.sniperOwnedPercentage || 0) * 100),
+    }));
+  } catch {
+    return getPumpGraduatedFallback();
+  }
+}
+
+async function getPumpGraduatedFallback(): Promise<TrendingToken[]> {
   try {
     const res = await fetch("https://frontend-api-v3.pump.fun/coins?limit=10&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true", {
       signal: AbortSignal.timeout(5000),
@@ -267,8 +314,22 @@ export async function GET(req: NextRequest) {
       const batch = toScore.slice(i, i + 5);
       const results = await Promise.allSettled(
         batch.map(async (token) => {
-          const score = await quickScore(token.mint);
-          return { ...token, ...score };
+          // If advanced API already gave us holder data, use it for a fast grade
+          if (token.numHolders && token.topHoldersPct !== undefined) {
+            const topPct = token.topHoldersPct;
+            const sniperPct = token.sniperOwnedPct || 0;
+            let grade = "A", score = 85;
+            if (topPct > 80 || sniperPct > 30) { grade = "F"; score = 15; }
+            else if (topPct > 60 || sniperPct > 20) { grade = "D"; score = 35; }
+            else if (topPct > 40) { grade = "C"; score = 55; }
+            else if (topPct > 25) { grade = "B"; score = 72; }
+            if (token.numHolders < 15) { score = Math.max(score - 20, 10); grade = score < 30 ? "F" : score < 50 ? "D" : grade; }
+            if (token.devHoldingsPct && token.devHoldingsPct > 10) { score = Math.max(score - 15, 10); }
+            return { ...token, holderCount: token.numHolders, freshPct: 0, avgWalletAgeDays: 0, grade, score };
+          }
+          // Otherwise do the full RPC-based quickScore
+          const scoreData = await quickScore(token.mint);
+          return { ...token, ...scoreData };
         })
       );
       for (const r of results) {

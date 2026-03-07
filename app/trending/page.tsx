@@ -8,13 +8,18 @@ interface ScoredToken {
   symbol: string;
   image: string | null;
   marketCap: number;
-  source: "pump_hot" | "pump_live" | "dex_boosted";
+  source: string;
   boostAmount?: number;
   holderCount: number;
   freshPct: number;
   avgWalletAgeDays: number;
   grade: string;
   score: number;
+  sniperCount?: number;
+  volume?: number;
+  topHoldersPct?: number;
+  devHoldingsPct?: number;
+  sniperOwnedPct?: number;
 }
 
 const gradeColors: Record<string, string> = {
@@ -150,7 +155,7 @@ export default function TrendingPage() {
           <div className="glass" style={{ borderRadius: "16px", overflow: "hidden" }}>
             {/* Header row */}
             <div style={{
-              display: "grid", gridTemplateColumns: "44px 1fr 90px 80px 70px 70px 80px 60px",
+              display: "grid", gridTemplateColumns: "36px 1fr 85px 65px 65px 60px 75px 50px",
               padding: "10px 16px", background: "var(--bg-card-alt)", borderBottom: "1px solid var(--border)",
               fontSize: "9px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "1px",
             }}>
@@ -158,8 +163,8 @@ export default function TrendingPage() {
               <div>TOKEN</div>
               <div>MCAP</div>
               <div>HOLDERS</div>
-              <div>FRESH %</div>
-              <div>AVG AGE</div>
+              <div>SNIPERS</div>
+              <div>TOP %</div>
               <div>SOURCE</div>
               <div style={{ textAlign: "center" }}>GRADE</div>
             </div>
@@ -170,7 +175,7 @@ export default function TrendingPage() {
                 key={token.mint}
                 href={`/?mint=${token.mint}`}
                 style={{
-                  display: "grid", gridTemplateColumns: "44px 1fr 90px 80px 70px 70px 80px 60px",
+                  display: "grid", gridTemplateColumns: "36px 1fr 85px 65px 65px 60px 75px 50px",
                   padding: "12px 16px", borderBottom: "1px solid var(--border)",
                   textDecoration: "none", color: "var(--text)",
                   background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.01)",
@@ -202,11 +207,11 @@ export default function TrendingPage() {
                 <div className="font-mono" style={{ fontSize: "12px", alignSelf: "center", color: "var(--text-muted)" }}>
                   {token.holderCount || "—"}
                 </div>
-                <div className="font-mono" style={{ fontSize: "12px", alignSelf: "center", color: token.freshPct > 45 ? "var(--red)" : token.freshPct > 25 ? "#eab308" : "var(--green)" }}>
-                  {token.freshPct}%
+                <div className="font-mono" style={{ fontSize: "12px", alignSelf: "center", color: (token.sniperCount || 0) > 50 ? "var(--red)" : (token.sniperCount || 0) > 20 ? "#eab308" : "var(--text-muted)" }}>
+                  {token.sniperCount || "—"}
                 </div>
-                <div className="font-mono" style={{ fontSize: "12px", alignSelf: "center", color: "var(--text-muted)" }}>
-                  {token.avgWalletAgeDays > 0 ? `${token.avgWalletAgeDays}d` : "—"}
+                <div className="font-mono" style={{ fontSize: "12px", alignSelf: "center", color: (token.topHoldersPct || 0) > 60 ? "var(--red)" : (token.topHoldersPct || 0) > 40 ? "#eab308" : "var(--text-muted)" }}>
+                  {token.topHoldersPct ? `${token.topHoldersPct}%` : "—"}
                 </div>
                 <div style={{ alignSelf: "center" }}>
                   <span className="font-mono" style={{
