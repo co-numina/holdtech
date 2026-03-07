@@ -1093,91 +1093,82 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ═══ $SCOPE TOKEN ═══ */}
-            <div className="reveal" style={{ marginBottom: "32px" }}>
-              <div style={{ textAlign: "center", marginBottom: "24px" }}>
-                <div className="font-mono" style={{ fontSize: "28px", fontWeight: 800, background: "linear-gradient(135deg, var(--accent), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t.scopeTitle}</div>
-                <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--text)", marginTop: "6px" }}>{t.scopeTagline}</div>
-                <div style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>{t.scopeDesc}</div>
+            {/* ═══ $SCOPE + EXTENSION ═══ */}
+            <div className="reveal" style={{ marginBottom: "24px", borderRadius: "16px", border: "1px solid var(--border-accent)", overflow: "hidden" }}>
+              {/* $SCOPE header */}
+              <div style={{ padding: "28px 24px 20px", textAlign: "center", background: "linear-gradient(180deg, rgba(153,69,255,0.06) 0%, transparent 100%)" }}>
+                <div className="font-mono" style={{ fontSize: "24px", fontWeight: 800, background: "linear-gradient(135deg, var(--accent), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t.scopeTitle}</div>
+                <div style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "6px" }}>{t.scopeDesc}</div>
               </div>
 
-              {/* Tier cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid var(--border)", background: "var(--card-bg)" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", marginBottom: "4px" }}>{t.tierFree}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierFreeDesc}</div>
-                </div>
-                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid rgba(153,69,255,0.2)", background: "rgba(153,69,255,0.03)" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "2px" }}>{t.tierScout}</div>
-                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.tierScoutHold}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierScoutDesc}</div>
-                </div>
-                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid rgba(153,69,255,0.35)", background: "rgba(153,69,255,0.06)" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "2px" }}>{t.tierOperator}</div>
-                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.tierOperatorHold}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierOperatorDesc}</div>
-                </div>
-                <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid rgba(20,241,149,0.3)", background: "linear-gradient(135deg, rgba(153,69,255,0.05), rgba(20,241,149,0.05))" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--green)", marginBottom: "2px" }}>{t.tierWhale}</div>
-                  <div style={{ fontSize: "10px", color: "var(--text-muted)", marginBottom: "6px" }}>{t.tierWhaleHold}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.tierWhaleDesc}</div>
-                </div>
+              {/* Tiers — compact horizontal strip */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", borderTop: "1px solid var(--border)" }}>
+                {[
+                  { name: t.tierFree, hold: null, desc: t.tierFreeDesc, color: "var(--text-muted)" },
+                  { name: t.tierScout, hold: t.tierScoutHold, desc: t.tierScoutDesc, color: "var(--accent)" },
+                  { name: t.tierOperator, hold: t.tierOperatorHold, desc: t.tierOperatorDesc, color: "var(--accent)" },
+                  { name: t.tierWhale, hold: t.tierWhaleHold, desc: t.tierWhaleDesc, color: "var(--green)" },
+                ].map((tier, i) => (
+                  <div key={i} style={{ padding: "16px", borderRight: i < 3 ? "1px solid var(--border)" : "none" }}>
+                    <div className="font-mono" style={{ fontSize: "10px", fontWeight: 700, color: tier.color, letterSpacing: "0.05em" }}>{tier.name}</div>
+                    {tier.hold && <div style={{ fontSize: "9px", color: "var(--text-muted)", marginTop: "2px" }}>{tier.hold}</div>}
+                    <div style={{ fontSize: "10px", color: "var(--text-secondary)", lineHeight: 1.5, marginTop: "6px" }}>{tier.desc}</div>
+                  </div>
+                ))}
               </div>
 
-              {/* Feature highlights */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
-                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>📡</div>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.scopeFeed}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.scopeFeedDesc}</div>
-                </div>
-                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
-                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>🔩</div>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.scopeDrill}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.scopeDrillDesc}</div>
-                </div>
-                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
-                  <div style={{ fontSize: "18px", marginBottom: "6px" }}>📈</div>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.scopeTrajectory}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.scopeTrajectoryDesc}</div>
-                </div>
+              {/* Coming soon features — single row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", borderTop: "1px solid var(--border)", background: "rgba(153,69,255,0.02)" }}>
+                {[
+                  { icon: "📡", label: t.scopeFeed, desc: t.scopeFeedDesc },
+                  { icon: "🔩", label: t.scopeDrill, desc: t.scopeDrillDesc },
+                  { icon: "📈", label: t.scopeTrajectory, desc: t.scopeTrajectoryDesc },
+                ].map((f, i) => (
+                  <div key={i} style={{ padding: "14px 16px", borderRight: i < 2 ? "1px solid var(--border)" : "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "12px" }}>{f.icon}</span>
+                      <span className="font-mono" style={{ fontSize: "9px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.05em" }}>{f.label}</span>
+                    </div>
+                    <div style={{ fontSize: "10px", color: "var(--text-secondary)", lineHeight: 1.5 }}>{f.desc}</div>
+                  </div>
+                ))}
               </div>
 
-              {/* CTA */}
-              <div style={{ textAlign: "center", padding: "16px", borderRadius: "12px", border: "1px dashed var(--border-accent)", background: "rgba(153,69,255,0.03)" }}>
-                <div className="font-mono" style={{ fontSize: "14px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.1em" }}>{t.scopeCTA}</div>
+              {/* CTA strip */}
+              <div style={{ padding: "12px", textAlign: "center", borderTop: "1px solid var(--border)", background: "rgba(153,69,255,0.03)" }}>
+                <span className="font-mono" style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent)", letterSpacing: "0.1em" }}>{t.scopeCTA}</span>
               </div>
             </div>
 
             {/* ═══ CHROME EXTENSION ═══ */}
-            <div className="reveal" style={{ marginBottom: "32px" }}>
-              <div style={{ textAlign: "center", marginBottom: "20px" }}>
-                <div style={{ fontSize: "24px", marginBottom: "6px" }}>🧩</div>
-                <div className="font-mono" style={{ fontSize: "18px", fontWeight: 800, color: "var(--accent)" }}>{t.extTitle}</div>
-                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)", marginTop: "4px" }}>{t.extTagline}</div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "4px", maxWidth: "480px", margin: "4px auto 0" }}>{t.extDesc}</div>
-              </div>
+            <div className="reveal" style={{ marginBottom: "24px", borderRadius: "16px", border: "1px solid var(--border)", overflow: "hidden" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+                {/* Left — info */}
+                <div style={{ padding: "24px", borderRight: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "18px" }}>🧩</span>
+                    <span className="font-mono" style={{ fontSize: "14px", fontWeight: 800, color: "var(--text)" }}>{t.extTitle}</span>
+                  </div>
+                  <div style={{ fontSize: "13px", color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: "16px" }}>{t.extDesc}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {[t.extFeature1, t.extFeature2, t.extFeature3].map((f, i) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ width: "4px", height: "4px", borderRadius: "50%", background: i === 1 ? "var(--green)" : "var(--accent)", flexShrink: 0 }} />
+                        <span className="font-mono" style={{ fontSize: "10px", color: "var(--text-secondary)" }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-              {/* Feature cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginBottom: "16px" }}>
-                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.extFeature1}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.extFeature1Desc}</div>
+                {/* Right — install */}
+                <div style={{ padding: "24px", background: "rgba(153,69,255,0.02)" }}>
+                  <div className="font-mono" style={{ fontSize: "10px", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.05em", marginBottom: "12px" }}>{t.extHow}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {[t.extStep1, t.extStep2, t.extStep3].map((step, i) => (
+                      <div key={i} style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.5 }} dangerouslySetInnerHTML={{ __html: step }} />
+                    ))}
+                  </div>
                 </div>
-                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--green)", marginBottom: "6px" }}>{t.extFeature2}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.extFeature2Desc}</div>
-                </div>
-                <div className="glass" style={{ borderRadius: "12px", padding: "16px" }}>
-                  <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", marginBottom: "6px" }}>{t.extFeature3}</div>
-                  <div style={{ fontSize: "11px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{t.extFeature3Desc}</div>
-                </div>
-              </div>
-
-              {/* Install steps */}
-              <div style={{ borderRadius: "12px", padding: "16px", border: "1px solid var(--border)", background: "var(--card-bg)" }}>
-                <div className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--text)", marginBottom: "10px" }}>{t.extHow}</div>
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 2 }} dangerouslySetInnerHTML={{ __html: `${t.extStep1}<br/>${t.extStep2}<br/>${t.extStep3}` }} />
               </div>
             </div>
 
