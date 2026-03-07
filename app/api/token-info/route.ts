@@ -1,47 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const HELIUS_API_KEY = "2e5afdba-52c8-47bb-a203-d7571a17ade5";
-const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
-
-async function getHolderCount(mint: string): Promise<number | null> {
-  try {
-    // Helius DAS getTokenAccounts with displayOptions to get total
-    const res = await fetch(HELIUS_RPC, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1,
-        method: "getTokenAccounts",
-        params: {
-          mint,
-          limit: 1,
-          options: { showZeroBalance: false },
-        },
-      }),
-    });
-    const data = await res.json();
-    // Helius DAS returns total in result
-    if (data?.result?.total != null) return data.result.total;
-    // Fallback: check if token_accounts array length hint exists
-    return null;
-  } catch { return null; }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { mint } = await req.json();
     if (!mint) return NextResponse.json({ error: "Missing mint" }, { status: 400 });
 
-    // Parallel: pump.fun + DexScreener + holder count
-    const [pumpRes, dexRes, holderCountRes] = await Promise.allSettled([
+    // Parallel: pump.fun + DexScreener (holder count handled by /api/holder-count)
+    const [pumpRes, dexRes] = await Promise.allSettled([
       fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`).then(r => r.ok ? r.json() : null),
       fetch(`https://api.dexscreener.com/latest/dex/tokens/${mint}`).then(r => r.ok ? r.json() : null),
-      getHolderCount(mint),
     ]);
 
     const pump = pumpRes.status === "fulfilled" ? pumpRes.value : null;
     const dex = dexRes.status === "fulfilled" ? dexRes.value : null;
-    const heliusHolders = holderCountRes.status === "fulfilled" ? holderCountRes.value : null;
 
     const solPair = dex?.pairs?.find((p: Record<string, unknown>) => p.chainId === "solana");
 
@@ -66,7 +37,7 @@ export async function POST(req: NextRequest) {
         h24: solPair?.priceChange?.h24 || null,
       },
       // Holder count from pump
-      holderCount: pump?.holder_count || heliusHolders || null,
+      holderCount: pump?.holder_count || null,
       pairAddress: solPair?.pairAddress || null,
       dexId: solPair?.dexId || null,
       // Sparkline data (will be populated below)
