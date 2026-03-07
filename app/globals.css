@@ -40,8 +40,8 @@ body::before {
     linear-gradient(rgba(153, 69, 255, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(153, 69, 255, 0.08) 1px, transparent 1px);
   background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 120% 100% at 50% 0%, black 20%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse 120% 100% at 50% 0%, black 20%, transparent 80%);
+  mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
 }
 
 * { box-sizing: border-box; }
