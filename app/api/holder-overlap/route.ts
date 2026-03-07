@@ -5,7 +5,7 @@ export const runtime = "edge";
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY || "2e5afdba-52c8-47bb-a203-d7571a17ade5";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
-async function heliusRpc(method: string, params: unknown[]) {
+async function heliusRpc(method: string, params: unknown) {
   const res = await fetch(HELIUS_RPC, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -33,7 +33,7 @@ async function getHolders(mint: string, limit = 5000): Promise<HolderInfo[]> {
     };
     if (cursor) params.cursor = cursor;
 
-    const result = await heliusRpc("getTokenAccounts", [params]);
+    const result = await heliusRpc("getTokenAccounts", params);
     if (!result?.token_accounts || result.token_accounts.length === 0) break;
 
     for (const acc of result.token_accounts) {
@@ -68,7 +68,7 @@ async function getTokenMeta(mint: string): Promise<{ name: string; symbol: strin
 
   // DAS fallback
   try {
-    const asset = await heliusRpc("getAsset", [mint]);
+    const asset = await heliusRpc("getAsset", { id: mint });
     if (asset?.content?.metadata) {
       const meta = asset.content.metadata;
       return {
