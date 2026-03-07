@@ -29,11 +29,19 @@ Paste any Solana token address → get a complete holder quality analysis in ~15
 
 ---
 
-## Screenshot
+## Screenshots
 
-<p align="center">
-  <img src="public/logo.png" width="120" alt="HoldTech logo" />
-</p>
+### Token Overview & Verdict
+<img src="docs/screenshots/overview.png" alt="Token overview with AI verdict showing grade, score, and key metrics" />
+
+### Holder Analysis & Distribution
+<img src="docs/screenshots/analysis.png" alt="Wallet age distribution, hold duration, radar chart, and top holders table" />
+
+### Deep Scan — Bundles & Concentration
+<img src="docs/screenshots/deepscan.png" alt="Token concentration bar, bundle detection, funding clusters, SOL distribution" />
+
+### Wallet Scatter Plot
+<img src="docs/screenshots/scatter.png" alt="Bubble chart showing wallet age vs holdings percentage, colored by wallet type" />
 
 ---
 
