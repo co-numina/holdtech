@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cacheGet, cacheSet } from "@/app/lib/cache";
+import { rateLimit } from "@/app/lib/rate-limit";
 
-const HELIUS_API_KEY = "93201fd9-930c-42c2-8298-e42dcbcf4cb3";
+const HELIUS_API_KEY = process.env.HELIUS_API_KEY || "2e5afdba-52c8-47bb-a203-d7571a17ade5";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 // Use Helius enhanced API — 1 call gets parsed transaction history
@@ -173,6 +175,23 @@ export async function POST(req: NextRequest) {
     }
 
     const analyzeLimit = Math.min(Math.max(reqLimit || 20, 10), 100);
+
+    // Rate limit: 10 scans per IP per minute
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+    const rl = await rateLimit(`analyze:${ip}`, 10, 60);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Rate limited — try again in a minute" },
+        { status: 429, headers: { "X-RateLimit-Remaining": "0" } }
+      );
+    }
+
+    // Check cache first — full analysis results cached for 60s per mint+limit
+    const cacheKey = `analyze:${mint}:${analyzeLimit}`;
+    const cachedResult = await cacheGet(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult);
+    }
 
     // Step 1: Get token metadata (1 call, or 0 if pump.fun works)
     const meta = await getTokenMetadata(mint);
@@ -383,6 +402,9 @@ export async function POST(req: NextRequest) {
       totalSupply,
       timestamp: now,
     };
+
+    // Cache the full result for 60s
+    await cacheSet(cacheKey, result, 60);
 
     return NextResponse.json(result);
   } catch (err) {

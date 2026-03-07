@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cached } from "@/app/lib/cache";
 
 const HELIUS_KEY = process.env.HELIUS_API_KEY || "2e5afdba-52c8-47bb-a203-d7571a17ade5";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`;
@@ -33,10 +34,13 @@ export async function POST(req: NextRequest) {
     // Fetch parsed transaction history from Helius for each wallet
     const promises = batch.map(async (w: { address: string; name: string; emoji: string; group: string }) => {
       try {
-        const url = `${HELIUS_API}/addresses/${w.address}/transactions?api-key=${HELIUS_KEY}&limit=2&type=SWAP`;
-        const res = await fetch(url, { next: { revalidate: 60 } });
-        if (!res.ok) return [];
-        const txs = await res.json();
+        // Cache per-wallet tx fetch for 30s — all users share the same feed data
+        const txs = await cached(`bf:${w.address}`, 30, async () => {
+          const url = `${HELIUS_API}/addresses/${w.address}/transactions?api-key=${HELIUS_KEY}&limit=2&type=SWAP`;
+          const res = await fetch(url);
+          if (!res.ok) return [];
+          return res.json();
+        });
 
         return txs.map((tx: any) => {
           // Parse Helius enriched transaction
@@ -118,29 +122,34 @@ export async function POST(req: NextRequest) {
 
     if (mints.length > 0) {
       try {
-        // Use Helius DAS to get token metadata
-        const dasRes = await fetch(HELIUS_RPC, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: "meta",
-            method: "getAssetBatch",
-            params: { ids: mints.slice(0, 50) },
-          }),
-        });
-        if (dasRes.ok) {
+        // Cache token metadata for 120s — symbols/images rarely change
+        const mintKey = mints.slice(0, 50).sort().join(",");
+        const cachedMeta = await cached(`tm:${mintKey.slice(0, 200)}`, 120, async () => {
+          const dasRes = await fetch(HELIUS_RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: "meta",
+              method: "getAssetBatch",
+              params: { ids: mints.slice(0, 50) },
+            }),
+          });
+          if (!dasRes.ok) return {};
           const dasData = await dasRes.json();
           const assets = dasData.result || [];
+          const meta: Record<string, { symbol: string; image: string }> = {};
           for (const asset of assets) {
             if (asset?.id) {
-              tokenMeta[asset.id] = {
+              meta[asset.id] = {
                 symbol: asset.content?.metadata?.symbol || asset.id.slice(0, 6),
                 image: asset.content?.links?.image || asset.content?.files?.[0]?.uri || "",
               };
             }
           }
-        }
+          return meta;
+        });
+        Object.assign(tokenMeta, cachedMeta);
       } catch {}
     }
 
