@@ -1,6 +1,9 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 
+// ============================================================
+// TYPES
+// ============================================================
 interface WalletAnalysis {
   address: string;
   balance: number;
@@ -12,11 +15,7 @@ interface WalletAnalysis {
   otherTokenCount: number;
 }
 
-interface DistBucket {
-  label: string;
-  count: number;
-  pct: number;
-}
+interface DistBucket { label: string; count: number; pct: number; }
 
 interface AnalysisResult {
   mint: string;
@@ -39,27 +38,12 @@ interface AnalysisResult {
     avgSolBalance: number;
     singleTokenPct: number;
   };
-  distribution: {
-    walletAge: DistBucket[];
-    holdDuration: DistBucket[];
-  };
-  topHolders: {
-    address: string;
-    balancePct: number;
-    walletAgeDays: number;
-    holdDurationDays: number;
-    totalTxCount: number;
-    isFresh: boolean;
-  }[];
+  distribution: { walletAge: DistBucket[]; holdDuration: DistBucket[]; };
+  topHolders: { address: string; balancePct: number; walletAgeDays: number; holdDurationDays: number; totalTxCount: number; isFresh: boolean; }[];
   wallets: WalletAnalysis[];
 }
 
-interface Verdict {
-  score: number;
-  grade: string;
-  verdict: string;
-  flags: string[];
-}
+interface Verdict { score: number; grade: string; verdict: string; flags: string[]; }
 
 interface DeepScanResult {
   txHistoryCount: number;
@@ -75,43 +59,60 @@ interface DeepScanResult {
   clusteredWalletCount: number;
 }
 
-function shortenAddr(addr: string) {
-  return addr.slice(0, 4) + "..." + addr.slice(-4);
-}
+// ============================================================
+// ICONS (inline SVG)
+// ============================================================
+const Icon = ({ d, size = 18, color = "currentColor" }: { d: string; size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+);
 
-function gradeColor(grade: string) {
-  switch (grade) {
-    case "A": return "text-emerald-400";
-    case "B": return "text-cyan-400";
-    case "C": return "text-yellow-400";
-    case "D": return "text-orange-400";
-    case "F": return "text-red-400";
-    default: return "text-white";
-  }
-}
+const SearchIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" size={size} color={color} />;
+const ShieldIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" size={size} color={color} />;
+const AlertIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01" size={size} color={color} />;
+const EyeIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zm10 3a3 3 0 100-6 3 3 0 000 6z" size={size} color={color} />;
+const TargetIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M22 12h-4M6 12H2M12 6V2m0 20v-4m7.07-2.93l-2.83-2.83M7.76 7.76L4.93 4.93m0 14.14l2.83-2.83m9.48 0l2.83 2.83M12 12a3 3 0 100-6 3 3 0 000 6z" size={size} color={color} />;
+const LayersIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" size={size} color={color} />;
+const TrendIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => <Icon d="M23 6l-9.5 9.5-5-5L1 18" size={size} color={color} />;
+const GitHubIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+);
+const XIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+);
 
-function scoreColor(score: number) {
-  if (score >= 80) return "bg-emerald-500";
-  if (score >= 65) return "bg-cyan-500";
-  if (score >= 50) return "bg-yellow-500";
-  if (score >= 35) return "bg-orange-500";
-  return "bg-red-500";
+// ============================================================
+// UTILITY
+// ============================================================
+function shortenAddr(addr: string) { return addr.slice(0, 4) + "..." + addr.slice(-4); }
+function gradeColor(g: string) { return g === "A" ? "text-emerald-400" : g === "B" ? "text-cyan-400" : g === "C" ? "text-yellow-400" : g === "D" ? "text-orange-400" : "text-red-400"; }
+function scoreColor(s: number) { return s >= 80 ? "bg-emerald-500" : s >= 65 ? "bg-cyan-500" : s >= 50 ? "bg-yellow-500" : s >= 35 ? "bg-orange-500" : "bg-red-500"; }
+function scoreBorderColor(s: number) { return s >= 80 ? "border-emerald-500/30" : s >= 65 ? "border-cyan-500/30" : s >= 50 ? "border-yellow-500/30" : s >= 35 ? "border-orange-500/30" : "border-red-500/30"; }
+
+// ============================================================
+// SUB-COMPONENTS
+// ============================================================
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+      className="font-mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all"
+      style={{ background: copied ? "rgba(34,211,238,0.1)" : "var(--bg-card-alt)", borderColor: copied ? "var(--accent)" : "var(--border)", color: copied ? "var(--accent)" : "var(--text-muted)" }}>
+      {text} {copied ? "✓" : "⧉"}
+    </button>
+  );
 }
 
 function BarChart({ data, color = "bg-cyan-500" }: { data: DistBucket[]; color?: string }) {
-  const max = Math.max(...data.map((d) => d.pct), 1);
+  const max = Math.max(...data.map(d => d.pct), 1);
   return (
     <div className="space-y-1.5">
-      {data.map((d) => (
+      {data.map(d => (
         <div key={d.label} className="flex items-center gap-2 text-xs">
-          <span className="w-24 text-right text-white/50 shrink-0">{d.label}</span>
-          <div className="flex-1 h-5 bg-white/5 rounded overflow-hidden">
-            <div
-              className={`h-full ${color} rounded transition-all duration-500`}
-              style={{ width: `${(d.pct / max) * 100}%` }}
-            />
+          <span className="w-24 text-right shrink-0" style={{ color: "var(--text-muted)" }}>{d.label}</span>
+          <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <div className={`h-full ${color} rounded transition-all duration-500`} style={{ width: `${(d.pct / max) * 100}%` }} />
           </div>
-          <span className="w-16 text-white/70 shrink-0">{d.pct}% ({d.count})</span>
+          <span className="w-16 shrink-0" style={{ color: "var(--text-secondary)" }}>{d.pct}% ({d.count})</span>
         </div>
       ))}
     </div>
@@ -120,60 +121,39 @@ function BarChart({ data, color = "bg-cyan-500" }: { data: DistBucket[]; color?:
 
 function MetricCard({ label, value, sub, warn }: { label: string; value: string; sub?: string; warn?: boolean }) {
   return (
-    <div className={`bg-white/5 border ${warn ? "border-red-500/30" : "border-white/10"} rounded-lg p-3`}>
-      <div className="text-xs text-white/40 mb-1">{label}</div>
-      <div className={`text-xl font-bold ${warn ? "text-red-400" : "text-white"}`}>{value}</div>
-      {sub && <div className="text-xs text-white/30 mt-0.5">{sub}</div>}
+    <div style={{ background: "var(--bg-card-alt)", border: `1px solid ${warn ? "rgba(239,68,68,0.3)" : "var(--border)"}`, borderRadius: "12px", padding: "14px" }}>
+      <div className="font-mono" style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: "4px" }}>{label}</div>
+      <div className="font-mono" style={{ fontSize: "22px", fontWeight: 700, color: warn ? "var(--red)" : "var(--text)", lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{sub}</div>}
     </div>
   );
 }
 
-/* ─── Deep Scan Visualization Components ─── */
-
+// ============================================================
+// DEEP SCAN VIZ
+// ============================================================
 function ConcentrationBar({ concentration }: { concentration: DeepScanResult["concentration"] }) {
   const rest = Math.max(0, 100 - concentration.top20Pct);
   const top5 = concentration.top5Pct;
   const top10Only = concentration.top10Pct - concentration.top5Pct;
   const top20Only = concentration.top20Pct - concentration.top10Pct;
-
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-      <div className="text-sm font-bold text-white/70 mb-3">Token Concentration</div>
-      <div className="h-8 rounded-lg overflow-hidden flex">
-        {top5 > 0 && (
-          <div className="bg-red-500 h-full relative group" style={{ width: `${top5}%` }}>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">
-              Top 5: {top5.toFixed(1)}%
-            </span>
-          </div>
-        )}
-        {top10Only > 0 && (
-          <div className="bg-yellow-500 h-full relative group" style={{ width: `${top10Only}%` }}>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">
-              6-10: {top10Only.toFixed(1)}%
-            </span>
-          </div>
-        )}
-        {top20Only > 0 && (
-          <div className="bg-cyan-500 h-full relative group" style={{ width: `${top20Only}%` }}>
-            <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">
-              11-20: {top20Only.toFixed(1)}%
-            </span>
-          </div>
-        )}
-        {rest > 0 && (
-          <div className="bg-white/20 h-full" style={{ width: `${rest}%` }} />
-        )}
+    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Token Concentration</div>
+      <div style={{ height: "32px", borderRadius: "8px", overflow: "hidden", display: "flex" }}>
+        {top5 > 0 && <div className="group relative" style={{ width: `${top5}%`, background: "var(--red)", height: "100%" }}><span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">Top 5: {top5.toFixed(1)}%</span></div>}
+        {top10Only > 0 && <div style={{ width: `${top10Only}%`, background: "var(--yellow)", height: "100%" }} />}
+        {top20Only > 0 && <div style={{ width: `${top20Only}%`, background: "var(--accent)", height: "100%" }} />}
+        {rest > 0 && <div style={{ width: `${rest}%`, background: "rgba(255,255,255,0.08)", height: "100%" }} />}
       </div>
-      <div className="flex gap-4 mt-2 text-[10px] text-white/40">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-red-500 inline-block" /> Top 5 ({top5.toFixed(1)}%)</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-yellow-500 inline-block" /> Top 10 ({concentration.top10Pct.toFixed(1)}%)</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-cyan-500 inline-block" /> Top 20 ({concentration.top20Pct.toFixed(1)}%)</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded bg-white/20 inline-block" /> Rest ({rest.toFixed(1)}%)</span>
+      <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
+        <span>🔴 Top 5 ({top5.toFixed(1)}%)</span>
+        <span>🟡 Top 10 ({concentration.top10Pct.toFixed(1)}%)</span>
+        <span>🔵 Top 20 ({concentration.top20Pct.toFixed(1)}%)</span>
       </div>
-      <div className="flex gap-6 mt-2 text-xs text-white/50">
-        <span>Gini: <span className={`font-mono ${concentration.giniCoefficient > 0.8 ? "text-red-400" : concentration.giniCoefficient > 0.6 ? "text-yellow-400" : "text-emerald-400"}`}>{concentration.giniCoefficient.toFixed(3)}</span></span>
-        <span>HHI: <span className="font-mono text-white/70">{concentration.herfindahlIndex.toFixed(4)}</span></span>
+      <div style={{ display: "flex", gap: "24px", marginTop: "6px", fontSize: "11px", color: "var(--text-muted)" }}>
+        <span>Gini: <span className="font-mono" style={{ color: concentration.giniCoefficient > 0.8 ? "var(--red)" : concentration.giniCoefficient > 0.6 ? "var(--yellow)" : "var(--green)" }}>{concentration.giniCoefficient.toFixed(3)}</span></span>
+        <span>HHI: <span className="font-mono" style={{ color: "var(--text-secondary)" }}>{concentration.herfindahlIndex.toFixed(4)}</span></span>
       </div>
     </div>
   );
@@ -182,35 +162,27 @@ function ConcentrationBar({ concentration }: { concentration: DeepScanResult["co
 function BundleDetection({ bundles, bundleCount, bundledWalletCount }: { bundles: DeepScanResult["bundles"]; bundleCount: number; bundledWalletCount: number }) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   if (bundleCount === 0) return null;
-
   return (
-    <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-red-400 text-lg">⚠️</span>
-        <div className="text-sm font-bold text-red-400">Bundle Detection: {bundleCount} bundles found ({bundledWalletCount} wallets)</div>
+    <div style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+        <AlertIcon size={18} color="var(--red)" />
+        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--red)" }}>Bundle Detection: {bundleCount} bundles ({bundledWalletCount} wallets)</span>
       </div>
-      <div className="space-y-2">
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {bundles.map((b, i) => (
-          <div key={i} className="bg-white/5 rounded-lg p-3">
-            <button
-              onClick={() => setExpanded((p) => ({ ...p, [i]: !p[i] }))}
-              className="w-full flex items-center gap-3 text-xs text-left"
-            >
-              <span className="text-white/30">{expanded[i] ? "▼" : "▶"}</span>
-              <span className="text-white/60">Slot {b.slot.toLocaleString()}</span>
-              <span className="text-white/40">·</span>
-              <span className="text-white/40">{new Date(b.timestamp * 1000).toLocaleString()}</span>
-              <span className="text-white/40">·</span>
-              <span className="text-red-400 font-bold">{b.wallets.length} wallets</span>
-              <span className="text-white/40">·</span>
-              <span className="text-white/40">{b.txCount} txs</span>
+          <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "12px" }}>
+            <button onClick={() => setExpanded(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", fontSize: "11px", textAlign: "left", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
+              <span style={{ color: "var(--text-muted)" }}>{expanded[i] ? "▼" : "▶"}</span>
+              <span>Slot {b.slot.toLocaleString()}</span>
+              <span style={{ color: "var(--text-muted)" }}>·</span>
+              <span style={{ color: "var(--text-muted)" }}>{new Date(b.timestamp * 1000).toLocaleString()}</span>
+              <span style={{ color: "var(--text-muted)" }}>·</span>
+              <span style={{ color: "var(--red)", fontWeight: 700 }}>{b.wallets.length} wallets</span>
             </button>
             {expanded[i] && (
-              <div className="mt-2 pl-5 space-y-1">
-                {b.wallets.map((w) => (
-                  <a key={w} href={`https://solscan.io/account/${w}`} target="_blank" rel="noopener" className="block text-xs font-mono text-cyan-400/70 hover:text-cyan-300">
-                    {shortenAddr(w)}
-                  </a>
+              <div style={{ marginTop: "8px", paddingLeft: "20px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                {b.wallets.map(w => (
+                  <a key={w} href={`https://solscan.io/account/${w}`} target="_blank" rel="noopener" className="font-mono" style={{ fontSize: "11px", color: "var(--accent-dark)", textDecoration: "none" }}>{shortenAddr(w)}</a>
                 ))}
               </div>
             )}
@@ -223,28 +195,23 @@ function BundleDetection({ bundles, bundleCount, bundledWalletCount }: { bundles
 
 function FundingClusters({ clusters, clusterCount, clusteredWalletCount }: { clusters: DeepScanResult["fundingClusters"]; clusterCount: number; clusteredWalletCount: number }) {
   if (clusterCount === 0) return null;
-
   return (
-    <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-red-400 text-lg">🕸️</span>
-        <div className="text-sm font-bold text-red-400">{clusteredWalletCount} wallets funded by same source ({clusterCount} clusters)</div>
+    <div style={{ background: "rgba(239,68,68,0.04)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+        <span style={{ fontSize: "16px" }}>🕸️</span>
+        <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--red)" }}>{clusteredWalletCount} wallets funded by same source ({clusterCount} clusters)</span>
       </div>
-      <div className="space-y-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {clusters.map((c, i) => (
-          <div key={i} className={`bg-white/5 rounded-lg p-3 ${c.count >= 3 ? "border border-red-500/30" : ""}`}>
-            <div className="flex items-center gap-2 text-xs mb-2">
-              {c.count >= 3 && <span className="text-red-400 text-[10px] font-bold bg-red-400/10 px-1.5 py-0.5 rounded">RED FLAG</span>}
-              <a href={`https://solscan.io/account/${c.funder}`} target="_blank" rel="noopener" className="font-mono text-yellow-400/80 hover:text-yellow-300">
-                {shortenAddr(c.funder)}
-              </a>
-              <span className="text-white/30">→ {c.count} wallets</span>
+          <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "12px", border: c.count >= 3 ? "1px solid rgba(239,68,68,0.3)" : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", marginBottom: "6px" }}>
+              {c.count >= 3 && <span style={{ color: "var(--red)", fontSize: "10px", fontWeight: 700, background: "rgba(239,68,68,0.1)", padding: "2px 6px", borderRadius: "4px" }}>RED FLAG</span>}
+              <a href={`https://solscan.io/account/${c.funder}`} target="_blank" rel="noopener" className="font-mono" style={{ color: "var(--yellow)", textDecoration: "none" }}>{shortenAddr(c.funder)}</a>
+              <span style={{ color: "var(--text-muted)" }}>→ {c.count} wallets</span>
             </div>
-            <div className="pl-4 space-y-0.5">
-              {c.wallets.map((w) => (
-                <a key={w} href={`https://solscan.io/account/${w}`} target="_blank" rel="noopener" className="block text-xs font-mono text-cyan-400/60 hover:text-cyan-300">
-                  └ {shortenAddr(w)}
-                </a>
+            <div style={{ paddingLeft: "16px", display: "flex", flexDirection: "column", gap: "2px" }}>
+              {c.wallets.map(w => (
+                <a key={w} href={`https://solscan.io/account/${w}`} target="_blank" rel="noopener" className="font-mono" style={{ fontSize: "11px", color: "var(--accent-dark)", textDecoration: "none" }}>└ {shortenAddr(w)}</a>
               ))}
             </div>
           </div>
@@ -256,62 +223,52 @@ function FundingClusters({ clusters, clusterCount, clusteredWalletCount }: { clu
 
 function BuyTimeline({ timeline }: { timeline: DeepScanResult["buyTimeline"] }) {
   if (!timeline.length) return null;
-  const maxMin = Math.max(...timeline.map((t) => t.minutesAfterFirst), 1);
-
+  const maxMin = Math.max(...timeline.map(t => t.minutesAfterFirst), 1);
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-      <div className="text-sm font-bold text-white/70 mb-3">Buy Timeline</div>
-      <div className="relative h-16 bg-white/5 rounded-lg overflow-hidden">
+    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Buy Timeline</div>
+      <div style={{ position: "relative", height: "64px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", overflow: "hidden" }}>
         {timeline.map((t, i) => {
           const left = (t.minutesAfterFirst / maxMin) * 100;
-          const color = t.minutesAfterFirst < 5 ? "bg-red-500" : t.minutesAfterFirst < 60 ? "bg-yellow-500" : "bg-emerald-500";
-          return (
-            <div
-              key={i}
-              className={`absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full ${color} opacity-80 hover:opacity-100 hover:scale-150 transition-all cursor-pointer group`}
-              style={{ left: `${Math.min(left, 99)}%` }}
-              title={`${shortenAddr(t.wallet)} — ${t.minutesAfterFirst.toFixed(1)}m after first buy`}
-            />
-          );
+          const bg = t.minutesAfterFirst < 5 ? "var(--red)" : t.minutesAfterFirst < 60 ? "var(--yellow)" : "var(--green)";
+          return <div key={i} style={{ position: "absolute", top: "50%", left: `${Math.min(left, 99)}%`, transform: "translate(-50%, -50%)", width: 10, height: 10, borderRadius: "50%", background: bg, opacity: 0.8, cursor: "pointer" }} title={`${shortenAddr(t.wallet)} — ${t.minutesAfterFirst.toFixed(1)}m after first buy`} />;
         })}
       </div>
-      <div className="flex justify-between text-[10px] text-white/30 mt-1">
-        <span>0 min</span>
-        <span>{maxMin.toFixed(0)} min</span>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--text-muted)", marginTop: "4px" }}>
+        <span>0 min</span><span>{maxMin.toFixed(0)} min</span>
       </div>
-      <div className="flex gap-4 mt-2 text-[10px] text-white/40">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> &lt;5 min (insider risk)</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 inline-block" /> &lt;60 min</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> 60+ min</span>
+      <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
+        <span>🔴 &lt;5 min (insider risk)</span>
+        <span>🟡 &lt;60 min</span>
+        <span>🟢 60+ min</span>
       </div>
     </div>
   );
 }
 
-function SolDistribution({ dist }: { dist: DeepScanResult["solDistribution"] }) {
+function SolDistChart({ dist }: { dist: DeepScanResult["solDistribution"] }) {
   const buckets: DistBucket[] = [
     { label: "Dust (<0.1)", count: dist.dust, pct: 0 },
     { label: "Low (0.1-1)", count: dist.low, pct: 0 },
-    { label: "Medium (1-10)", count: dist.medium, pct: 0 },
+    { label: "Med (1-10)", count: dist.medium, pct: 0 },
     { label: "High (10-100)", count: dist.high, pct: 0 },
     { label: "Whale (100+)", count: dist.whale, pct: 0 },
   ];
   const total = buckets.reduce((s, b) => s + b.count, 0) || 1;
-  buckets.forEach((b) => (b.pct = Math.round((b.count / total) * 1000) / 10));
+  buckets.forEach(b => (b.pct = Math.round((b.count / total) * 1000) / 10));
   const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-cyan-500", "bg-emerald-500"];
-  const max = Math.max(...buckets.map((b) => b.pct), 1);
-
+  const max = Math.max(...buckets.map(b => b.pct), 1);
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-      <div className="text-sm font-bold text-white/70 mb-3">SOL Balance Distribution</div>
+    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>SOL Balance Distribution</div>
       <div className="space-y-1.5">
         {buckets.map((d, i) => (
           <div key={d.label} className="flex items-center gap-2 text-xs">
-            <span className="w-24 text-right text-white/50 shrink-0">{d.label}</span>
-            <div className="flex-1 h-5 bg-white/5 rounded overflow-hidden">
-              <div className={`h-full ${colors[i]} rounded transition-all duration-500`} style={{ width: `${(d.pct / max) * 100}%` }} />
+            <span className="w-24 text-right shrink-0" style={{ color: "var(--text-muted)" }}>{d.label}</span>
+            <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+              <div className={`h-full ${colors[i]} rounded`} style={{ width: `${(d.pct / max) * 100}%` }} />
             </div>
-            <span className="w-16 text-white/70 shrink-0">{d.pct}% ({d.count})</span>
+            <span className="w-16 shrink-0" style={{ color: "var(--text-secondary)" }}>{d.pct}% ({d.count})</span>
           </div>
         ))}
       </div>
@@ -321,56 +278,27 @@ function SolDistribution({ dist }: { dist: DeepScanResult["solDistribution"] }) 
 
 function RadarChart({ metrics }: { metrics: AnalysisResult["metrics"] }) {
   const axes = [
-    { label: "Wallet Age", value: Math.min(100, (metrics.avgWalletAgeDays / 365) * 100) },
+    { label: "Age", value: Math.min(100, (metrics.avgWalletAgeDays / 365) * 100) },
     { label: "Activity", value: Math.min(100, (metrics.avgTxCount / 1000) * 100) },
     { label: "Diversity", value: 100 - metrics.singleTokenPct },
     { label: "Balance", value: Math.min(100, (metrics.avgSolBalance / 10) * 100) },
     { label: "Organic", value: 100 - metrics.freshWalletPct },
     { label: "Conviction", value: metrics.diamondHandsPct },
   ];
-
   const cx = 150, cy = 150, r = 100;
-  const angleStep = (2 * Math.PI) / 6;
-  const startAngle = -Math.PI / 2;
-
-  const getPoint = (i: number, pct: number) => {
-    const angle = startAngle + i * angleStep;
-    return { x: cx + (r * pct / 100) * Math.cos(angle), y: cy + (r * pct / 100) * Math.sin(angle) };
-  };
-
-  const hexPoints = Array.from({ length: 6 }, (_, i) => getPoint(i, 100)).map((p) => `${p.x},${p.y}`).join(" ");
-  const valuePoints = axes.map((a, i) => getPoint(i, a.value)).map((p) => `${p.x},${p.y}`).join(" ");
-
+  const step = (2 * Math.PI) / 6, start = -Math.PI / 2;
+  const pt = (i: number, pct: number) => ({ x: cx + (r * pct / 100) * Math.cos(start + i * step), y: cy + (r * pct / 100) * Math.sin(start + i * step) });
+  const valPts = axes.map((a, i) => pt(i, a.value)).map(p => `${p.x},${p.y}`).join(" ");
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-      <div className="text-sm font-bold text-white/70 mb-3">Holderbase Radar</div>
-      <div className="flex justify-center">
-        <svg viewBox="0 0 300 300" className="w-64 h-64">
-          {/* Grid lines */}
-          {[25, 50, 75, 100].map((pct) => (
-            <polygon key={pct} points={Array.from({ length: 6 }, (_, i) => getPoint(i, pct)).map((p) => `${p.x},${p.y}`).join(" ")} fill="none" stroke="white" strokeOpacity={0.1} />
-          ))}
-          {/* Axis lines */}
-          {Array.from({ length: 6 }, (_, i) => {
-            const p = getPoint(i, 100);
-            return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="white" strokeOpacity={0.1} />;
-          })}
-          {/* Value polygon */}
-          <polygon points={valuePoints} fill="rgb(34,211,238)" fillOpacity={0.2} stroke="rgb(34,211,238)" strokeWidth={2} />
-          {/* Value dots */}
-          {axes.map((a, i) => {
-            const p = getPoint(i, a.value);
-            return <circle key={i} cx={p.x} cy={p.y} r={3} fill="rgb(34,211,238)" />;
-          })}
-          {/* Labels */}
-          {axes.map((a, i) => {
-            const p = getPoint(i, 130);
-            return (
-              <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="white" fillOpacity={0.5} fontSize={10}>
-                {a.label}
-              </text>
-            );
-          })}
+    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Holderbase Radar</div>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <svg viewBox="0 0 300 300" style={{ width: 256, height: 256 }}>
+          {[25, 50, 75, 100].map(p => <polygon key={p} points={Array.from({ length: 6 }, (_, i) => pt(i, p)).map(p => `${p.x},${p.y}`).join(" ")} fill="none" stroke="white" strokeOpacity={0.08} />)}
+          {Array.from({ length: 6 }, (_, i) => { const p = pt(i, 100); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="white" strokeOpacity={0.08} />; })}
+          <polygon points={valPts} fill="rgba(34,211,238,0.15)" stroke="rgb(34,211,238)" strokeWidth={2} />
+          {axes.map((a, i) => { const p = pt(i, a.value); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="rgb(34,211,238)" />; })}
+          {axes.map((a, i) => { const p = pt(i, 125); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="white" fillOpacity={0.4} fontSize={10}>{a.label}</text>; })}
         </svg>
       </div>
     </div>
@@ -378,57 +306,52 @@ function RadarChart({ metrics }: { metrics: AnalysisResult["metrics"] }) {
 }
 
 function BubbleScatter({ wallets, totalSupply }: { wallets: WalletAnalysis[]; totalSupply: number }) {
-  const W = 600, H = 400;
-  const maxAge = Math.max(...wallets.map((w) => w.walletAgeDays), 1);
+  const maxAge = Math.max(...wallets.map(w => w.walletAgeDays), 1);
   const logMax = Math.log10(maxAge + 1);
-
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-      <div className="text-sm font-bold text-white/70 mb-3">Wallet Scatter (Age vs Holdings)</div>
-      <div className="overflow-x-auto">
-        <div className="relative mx-auto" style={{ width: W, height: H }}>
-          {/* Axes */}
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-white/10" />
-          <div className="absolute top-0 bottom-0 left-0 w-px bg-white/10" />
-          {/* Bubbles */}
-          {wallets.map((w) => {
+    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+      <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Wallet Scatter (Age vs Holdings)</div>
+      <div style={{ overflowX: "auto" }}>
+        <div style={{ position: "relative", width: 600, height: 400, margin: "0 auto" }}>
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 1, background: "rgba(255,255,255,0.08)" }} />
+          <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: 1, background: "rgba(255,255,255,0.08)" }} />
+          {wallets.map(w => {
             const xPct = totalSupply > 0 ? (Math.log10(w.walletAgeDays + 1) / logMax) * 100 : 0;
             const yPct = totalSupply > 0 ? Math.min(((w.balance / totalSupply) * 100), 100) : 0;
             const size = Math.min(Math.sqrt(w.totalTxCount) * 2, 40);
-            const color = w.walletAgeDays < 7 ? "bg-red-500" : w.walletAgeDays >= 180 ? "bg-emerald-500" : "bg-cyan-500";
-            return (
-              <div
-                key={w.address}
-                className={`absolute rounded-full ${color} opacity-60 hover:opacity-100 transition-opacity cursor-pointer`}
-                style={{
-                  left: `${Math.max(1, Math.min(xPct, 98))}%`,
-                  bottom: `${Math.max(1, Math.min(yPct * 5, 95))}%`,
-                  width: Math.max(6, size),
-                  height: Math.max(6, size),
-                  transform: "translate(-50%, 50%)",
-                }}
-                title={`${shortenAddr(w.address)}\nAge: ${w.walletAgeDays.toFixed(0)}d | Balance: ${(w.balance / (totalSupply || 1) * 100).toFixed(2)}% | Txs: ${w.totalTxCount}`}
-              />
-            );
+            const bg = w.walletAgeDays < 7 ? "var(--red)" : w.walletAgeDays >= 180 ? "var(--green)" : "var(--accent)";
+            return <div key={w.address} style={{ position: "absolute", left: `${Math.max(1, Math.min(xPct, 98))}%`, bottom: `${Math.max(1, Math.min(yPct * 5, 95))}%`, width: Math.max(6, size), height: Math.max(6, size), borderRadius: "50%", background: bg, opacity: 0.6, transform: "translate(-50%, 50%)", cursor: "pointer" }} title={`${shortenAddr(w.address)} — Age: ${w.walletAgeDays.toFixed(0)}d | ${(w.balance / (totalSupply || 1) * 100).toFixed(2)}% | Txs: ${w.totalTxCount}`} />;
           })}
-          {/* Axis labels */}
-          <div className="absolute -bottom-5 left-0 text-[10px] text-white/30">0d</div>
-          <div className="absolute -bottom-5 right-0 text-[10px] text-white/30">{maxAge.toFixed(0)}d</div>
-          <div className="absolute -left-1 top-0 text-[10px] text-white/30 -translate-x-full">high</div>
-          <div className="absolute -left-1 bottom-0 text-[10px] text-white/30 -translate-x-full">low</div>
+          <div style={{ position: "absolute", bottom: -16, left: 0, fontSize: 10, color: "var(--text-muted)" }}>0d</div>
+          <div style={{ position: "absolute", bottom: -16, right: 0, fontSize: 10, color: "var(--text-muted)" }}>{maxAge.toFixed(0)}d</div>
         </div>
       </div>
-      <div className="flex gap-4 mt-4 text-[10px] text-white/40 justify-center">
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Fresh (&lt;7d)</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-cyan-500 inline-block" /> Veteran</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" /> OG (180d+)</span>
+      <div style={{ display: "flex", gap: "16px", marginTop: "20px", fontSize: "10px", color: "var(--text-muted)", justifyContent: "center" }}>
+        <span>🔴 Fresh (&lt;7d)</span>
+        <span>🔵 Veteran</span>
+        <span>🟢 OG (180d+)</span>
       </div>
     </div>
   );
 }
 
-/* ─── Main Page ─── */
+// ============================================================
+// FLOATING BG
+// ============================================================
+function FloatingBg() {
+  return (
+    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: "5%", left: "6%", opacity: 0.04, animation: "float 8s ease-in-out infinite" }}><ShieldIcon size={40} color="var(--accent)" /></div>
+      <div style={{ position: "absolute", top: "20%", right: "7%", opacity: 0.03, animation: "float 9s ease-in-out infinite", animationDelay: "1.5s" }}><EyeIcon size={48} color="var(--accent-dark)" /></div>
+      <div style={{ position: "absolute", top: "55%", left: "4%", opacity: 0.03, animation: "float 7s ease-in-out infinite", animationDelay: "3s" }}><TargetIcon size={32} color="var(--accent)" /></div>
+      <div style={{ position: "absolute", top: "75%", right: "5%", opacity: 0.03, animation: "float 10s ease-in-out infinite", animationDelay: "2s" }}><SearchIcon size={36} color="var(--accent-dark)" /></div>
+    </div>
+  );
+}
 
+// ============================================================
+// MAIN PAGE
+// ============================================================
 export default function Home() {
   const [mint, setMint] = useState("");
   const [loading, setLoading] = useState(false);
@@ -440,177 +363,311 @@ export default function Home() {
   const [deepScanError, setDeepScanError] = useState("");
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const analyze = useCallback(async () => {
     const addr = mint.trim();
     if (!addr) return;
-    
-    setLoading(true);
-    setError("");
-    setResult(null);
-    setVerdict(null);
-    setDeepScan(null);
-    setDeepScanError("");
-    setProgress("Fetching holders and analyzing wallets...");
+    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setProgress("Fetching holders and analyzing wallets...");
 
     try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mint: addr }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Analysis failed");
-      }
-
+      const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
       const data: AnalysisResult = await res.json();
       setResult(data);
-      setProgress("Generating AI verdict...");
+      setProgress("Generating verdict...");
 
-      // Get verdict
-      const vRes = await fetch("/api/ai-verdict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          metrics: data.metrics,
-          totalHolders: data.totalHolders,
-          tokenSymbol: data.tokenSymbol,
-        }),
-      });
+      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: data.totalHolders, tokenSymbol: data.tokenSymbol }) });
+      if (vRes.ok) setVerdict(await vRes.json());
 
-      if (vRes.ok) {
-        const vData = await vRes.json();
-        setVerdict(vData);
-      }
+      setLoading(false); setProgress("");
 
-      // Deep scan (runs after analysis completes)
-      setLoading(false);
-      setProgress("");
+      // Deep scan
       setDeepScanLoading(true);
-
       try {
         const totalSupply = data.wallets.reduce((s, w) => s + w.balance, 0);
-        const dsRes = await fetch("/api/deep-scan", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mint: data.mint,
-            wallets: data.wallets,
-            totalSupply,
-          }),
-        });
+        const dsRes = await fetch("/api/deep-scan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: data.mint, wallets: data.wallets, totalSupply }) });
+        if (dsRes.ok) setDeepScan(await dsRes.json());
+        else setDeepScanError("Deep scan incomplete");
+      } catch { setDeepScanError("Deep scan incomplete"); }
+      finally { setDeepScanLoading(false); }
 
-        if (dsRes.ok) {
-          const dsData = await dsRes.json();
-          setDeepScan(dsData);
-        } else {
-          setDeepScanError("Deep scan failed — results may be incomplete");
-        }
-      } catch {
-        setDeepScanError("Deep scan failed — results may be incomplete");
-      } finally {
-        setDeepScanLoading(false);
-      }
-
-      return; // skip the finally block's setLoading
+      // Scroll to results
+      setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
-      setLoading(false);
-      setProgress("");
+      setLoading(false); setProgress("");
     }
   }, [mint]);
 
   const totalSupply = result ? result.wallets.reduce((s, w) => s + w.balance, 0) : 0;
 
+  // Scroll-triggered reveals
+  useEffect(() => {
+    const loadGsap = async () => {
+      try {
+        const gsap = (await import("gsap")).default;
+        const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+        gsap.registerPlugin(ScrollTrigger);
+        gsap.config({ force3D: true });
+        document.querySelectorAll(".reveal").forEach(el => {
+          const h = el as HTMLElement;
+          h.style.willChange = "transform, opacity";
+          gsap.fromTo(h, { opacity: 0, y: 24 }, {
+            opacity: 1, y: 0, duration: 0.6, ease: "power3.out",
+            scrollTrigger: { trigger: h, start: "top 90%", once: true },
+            onComplete: () => { h.style.willChange = "auto"; },
+          });
+        });
+        document.querySelectorAll(".stagger").forEach(container => {
+          const children = Array.from(container.children) as HTMLElement[];
+          gsap.fromTo(children, { opacity: 0, y: 16 }, {
+            opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power3.out",
+            scrollTrigger: { trigger: container, start: "top 90%", once: true },
+          });
+        });
+      } catch { /* gsap optional */ }
+    };
+    loadGsap();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white">
-      {/* Header */}
-      <div className="border-b border-white/10 bg-black/40">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="text-xl font-bold tracking-tight">
-            <span className="text-cyan-400">HOLDER</span>
-            <span className="text-white/60">SCOPE</span>
-          </div>
-          <span className="text-xs text-white/30 border border-white/10 rounded px-1.5 py-0.5">BETA</span>
-          <div className="flex-1" />
-          <span className="text-xs text-white/20">holderbase quality analysis</span>
-        </div>
-      </div>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+      <FloatingBg />
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Search */}
-        <div className="flex gap-2 mb-8">
-          <input
-            type="text"
-            value={mint}
-            onChange={(e) => setMint(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !loading && analyze()}
-            placeholder="Paste token mint address..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-sm font-mono placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50"
-          />
-          <button
-            onClick={analyze}
-            disabled={loading || !mint.trim()}
-            className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-white/10 disabled:text-white/30 text-black font-bold px-6 py-3 rounded-lg text-sm transition-colors"
-          >
-            {loading ? "Analyzing..." : "Analyze"}
-          </button>
+      <div style={{ position: "relative", zIndex: 10, maxWidth: "1100px", margin: "0 auto", padding: "0 32px" }}>
+
+        {/* ═══ NAV ═══ */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "2px solid var(--border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <ShieldIcon size={24} color="var(--accent)" />
+              <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
+            </div>
+            <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(34,211,238,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <a href="https://github.com/co-numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none" }}>
+              <GitHubIcon size={20} />
+            </a>
+            <a href="https://x.com/latebuild" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none" }}>
+              <XIcon size={18} />
+            </a>
+          </div>
         </div>
 
-        {/* Loading */}
-        {loading && (
-          <div className="text-center py-12">
-            <div className="inline-block w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-4" />
-            <div className="text-sm text-white/50">{progress}</div>
-            <div className="text-xs text-white/20 mt-1">Analyzing top 20 holders — takes ~15-20 seconds</div>
+        {/* ═══ HERO ═══ */}
+        <div style={{ padding: "48px 0 32px" }}>
+          <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: "14px" }}>
+            SOLANA TOKEN INTELLIGENCE
           </div>
-        )}
+          <h1 style={{ fontSize: "44px", fontWeight: 800, lineHeight: 1.05, letterSpacing: "-0.03em", color: "var(--text)", marginBottom: "14px" }}>
+            See through the{" "}
+            <span style={{ background: "linear-gradient(135deg, var(--accent-bright), var(--accent-dark))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>holderbase.</span>
+          </h1>
+          <p style={{ fontSize: "15px", color: "var(--text-secondary)", maxWidth: "640px", lineHeight: 1.7 }}>
+            Paste any Solana token address. Get wallet age, activity analysis, bundle detection, cabal pattern scoring, and a plain-English quality verdict in seconds.
+          </p>
+        </div>
 
-        {/* Error */}
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-sm text-red-400">
-            {error}
-            {error.includes("max usage") || error.includes("429") || error.includes("rate") ? (
-              <div className="text-xs text-red-400/60 mt-1">RPC rate limited — wait 30 seconds and try again</div>
-            ) : null}
+        {/* ═══ SEARCH BAR ═══ */}
+        <div className="reveal" style={{ marginBottom: "32px" }}>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ flex: 1, position: "relative" }}>
+              <SearchIcon size={16} color="var(--text-muted)" />
+              <input
+                type="text" value={mint} onChange={e => setMint(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !loading && analyze()}
+                placeholder="Paste token mint address..."
+                className="font-mono"
+                style={{
+                  width: "100%", background: "var(--bg-card)", border: "2px solid var(--border)", borderRadius: "14px",
+                  padding: "14px 16px 14px 16px", fontSize: "13px", color: "var(--text)", outline: "none",
+                }}
+                onFocus={e => { e.currentTarget.style.borderColor = "var(--accent-dark)"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; }}
+              />
+            </div>
+            <button
+              onClick={analyze} disabled={loading || !mint.trim()}
+              style={{
+                padding: "14px 28px", borderRadius: "14px", fontWeight: 700, fontSize: "14px", border: "none", cursor: loading || !mint.trim() ? "default" : "pointer",
+                background: loading || !mint.trim() ? "var(--bg-card-alt)" : "linear-gradient(135deg, var(--accent-bright), var(--accent-dark))",
+                color: loading || !mint.trim() ? "var(--text-muted)" : "var(--bg)", boxShadow: loading || !mint.trim() ? "none" : "0 4px 16px var(--accent-glow)",
+              }}
+            >
+              {loading ? "Analyzing..." : "Analyze"}
+            </button>
           </div>
-        )}
+        </div>
 
-        {/* Results */}
-        {result && (
-          <div className="space-y-6">
-            {/* Token header */}
-            <div className="flex items-center gap-3">
-              <div className="text-2xl font-bold">${result.tokenSymbol}</div>
-              <div className="text-sm text-white/30">{result.tokenName}</div>
-              <div className="text-xs text-white/20 font-mono">{shortenAddr(result.mint)}</div>
-              <div className="flex-1" />
-              <div className="text-xs text-white/30">
-                {result.totalHolders} total holders · {result.analyzedHolders} analyzed
+        {/* ═══ THESIS ═══ */}
+        {!result && !loading && (
+          <>
+            <div className="reveal" style={{ marginBottom: "24px", background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
+              <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
+                <EyeIcon size={20} color="white" />
+                <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Why holderbase quality matters</span>
+              </div>
+              <div style={{ padding: "28px", display: "flex", flexDirection: "column", gap: "24px" }}>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                    <AlertIcon size={20} color="var(--red)" />
+                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>The problem</span>
+                  </div>
+                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }}>
+                    Most tokens look organic on the surface. 500 holders, growing chart, active Telegram. But underneath: <strong style={{ color: "var(--text)" }}>70% are fresh wallets from the same funding source</strong>, bundled in the same slot, holding nothing else. The chart is manufactured. The "community" is one person with 50 wallets.
+                  </p>
+                </div>
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                    <TargetIcon size={20} color="var(--accent-dark)" />
+                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--text)" }}>What we detect</span>
+                  </div>
+                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }}>
+                    HolderScope analyzes every wallet individually. <strong style={{ color: "var(--text)" }}>Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.
+                  </p>
+                </div>
+                <div style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.06), rgba(8,145,178,0.06))", borderRadius: "14px", padding: "24px", border: "1px solid var(--border-accent)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                    <ShieldIcon size={20} color="var(--accent)" />
+                    <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent)" }}>Plain-English verdict</span>
+                  </div>
+                  <p style={{ fontSize: "14px", lineHeight: 1.7, color: "var(--text-secondary)" }}>
+                    No jargon, no ambiguous charts. You get a letter grade (A–F), a numerical score, specific red flags, and a written verdict explaining exactly what the holderbase looks like and why. <strong style={{ color: "var(--accent)" }}>Know before you ape.</strong>
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* Verdict */}
-            {verdict && (
-              <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-                <div className="flex items-start gap-6">
-                  {/* Score circle */}
-                  <div className="shrink-0 text-center">
-                    <div className={`w-20 h-20 rounded-full ${scoreColor(verdict.score)} flex items-center justify-center`}>
-                      <span className="text-3xl font-black text-black">{verdict.score}</span>
-                    </div>
-                    <div className={`text-2xl font-black mt-1 ${gradeColor(verdict.grade)}`}>
-                      {verdict.grade}
-                    </div>
+            {/* ═══ WHAT IT DETECTS ═══ */}
+            <div className="reveal stagger" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "24px" }}>
+              {[
+                { icon: <TargetIcon size={20} color="var(--red)" />, title: "Sybil / Cabal Detection", desc: "Fresh wallets, single-token holders, same-slot buys, funding cluster analysis. Spots manufactured holderbases." },
+                { icon: <LayersIcon size={20} color="var(--accent)" />, title: "Wallet Quality Scoring", desc: "Age, tx count, SOL balance, token diversity. Each wallet profiled individually. Aggregated into holderbase metrics." },
+                { icon: <TrendIcon size={20} color="var(--green)" />, title: "Concentration Analysis", desc: "Top 5/10/20 holder dominance, Gini coefficient, HHI index. Detects whale risk and distribution health." },
+              ].map((card, i) => (
+                <div key={i} style={{
+                  padding: "24px", borderRadius: "16px", border: "1px solid var(--border)", background: "var(--bg-card)",
+                  display: "flex", flexDirection: "column", gap: "12px", transition: "all 0.2s ease",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(34,211,238,0.06)"; e.currentTarget.style.borderColor = "var(--border-accent)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    {card.icon}
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>{card.title}</span>
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-white/80 leading-relaxed mb-4">{verdict.verdict}</div>
-                    <div className="space-y-1.5">
+                  <p style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>{card.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* ═══ HOW IT WORKS ═══ */}
+            <div className="reveal" style={{ marginBottom: "24px", background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", padding: "24px 28px" }}>
+              <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "16px" }}>
+                How it works
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {[
+                  { step: "1", text: "Paste any Solana token mint address" },
+                  { step: "2", text: "We fetch top 100 holders via Helius DAS and analyze each wallet in parallel" },
+                  { step: "3", text: "Deep scan runs bundle detection, funding cluster tracing, and buy timing analysis" },
+                  { step: "4", text: "Get a scored verdict — letter grade, red flags, and plain-English assessment" },
+                ].map(s => (
+                  <div key={s.step} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 16px", borderRadius: "12px", background: "var(--bg-card-alt)", border: "1px solid var(--border)" }}>
+                    <span className="font-mono" style={{ fontSize: "11px", fontWeight: 700, color: "var(--accent)", minWidth: "18px" }}>{s.step}</span>
+                    <span style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{s.text}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(34,211,238,0.04)", border: "1px solid var(--border-accent)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                <strong style={{ color: "var(--accent-dark)" }}>Data source:</strong> Helius RPC (enhanced transactions, DAS). No third-party APIs that can be gamed. All analysis runs on raw on-chain data.
+              </div>
+            </div>
+
+            {/* ═══ VS COMPARISON ═══ */}
+            <div className="reveal stagger" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "24px" }}>
+              <div style={{ background: "rgba(239,68,68,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid rgba(239,68,68,0.12)" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--red)", marginBottom: "10px" }}>❌ Rugcheck</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
+                  Flags supply concentration and LP locks. Doesn't analyze individual wallets, wallet age, or funding sources. <strong style={{ color: "var(--red)" }}>Surface-level only.</strong>
+                </div>
+              </div>
+              <div style={{ background: "rgba(234,179,8,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid rgba(234,179,8,0.12)" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--yellow)", marginBottom: "10px" }}>⚠️ Bubblemaps</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
+                  Shows wallet clusters visually. Useful but no scoring, no age analysis, no automated verdict. <strong style={{ color: "var(--yellow)" }}>Manual interpretation required.</strong>
+                </div>
+              </div>
+              <div style={{ background: "rgba(34,211,238,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>✓ HolderScope</div>
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
+                  Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style={{ color: "var(--accent)" }}>Full picture, plain English.</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* ═══ EMPTY STATE ═══ */}
+            <div style={{ textAlign: "center", padding: "40px 0 60px" }}>
+              <div style={{ fontSize: "48px", marginBottom: "12px", opacity: 0.6 }}>🔍</div>
+              <div style={{ fontSize: "16px", color: "var(--text-muted)", marginBottom: "6px" }}>Paste a Solana token address above to analyze its holderbase</div>
+              <div style={{ fontSize: "13px", color: "var(--text-muted)", opacity: 0.6 }}>Analysis takes ~15-20 seconds · Top 100 holders · Free to use</div>
+            </div>
+          </>
+        )}
+
+        {/* ═══ LOADING ═══ */}
+        {loading && (
+          <div style={{ textAlign: "center", padding: "48px 0" }}>
+            <div style={{ display: "inline-block", width: 32, height: 32, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "scan-line 1s linear infinite", marginBottom: "16px" }} />
+            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{progress}</div>
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Analyzing top 100 holders — takes ~15-20 seconds</div>
+          </div>
+        )}
+
+        {/* ═══ ERROR ═══ */}
+        {error && (
+          <div style={{ background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "14px", padding: "16px", fontSize: "13px", color: "var(--red)", marginBottom: "24px" }}>
+            {error}
+            {(error.includes("max usage") || error.includes("429") || error.includes("rate")) && (
+              <div style={{ fontSize: "11px", color: "rgba(239,68,68,0.6)", marginTop: "4px" }}>RPC rate limited — wait 30 seconds and try again</div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ RESULTS ═══ */}
+        {result && (
+          <div ref={resultsRef} style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "40px" }}>
+
+            {/* Token header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+              <span style={{ fontSize: "24px", fontWeight: 800, color: "var(--text)" }}>${result.tokenSymbol}</span>
+              <span style={{ fontSize: "14px", color: "var(--text-muted)" }}>{result.tokenName}</span>
+              <CopyButton text={result.mint} />
+              <div style={{ flex: 1 }} />
+              <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{result.totalHolders} total holders · {result.analyzedHolders} analyzed</span>
+            </div>
+
+            {/* Verdict card */}
+            {verdict && (
+              <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: `2px solid`, borderColor: scoreBorderColor(verdict.score).replace("border-", "").replace("/30", ""), overflow: "hidden" }}>
+                <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <ShieldIcon size={20} color="white" />
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Holderbase Verdict</span>
+                </div>
+                <div style={{ padding: "28px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
+                  <div style={{ textAlign: "center", flexShrink: 0 }}>
+                    <div className={`${scoreColor(verdict.score)}`} style={{ width: 80, height: 80, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", animation: "pulse-glow 3s ease-in-out infinite" }}>
+                      <span style={{ fontSize: "32px", fontWeight: 900, color: "var(--bg)" }}>{verdict.score}</span>
+                    </div>
+                    <div className={`${gradeColor(verdict.grade)}`} style={{ fontSize: "28px", fontWeight: 900, marginTop: "6px" }}>{verdict.grade}</div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "14px", color: "var(--text-secondary)", lineHeight: 1.7, marginBottom: "16px" }}>{verdict.verdict}</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                       {verdict.flags.map((flag, i) => (
-                        <div key={i} className="text-xs text-white/60">{flag}</div>
+                        <div key={i} style={{ fontSize: "12px", color: "var(--text-secondary)", padding: "6px 10px", borderRadius: "8px", background: "var(--bg-card-alt)", border: "1px solid var(--border)" }}>{flag}</div>
                       ))}
                     </div>
                   </div>
@@ -618,117 +675,72 @@ export default function Home() {
               </div>
             )}
 
-            {/* Key Metrics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <MetricCard
-                label="Fresh Wallets (<7d)"
-                value={`${result.metrics.freshWalletPct}%`}
-                sub={`${result.metrics.veryFreshWalletPct}% under 24hrs`}
-                warn={result.metrics.freshWalletPct > 40}
-              />
-              <MetricCard
-                label="Veteran Holders (90d+)"
-                value={`${result.metrics.veteranHolderPct}%`}
-                sub={`${result.metrics.ogHolderPct}% OG (180d+)`}
-              />
-              <MetricCard
-                label="Low Activity (<10 txs)"
-                value={`${result.metrics.lowActivityPct}%`}
-                sub="likely burner wallets"
-                warn={result.metrics.lowActivityPct > 40}
-              />
-              <MetricCard
-                label="Single-Token Holders"
-                value={`${result.metrics.singleTokenPct}%`}
-                sub="only hold this token"
-                warn={result.metrics.singleTokenPct > 30}
-              />
-              <MetricCard
-                label="Avg Wallet Age"
-                value={`${result.metrics.avgWalletAgeDays}d`}
-                sub={`median: ${result.metrics.medianWalletAgeDays}d`}
-              />
-              <MetricCard
-                label="Avg Tx Count"
-                value={`${result.metrics.avgTxCount}`}
-                sub="lifetime transactions"
-              />
-              <MetricCard
-                label="Avg SOL Balance"
-                value={`${result.metrics.avgSolBalance}`}
-                sub="SOL per wallet"
-                warn={result.metrics.avgSolBalance < 0.5}
-              />
-              <MetricCard
-                label="Diamond Hands (>2d)"
-                value={`${result.metrics.diamondHandsPct}%`}
-                sub="holding for 2+ days"
-              />
+            {/* Key Metrics */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
+              <MetricCard label="Fresh Wallets (<7d)" value={`${result.metrics.freshWalletPct}%`} sub={`${result.metrics.veryFreshWalletPct}% under 24hrs`} warn={result.metrics.freshWalletPct > 40} />
+              <MetricCard label="Veteran Holders (90d+)" value={`${result.metrics.veteranHolderPct}%`} sub={`${result.metrics.ogHolderPct}% OG (180d+)`} />
+              <MetricCard label="Low Activity (<10 txs)" value={`${result.metrics.lowActivityPct}%`} sub="likely burner wallets" warn={result.metrics.lowActivityPct > 40} />
+              <MetricCard label="Single-Token Holders" value={`${result.metrics.singleTokenPct}%`} sub="only hold this token" warn={result.metrics.singleTokenPct > 30} />
+              <MetricCard label="Avg Wallet Age" value={`${result.metrics.avgWalletAgeDays}d`} sub={`median: ${result.metrics.medianWalletAgeDays}d`} />
+              <MetricCard label="Avg Tx Count" value={`${result.metrics.avgTxCount}`} sub="lifetime transactions" />
+              <MetricCard label="Avg SOL Balance" value={`${result.metrics.avgSolBalance}`} sub="SOL per wallet" warn={result.metrics.avgSolBalance < 0.5} />
+              <MetricCard label="Diamond Hands (>2d)" value={`${result.metrics.diamondHandsPct}%`} sub="holding for 2+ days" />
             </div>
 
             {/* Distributions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-sm font-bold text-white/70 mb-3">Wallet Age Distribution</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+              <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Wallet Age Distribution</div>
                 <BarChart data={result.distribution.walletAge} color="bg-cyan-500" />
               </div>
-              <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                <div className="text-sm font-bold text-white/70 mb-3">Hold Duration Distribution</div>
+              <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+                <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Hold Duration Distribution</div>
                 <BarChart data={result.distribution.holdDuration} color="bg-emerald-500" />
               </div>
             </div>
 
-            {/* Radar Chart */}
+            {/* Radar */}
             <RadarChart metrics={result.metrics} />
 
             {/* Top Holders Table */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <div className="text-sm font-bold text-white/70 mb-3">Top 20 Holders</div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs">
+            <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
+              <div style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "10px" }}>
+                <LayersIcon size={16} color="var(--accent-dark)" />
+                <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>Top 20 Holders</span>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", fontSize: "11px", borderCollapse: "collapse" }}>
                   <thead>
-                    <tr className="text-white/30 border-b border-white/5">
-                      <th className="text-left py-2 pr-3">#</th>
-                      <th className="text-left py-2 pr-3">Wallet</th>
-                      <th className="text-right py-2 pr-3">Balance %</th>
-                      <th className="text-right py-2 pr-3">Wallet Age</th>
-                      <th className="text-right py-2 pr-3">Txs</th>
-                      <th className="text-right py-2">Status</th>
+                    <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                      {["#", "Wallet", "Balance %", "Wallet Age", "Txs", "Status"].map(h => (
+                        <th key={h} className="font-mono" style={{ padding: "10px 12px", textAlign: h === "#" || h === "Wallet" ? "left" : "right", fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", fontWeight: 600 }}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {result.topHolders.map((h, i) => (
-                      <tr key={h.address} className="border-b border-white/5 hover:bg-white/5">
-                        <td className="py-2 pr-3 text-white/30">{i + 1}</td>
-                        <td className="py-2 pr-3 font-mono">
-                          <a
-                            href={`https://solscan.io/account/${h.address}`}
-                            target="_blank"
-                            rel="noopener"
-                            className="text-cyan-400/80 hover:text-cyan-300"
-                          >
-                            {shortenAddr(h.address)}
-                          </a>
+                      <tr key={h.address} style={{ borderBottom: "1px solid var(--border)" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(34,211,238,0.03)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
+                        <td style={{ padding: "8px 12px", color: "var(--text-muted)" }}>{i + 1}</td>
+                        <td className="font-mono" style={{ padding: "8px 12px" }}>
+                          <a href={`https://solscan.io/account/${h.address}`} target="_blank" rel="noopener" style={{ color: "var(--accent-dark)", textDecoration: "none" }}>{shortenAddr(h.address)}</a>
                         </td>
-                        <td className="py-2 pr-3 text-right text-white/70">{h.balancePct}%</td>
-                        <td className={`py-2 pr-3 text-right ${h.walletAgeDays < 7 ? "text-red-400" : h.walletAgeDays > 90 ? "text-emerald-400" : "text-white/70"}`}>
+                        <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--text-secondary)" }}>{h.balancePct}%</td>
+                        <td style={{ padding: "8px 12px", textAlign: "right", color: h.walletAgeDays < 7 ? "var(--red)" : h.walletAgeDays > 90 ? "var(--green)" : "var(--text-secondary)" }}>
                           {h.walletAgeDays < 1 ? "<1d" : `${Math.round(h.walletAgeDays)}d`}
                         </td>
-                        <td className={`py-2 pr-3 text-right ${h.totalTxCount < 10 ? "text-red-400" : "text-white/70"}`}>
-                          {h.totalTxCount.toLocaleString()}
-                        </td>
-                        <td className="py-2 text-right">
+                        <td style={{ padding: "8px 12px", textAlign: "right", color: h.totalTxCount < 10 ? "var(--red)" : "var(--text-secondary)" }}>{h.totalTxCount.toLocaleString()}</td>
+                        <td style={{ padding: "8px 12px", textAlign: "right" }}>
                           {(h as Record<string, unknown>).isPool ? (
-                            <span className="text-purple-400 bg-purple-400/10 px-1.5 py-0.5 rounded">POOL</span>
+                            <span style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>POOL</span>
                           ) : h.isFresh ? (
-                            <span className="text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">FRESH</span>
+                            <span style={{ color: "var(--red)", background: "rgba(239,68,68,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>FRESH</span>
                           ) : h.walletAgeDays > 180 ? (
-                            <span className="text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">OG</span>
+                            <span style={{ color: "var(--green)", background: "rgba(16,185,129,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>OG</span>
                           ) : h.walletAgeDays > 90 ? (
-                            <span className="text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded">VET</span>
-                          ) : (
-                            <span className="text-white/30">—</span>
-                          )}
+                            <span style={{ color: "var(--accent)", background: "rgba(34,211,238,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>VET</span>
+                          ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
                         </td>
                       </tr>
                     ))}
@@ -738,44 +750,31 @@ export default function Home() {
             </div>
 
             {/* All Wallets (collapsible) */}
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <button
-                onClick={() => setShowWallets(!showWallets)}
-                className="text-sm font-bold text-white/70 hover:text-white flex items-center gap-2"
-              >
-                <span>{showWallets ? "▼" : "▶"}</span>
-                All Analyzed Wallets ({result.wallets.length})
+            <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+              <button onClick={() => setShowWallets(!showWallets)} style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span>{showWallets ? "▼" : "▶"}</span> All Analyzed Wallets ({result.wallets.length})
               </button>
               {showWallets && (
-                <div className="mt-3 overflow-x-auto max-h-96 overflow-y-auto">
-                  <table className="w-full text-xs">
-                    <thead className="sticky top-0 bg-[#0a0a0f]">
-                      <tr className="text-white/30 border-b border-white/5">
-                        <th className="text-left py-2 pr-2">Wallet</th>
-                        <th className="text-right py-2 pr-2">Age (d)</th>
-                        <th className="text-right py-2 pr-2">Txs</th>
-                        <th className="text-right py-2 pr-2">SOL</th>
-                        <th className="text-right py-2 pr-2">Tokens</th>
-                        <th className="text-right py-2">Fresh</th>
+                <div style={{ marginTop: "12px", overflowX: "auto", maxHeight: 400, overflowY: "auto" }}>
+                  <table style={{ width: "100%", fontSize: "11px", borderCollapse: "collapse" }}>
+                    <thead style={{ position: "sticky", top: 0, background: "var(--bg-card-alt)" }}>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        {["Wallet", "Age (d)", "Txs", "SOL", "Tokens", "Fresh"].map(h => (
+                          <th key={h} className="font-mono" style={{ padding: "8px", textAlign: h === "Wallet" ? "left" : "right", fontSize: "9px", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>{h}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {result.wallets.map((w) => (
-                        <tr key={w.address} className="border-b border-white/5">
-                          <td className="py-1.5 pr-2 font-mono">
-                            <a href={`https://solscan.io/account/${w.address}`} target="_blank" rel="noopener" className="text-cyan-400/60 hover:text-cyan-300">
-                              {shortenAddr(w.address)}
-                            </a>
+                      {result.wallets.map(w => (
+                        <tr key={w.address} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td className="font-mono" style={{ padding: "6px 8px" }}>
+                            <a href={`https://solscan.io/account/${w.address}`} target="_blank" rel="noopener" style={{ color: "var(--accent-dark)", textDecoration: "none", opacity: 0.7 }}>{shortenAddr(w.address)}</a>
                           </td>
-                          <td className={`py-1.5 pr-2 text-right ${w.walletAgeDays < 7 ? "text-red-400" : "text-white/50"}`}>
-                            {w.walletAgeDays.toFixed(1)}
-                          </td>
-                          <td className="py-1.5 pr-2 text-right text-white/50">{w.totalTxCount}</td>
-                          <td className="py-1.5 pr-2 text-right text-white/50">{w.solBalance}</td>
-                          <td className="py-1.5 pr-2 text-right text-white/50">{w.otherTokenCount}</td>
-                          <td className="py-1.5 text-right">
-                            {w.isFresh ? "🔴" : "🟢"}
-                          </td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", color: w.walletAgeDays < 7 ? "var(--red)" : "var(--text-muted)" }}>{w.walletAgeDays.toFixed(1)}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", color: "var(--text-muted)" }}>{w.totalTxCount}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", color: "var(--text-muted)" }}>{w.solBalance}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right", color: "var(--text-muted)" }}>{w.otherTokenCount}</td>
+                          <td style={{ padding: "6px 8px", textAlign: "right" }}>{w.isFresh ? "🔴" : "🟢"}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -784,63 +783,52 @@ export default function Home() {
               )}
             </div>
 
-            {/* Deep Scan Loading */}
+            {/* Deep scan loading */}
             {deepScanLoading && (
-              <div className="bg-white/5 border border-cyan-500/20 rounded-xl p-6 text-center">
-                <div className="inline-block w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-3" />
-                <div className="text-sm text-cyan-400/70">Running deep scan...</div>
-                <div className="text-xs text-white/20 mt-1">Analyzing bundles, funding sources, and buy patterns</div>
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
+                <div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "scan-line 1s linear infinite", marginBottom: "12px" }} />
+                <div style={{ fontSize: "13px", color: "var(--accent-dark)" }}>Running deep scan...</div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Analyzing bundles, funding sources, and buy patterns</div>
               </div>
             )}
 
-            {/* Deep Scan Error */}
-            {deepScanError && (
-              <div className="text-xs text-white/30 text-center py-2">{deepScanError}</div>
-            )}
+            {deepScanError && <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", padding: "8px" }}>{deepScanError}</div>}
 
-            {/* Deep Scan Results */}
+            {/* Deep scan results */}
             {deepScan && (
-              <div className="space-y-6">
-                <div className="text-sm font-bold text-white/40 uppercase tracking-wider">Deep Scan Results</div>
-
-                {/* Concentration Bar */}
+              <>
+                <div className="font-mono" style={{ fontSize: "10px", fontWeight: 600, color: "var(--accent-dark)", letterSpacing: "0.12em", textTransform: "uppercase", marginTop: "8px" }}>DEEP SCAN RESULTS</div>
                 <ConcentrationBar concentration={deepScan.concentration} />
-
-                {/* Bundle Detection */}
                 <BundleDetection bundles={deepScan.bundles} bundleCount={deepScan.bundleCount} bundledWalletCount={deepScan.bundledWalletCount} />
-
-                {/* Funding Clusters */}
                 <FundingClusters clusters={deepScan.fundingClusters} clusterCount={deepScan.clusterCount} clusteredWalletCount={deepScan.clusteredWalletCount} />
-
-                {/* Buy Timeline */}
                 <BuyTimeline timeline={deepScan.buyTimeline} />
-
-                {/* SOL Distribution */}
-                <SolDistribution dist={deepScan.solDistribution} />
-
-                {/* Bubble Scatter */}
+                <SolDistChart dist={deepScan.solDistribution} />
                 <BubbleScatter wallets={result.wallets} totalSupply={totalSupply} />
-              </div>
+              </>
             )}
 
             {/* Footer note */}
-            <div className="text-xs text-white/20 text-center">
-              Data sourced from Helius RPC · Wallet ages derived from first on-chain transaction · 
-              Top 100 holders analyzed · Results are indicative, not definitive
+            <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "center", padding: "8px 0", lineHeight: 1.6 }}>
+              Data sourced from Helius RPC · Wallet ages from first on-chain transaction · Top 100 holders analyzed · Results are indicative, not definitive
             </div>
           </div>
         )}
 
-        {/* Empty state */}
-        {!result && !loading && !error && (
-          <div className="text-center py-20">
-            <div className="text-4xl mb-4">🔍</div>
-            <div className="text-lg text-white/40 mb-2">Paste a Solana token address to analyze its holderbase</div>
-            <div className="text-sm text-white/20">
-              Analyzes wallet age, activity levels, holder quality, and sybil risk
-            </div>
+        {/* ═══ FOOTER ═══ */}
+        <div style={{ padding: "16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "2px solid var(--border)", marginTop: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12px", color: "var(--text-muted)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--accent-dark)" }}>
+              <ShieldIcon size={14} color="var(--accent-dark)" /> HOLDERSCOPE
+            </span>
+            <a href="https://github.com/co-numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
+              <GitHubIcon size={14} /> github
+            </a>
+            <a href="https://x.com/latebuild" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
+              <XIcon size={14} /> twitter
+            </a>
           </div>
-        )}
+          <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>know before you ape</div>
+        </div>
       </div>
     </div>
   );
