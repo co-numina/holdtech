@@ -21,15 +21,15 @@ interface HolderInfo {
   amount: number;
 }
 
-async function getHolders(mint: string, limit = 200): Promise<HolderInfo[]> {
+async function getHolders(mint: string, limit = 5000): Promise<HolderInfo[]> {
   const holders: HolderInfo[] = [];
   let cursor: string | undefined;
 
-  // Page through token accounts
+  // Page through token accounts — full holder base
   while (holders.length < limit) {
     const params: any = {
       mint,
-      limit: Math.min(1000, limit - holders.length),
+      limit: 1000,
     };
     if (cursor) params.cursor = cursor;
 
