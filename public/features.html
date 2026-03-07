@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HoldTech — Feature Overview</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050508;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .card {
+    width: 1200px;
+    background: #07070e;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: #e0e0f0;
+    padding-bottom: 60px;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(153,69,255,0.08) 0%, rgba(20,241,149,0.03) 40%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .header {
+    padding: 60px 60px 40px;
+    text-align: center;
+    position: relative;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  .logo-row img {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+  }
+
+  .logo-row h1 {
+    font-size: 42px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: #8888aa;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    border-radius: 20px;
+    background: rgba(20,241,149,0.06);
+    border: 1px solid rgba(20,241,149,0.15);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #14F195;
+    letter-spacing: 1px;
+    margin-top: 12px;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #14F195;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(20,241,149,0.4); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(20,241,149,0); }
+  }
+
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(153,69,255,0.2), rgba(20,241,149,0.15), transparent);
+    margin: 0 60px;
+  }
+
+  .section {
+    padding: 40px 60px;
+    position: relative;
+  }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #9945FF;
+    letter-spacing: 2px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(153,69,255,0.2), transparent);
+  }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .feature-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--card-accent, #9945FF), transparent);
+    opacity: 0.5;
+  }
+
+  .feature-card.full {
+    grid-column: 1 / -1;
+  }
+
+  .feature-icon {
+    font-size: 28px;
+    margin-bottom: 14px;
+  }
+
+  .feature-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #f0f0ff;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .feature-title .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    letter-spacing: 0.5px;
+  }
+
+  .tag-free {
+    background: rgba(20,241,149,0.08);
+    color: #14F195;
+    border: 1px solid rgba(20,241,149,0.15);
+  }
+
+  .tag-gated {
+    background: rgba(153,69,255,0.08);
+    color: #b06aff;
+    border: 1px solid rgba(153,69,255,0.15);
+  }
+
+  .tag-new {
+    background: rgba(255,165,0,0.08);
+    color: #ffa500;
+    border: 1px solid rgba(255,165,0,0.15);
+  }
+
+  .feature-desc {
+    font-size: 13px;
+    color: #8888aa;
+    line-height: 1.7;
+    margin-bottom: 14px;
+  }
+
+  .feature-bullets {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .feature-bullets li {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #aaaacc;
+  }
+
+  /* Tier gate section */
+  .gate-section {
+    padding: 40px 60px;
+  }
+
+  .gate-card {
+    background: rgba(153,69,255,0.03);
+    border: 1px solid rgba(153,69,255,0.12);
+    border-radius: 16px;
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  .gate-lock {
+    font-size: 48px;
+    flex-shrink: 0;
+  }
+
+  .gate-content h3 {
+    font-size: 20px;
+    font-weight: 800;
+    color: #f0f0ff;
+    margin-bottom: 8px;
+  }
+
+  .gate-content p {
+    font-size: 13px;
+    color: #8888aa;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+
+  .gate-tiers {
+    display: flex;
+    gap: 12px;
+  }
+
+  .gate-tier {
+    padding: 10px 20px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    text-align: center;
+  }
+
+  .gate-tier-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .gate-tier-amount {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #8888aa;
+  }
+
+  /* Pipeline section */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 20px 0;
+  }
+
+  .pipeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .pipeline-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    background: rgba(153,69,255,0.06);
+    border: 1px solid rgba(153,69,255,0.12);
+  }
+
+  .pipeline-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: #aaaacc;
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+
+  .pipeline-arrow {
+    font-size: 18px;
+    color: rgba(153,69,255,0.3);
+    flex-shrink: 0;
+    margin: 0 -4px;
+    margin-top: -20px;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 0;
+    margin: 0 60px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .stat {
+    flex: 1;
+    padding: 20px;
+    text-align: center;
+    background: rgba(255,255,255,0.02);
+    border-right: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    color: #666688;
+    letter-spacing: 1.5px;
+    margin-top: 6px;
+  }
+
+  /* Footer */
+  .footer {
+    padding: 32px 60px;
+    text-align: center;
+  }
+
+  .footer-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #9945FF, #14F195);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .footer-ca {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #555577;
+    margin-top: 8px;
+    word-break: break-all;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo-row">
+      <img src="/logo.png" alt="HoldTech">
+      <h1>HOLDTECH</h1>
+    </div>
+    <div class="subtitle">Solana Token Intelligence Platform</div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      ALL FEATURES LIVE
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Scan Pipeline -->
+  <div class="section">
+    <div class="section-label">SCAN PIPELINE — ONE TOKEN ADDRESS, FULL INTELLIGENCE</div>
+    <div class="pipeline">
+      <div class="pipeline-step">
+        <div class="pipeline-icon">📋</div>
+        <div class="pipeline-label">PASTE CA</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">📊</div>
+        <div class="pipeline-label">HOLDER<br>QUALITY</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🤖</div>
+        <div class="pipeline-label">AI<br>VERDICT</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🔬</div>
+        <div class="pipeline-label">DEEP<br>SCAN</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">👤</div>
+        <div class="pipeline-label">DEPLOYER<br>PROFILE</div>
+      </div>
+      <div class="pipeline-arrow">→</div>
+      <div class="pipeline-step">
+        <div class="pipeline-icon">🔗</div>
+        <div class="pipeline-label">HOLDER<br>OVERLAP</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Free Features -->
+  <div class="section">
+    <div class="section-label">FREE TIER — NO WALLET REQUIRED</div>
+    <div class="feature-grid">
+
+      <div class="feature-card" style="--card-accent: #14F195;">
+        <div class="feature-icon">📊</div>
+        <div class="feature-title">Holder Quality Analysis <span class="tag tag-free">FREE</span></div>
+        <div class="feature-desc">Instant breakdown of any token's holder base. See who's really holding.</div>
+        <ul class="feature-bullets">
+          <li>Wallet Age Distribution</li>
+          <li>Fresh Wallet %</li>
+          <li>SOL Balance Spread</li>
+          <li>Hold Duration</li>
+          <li>Activity Scoring</li>
+          <li>Quality Grade A→F</li>
+        </ul>
+      </div>
+
+      <div class="feature-card" style="--card-accent: #14F195;">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">AI Verdict <span class="tag tag-free">FREE</span></div>
+        <div class="feature-desc">GPT-powered plain-English analysis of what the holder data actually means.</div>
+        <ul class="feature-bullets">
+          <li>Natural Language Summary</li>
+          <li>Red Flag Detection</li>
+          <li>Confidence Score</li>
+          <li>Buy/Avoid Signal</li>
+        </ul>
+      </div>
+
+      <div class="feature-card" style="--card-accent: #14F195;">
+        <div class="feature-icon">📤</div>
+        <div class="feature-title">Share Cards <span class="tag tag-free">FREE</span></div>
+        <div class="feature-desc">Auto-generated visual report cards. Share scan results anywhere.</div>
+        <ul class="feature-bullets">
+          <li>OG Image Generation</li>
+          <li>One-Click Share</li>
+          <li>Crystal Background</li>
+          <li>Grade + Key Metrics</li>
+        </ul>
+      </div>
+
+      <div class="feature-card" style="--card-accent: #14F195;">
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title">Telegram Bot <span class="tag tag-free">FREE</span></div>
+        <div class="feature-desc">Drop a CA in any group chat. Full scan results in seconds.</div>
+        <ul class="feature-bullets">
+          <li>Auto-Detect CAs</li>
+          <li>Group Chat Support</li>
+          <li>Visual Metrics</li>
+          <li>Share Card Delivery</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Gated Features -->
+  <div class="section">
+    <div class="section-label">SCOUT+ TIER — HOLD 3M $HOLDTECH (0.3%)</div>
+    <div class="feature-grid">
+
+      <div class="feature-card" style="--card-accent: #9945FF;">
+        <div class="feature-icon">🔬</div>
+        <div class="feature-title">Deep Scan <span class="tag tag-gated">SCOUT+</span></div>
+        <div class="feature-desc">Bundle detection, funding cluster analysis, and coordinated buy pattern identification.</div>
+        <ul class="feature-bullets">
+          <li>Bundle Detection</li>
+          <li>Funding Clusters</li>
+          <li>Buy Timeline</li>
+          <li>SOL Distribution</li>
+          <li>Concentration Analysis</li>
+          <li>Bubble Scatter Plot</li>
+        </ul>
+      </div>
+
+      <div class="feature-card" style="--card-accent: #9945FF;">
+        <div class="feature-icon">👤</div>
+        <div class="feature-title">Deployer Profiles <span class="tag tag-gated">SCOUT+</span> <span class="tag tag-new">NEW</span></div>
+        <div class="feature-desc">Full launch history of any token's deployer. See their track record before you buy.</div>
+        <ul class="feature-bullets">
+          <li>Total Launches</li>
+          <li>Rug Rate %</li>
+          <li>Graduation Rate</li>
+          <li>Avg Time to ATH</li>
+          <li>Best Launch</li>
+          <li>Deploy Frequency</li>
+          <li>Per-Token ATH + Status</li>
+        </ul>
+      </div>
+
+      <div class="feature-card full" style="--card-accent: #9945FF;">
+        <div class="feature-icon">🔗</div>
+        <div class="feature-title">Holder Overlap <span class="tag tag-gated">SCOUT+</span> <span class="tag tag-new">NEW</span></div>
+        <div class="feature-desc">Cross-reference holder bases across multiple tokens. Detect coordinated cabal activity automatically.</div>
+        <ul class="feature-bullets">
+          <li>2-5 Token Comparison</li>
+          <li>Overlap Score</li>
+          <li>Coordination Verdict</li>
+          <li>Shared Wallet List</li>
+          <li>Directional Overlap %</li>
+          <li>Auto-Triggers from Deployer Profile</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Token Gate -->
+  <div class="gate-section">
+    <div class="gate-card">
+      <div class="gate-lock">🔒</div>
+      <div class="gate-content">
+        <h3>Token Gated Access</h3>
+        <p>Premium intelligence tools require holding $HOLDTECH. Threshold starts low — 0.3% of supply. As more tools ship, tiers scale up. Early holders lock in access at the floor.</p>
+        <div class="gate-tiers">
+          <div class="gate-tier">
+            <div class="gate-tier-name" style="color: #8888aa;">FREE</div>
+            <div class="gate-tier-amount">0 tokens</div>
+          </div>
+          <div class="gate-tier">
+            <div class="gate-tier-name" style="color: #9945FF;">SCOUT</div>
+            <div class="gate-tier-amount">3,000,000</div>
+          </div>
+          <div class="gate-tier">
+            <div class="gate-tier-name" style="color: #b06aff;">OPERATOR</div>
+            <div class="gate-tier-amount">10,000,000</div>
+          </div>
+          <div class="gate-tier">
+            <div class="gate-tier-name" style="color: #14F195;">WHALE</div>
+            <div class="gate-tier-amount">20,000,000</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div style="padding: 20px 0;">
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-value">8</div>
+        <div class="stat-label">LIVE FEATURES</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">6</div>
+        <div class="stat-label">API ENDPOINTS</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">5K</div>
+        <div class="stat-label">HOLDER SCAN DEPTH</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">∞</div>
+        <div class="stat-label">FREE SCANS</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="footer-url">holdtech.fun</div>
+    <div class="footer-ca">CA: ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump</div>
+  </div>
+
+</div>
+</body>
+</html>
