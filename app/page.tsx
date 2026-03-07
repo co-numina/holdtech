@@ -685,6 +685,10 @@ export default function Home() {
                 type="text" value={mint} onChange={e => setMint(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && !loading && analyze()}
                 placeholder="Paste token mint address..."
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                data-form-type="other"
                 className="font-mono"
                 style={{
                   width: "100%", background: "var(--bg-card)", border: "2px solid var(--border)", borderRadius: "14px",
