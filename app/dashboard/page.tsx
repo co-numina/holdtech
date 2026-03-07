@@ -5,58 +5,37 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { useState, useEffect, useCallback, useRef } from "react";
 
-// Config — update mint when token launches
-const HOLDTECH_MINT = ""; // empty = demo mode (no token yet)
+const HOLDTECH_MINT = "";
 const TIERS = [
-  { name: "FREE", min: 0, color: "#888" },
-  { name: "SCOUT", min: 5_000_000, color: "#9945FF" },
-  { name: "OPERATOR", min: 10_000_000, color: "#9945FF" },
-  { name: "WHALE", min: 20_000_000, color: "#14F195" },
+  { name: "FREE", min: 0, color: "#888", icon: "○" },
+  { name: "SCOUT", min: 5_000_000, color: "#9945FF", icon: "◐" },
+  { name: "OPERATOR", min: 10_000_000, color: "#9945FF", icon: "●" },
+  { name: "WHALE", min: 20_000_000, color: "#14F195", icon: "◆" },
 ];
 
 interface ScanResult {
   mint: string; symbol: string; score: number; grade: string;
   holders: number; top5Pct: number; freshPct: number; avgAge: number; timestamp: number;
 }
-
 interface WatchlistItem {
   mint: string; symbol: string; lastScore: number; lastGrade: string;
   lastHolders: number; addedAt: number; history: { score: number; timestamp: number }[];
 }
-
 interface FeedEvent {
   wallet: string; walletName: string; walletEmoji: string; walletGroup: string;
   type: "buy" | "sell" | "transfer"; tokenMint: string; tokenSymbol: string;
   tokenImage: string; amount: number; solAmount: number; signature: string; timestamp: number;
 }
 
-function getTier(balance: number) {
-  let tier = TIERS[0];
-  for (const t of TIERS) { if (balance >= t.min) tier = t; }
-  return tier;
-}
-
-function timeAgo(ts: number) {
-  const diff = Date.now() - ts;
-  if (diff < 60000) return "just now";
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-  return `${Math.floor(diff / 86400000)}d ago`;
-}
-
-function gradeColor(g: string) {
-  if (g?.startsWith("A")) return "#14F195";
-  if (g?.startsWith("B")) return "#4ade80";
-  if (g?.startsWith("C")) return "#eab308";
-  if (g?.startsWith("D")) return "#f97316";
-  return "#ef4444";
-}
+function getTier(b: number) { let t = TIERS[0]; for (const x of TIERS) { if (b >= x.min) t = x; } return t; }
+function timeAgo(ts: number) { const d = Date.now() - ts; if (d < 60000) return "now"; if (d < 3600000) return `${Math.floor(d / 60000)}m`; if (d < 86400000) return `${Math.floor(d / 3600000)}h`; return `${Math.floor(d / 86400000)}d`; }
+function gc(g: string) { if (g?.startsWith("A")) return "#14F195"; if (g?.startsWith("B")) return "#4ade80"; if (g?.startsWith("C")) return "#eab308"; if (g?.startsWith("D")) return "#f97316"; return "#ef4444"; }
 
 export default function Dashboard() {
   const { publicKey, connected } = useWallet();
   const { connection } = useConnection();
-  const [tokenBalance, setTokenBalance] = useState<number>(0);
-  const [tab, setTab] = useState<"scan" | "watchlist" | "history" | "batch" | "bundlers">("scan");
+  const [tokenBalance, setTokenBalance] = useState(0);
+  const [tab, setTab] = useState<"overview" | "scan" | "watchlist" | "history" | "batch" | "bundlers">("overview");
   const [scanInput, setScanInput] = useState("");
   const [batchInput, setBatchInput] = useState("");
   const [scanning, setScanning] = useState(false);
@@ -73,13 +52,11 @@ export default function Dashboard() {
   const [feedLoading, setFeedLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [showManage, setShowManage] = useState(false);
-  const [feedLimit, setFeedLimit] = useState(50);
   const [darkMode, setDarkMode] = useState(false);
-  const historyRef = useRef(history);
-  historyRef.current = history;
+  const [feedLimit, setFeedLimit] = useState(50);
+  const historyRef = useRef(history); historyRef.current = history;
   const intervalRef = useRef<any>(null);
 
-  // Load persisted data
   useEffect(() => {
     try {
       setHistory(JSON.parse(localStorage.getItem("holdtech-history") || "[]"));
@@ -90,444 +67,441 @@ export default function Dashboard() {
     } catch {}
   }, []);
 
-  // Check token balance
   useEffect(() => {
-    if (!connected || !publicKey || !HOLDTECH_MINT) {
-      setTokenBalance(HOLDTECH_MINT ? 0 : 999_999_999);
-      return;
-    }
+    if (!connected || !publicKey || !HOLDTECH_MINT) { setTokenBalance(HOLDTECH_MINT ? 0 : 999_999_999); return; }
     (async () => {
       try {
         const mint = new PublicKey(HOLDTECH_MINT);
-        const accounts = await connection.getParsedTokenAccountsByOwner(publicKey, { mint });
-        const bal = accounts.value.reduce((sum, a) => sum + (a.account.data.parsed?.info?.tokenAmount?.uiAmount || 0), 0);
-        setTokenBalance(bal);
+        const accs = await connection.getParsedTokenAccountsByOwner(publicKey, { mint });
+        setTokenBalance(accs.value.reduce((s, a) => s + (a.account.data.parsed?.info?.tokenAmount?.uiAmount || 0), 0));
       } catch { setTokenBalance(0); }
     })();
   }, [connected, publicKey, connection]);
 
   const tier = getTier(tokenBalance);
   const isDemo = !HOLDTECH_MINT;
+  const toggleTheme = () => { const n = !darkMode; setDarkMode(n); document.documentElement.setAttribute("data-theme", n ? "dark" : ""); localStorage.setItem("holdtech-theme", n ? "dark" : "light"); };
 
-  const toggleTheme = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    document.documentElement.setAttribute("data-theme", next ? "dark" : "");
-    localStorage.setItem("holdtech-theme", next ? "dark" : "light");
-  };
-
-  // ── Scan logic ──
   const runScan = useCallback(async (mint: string): Promise<ScanResult | null> => {
     try {
-      const [analyzeRes, countRes] = await Promise.all([
+      const [aR, cR] = await Promise.all([
         fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) }),
         fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint }) }),
       ]);
-      if (!analyzeRes.ok) return null;
-      const analysis = await analyzeRes.json();
-      const countData = countRes.ok ? await countRes.json() : { count: null };
-      // Use pre-computed metrics from the API (same as homepage)
-      const metrics = analysis.metrics;
-      const w = analysis.wallets || [];
-      const supply = analysis.totalSupply || 1;
+      if (!aR.ok) return null;
+      const a = await aR.json(); const c = cR.ok ? await cR.json() : { count: null };
+      const w = a.wallets || []; const supply = a.totalSupply || 1;
       const top5 = w.slice(0, 5).reduce((s: number, x: any) => s + (x.balance || 0), 0);
-
-      const verdictRes = await fetch("/api/ai-verdict", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ metrics, totalHolders: countData.count || analysis.analyzedHolders, analyzedHolders: analysis.analyzedHolders, tokenSymbol: analysis.tokenSymbol }),
-      });
-      const verdict = verdictRes.ok ? await verdictRes.json() : null;
-      return {
-        mint, symbol: analysis.tokenSymbol || mint.slice(0, 6), score: verdict?.score ?? 0,
-        grade: verdict?.grade || "?", holders: countData.count || analysis.totalHolders || w.length,
-        top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)),
-        freshPct: metrics?.freshWalletPct ?? 0,
-        avgAge: Math.round(metrics?.avgWalletAgeDays ?? 0),
-        timestamp: Date.now(),
-      };
+      const vR = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: a.metrics, totalHolders: c.count || a.analyzedHolders, analyzedHolders: a.analyzedHolders, tokenSymbol: a.tokenSymbol }) });
+      const v = vR.ok ? await vR.json() : null;
+      return { mint, symbol: a.tokenSymbol || mint.slice(0, 6), score: v?.score ?? 0, grade: v?.grade || "?", holders: c.count || a.totalHolders || w.length, top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)), freshPct: a.metrics?.freshWalletPct ?? 0, avgAge: Math.round(a.metrics?.avgWalletAgeDays ?? 0), timestamp: Date.now() };
     } catch { return null; }
   }, []);
 
   const handleScan = async () => {
     if (!scanInput.trim() || scanning) return;
-    setScanning(true); setProgress("Analyzing holders..."); setScanResult(null);
-    const result = await runScan(scanInput.trim());
-    if (result) {
-      setScanResult(result);
-      const newHistory = [result, ...historyRef.current.filter(h => h.mint !== result.mint)].slice(0, 50);
-      setHistory(newHistory);
-      localStorage.setItem("holdtech-history", JSON.stringify(newHistory));
-    }
+    setScanning(true); setProgress("Analyzing..."); setScanResult(null);
+    const r = await runScan(scanInput.trim());
+    if (r) { setScanResult(r); const nh = [r, ...historyRef.current.filter(h => h.mint !== r.mint)].slice(0, 50); setHistory(nh); localStorage.setItem("holdtech-history", JSON.stringify(nh)); }
     setScanning(false); setProgress("");
   };
 
   const handleBatch = async () => {
     const mints = batchInput.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 30);
     if (!mints.length || batchScanning) return;
-    const limit = tier.name === "FREE" ? 2 : tier.name === "SCOUT" ? 5 : tier.name === "OPERATOR" ? 20 : 50;
-    const toScan = mints.slice(0, limit);
+    const lim = tier.name === "FREE" ? 2 : tier.name === "SCOUT" ? 5 : tier.name === "OPERATOR" ? 20 : 50;
     setBatchScanning(true); setBatchResults([]);
     const results: ScanResult[] = [];
-    for (let i = 0; i < toScan.length; i++) {
-      setProgress(`Scanning ${i + 1}/${toScan.length}...`);
-      const r = await runScan(toScan[i]);
-      if (r) { results.push(r); setBatchResults([...results]); }
+    for (let i = 0; i < Math.min(mints.length, lim); i++) {
+      setProgress(`${i + 1}/${Math.min(mints.length, lim)}`);
+      const r = await runScan(mints[i]); if (r) { results.push(r); setBatchResults([...results]); }
     }
     setBatchScanning(false); setProgress("");
   };
 
-  const addToWatchlist = (result: ScanResult) => {
-    if (watchlist.find(w => w.mint === result.mint)) return;
-    const limit = tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200;
-    if (watchlist.length >= limit) return;
-    const item: WatchlistItem = { mint: result.mint, symbol: result.symbol, lastScore: result.score, lastGrade: result.grade, lastHolders: result.holders, addedAt: Date.now(), history: [{ score: result.score, timestamp: Date.now() }] };
-    const newWl = [...watchlist, item];
-    setWatchlist(newWl);
-    localStorage.setItem("holdtech-watchlist", JSON.stringify(newWl));
+  const addWatch = (r: ScanResult) => {
+    if (watchlist.find(w => w.mint === r.mint)) return;
+    const lim = tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200;
+    if (watchlist.length >= lim) return;
+    const nw = [...watchlist, { mint: r.mint, symbol: r.symbol, lastScore: r.score, lastGrade: r.grade, lastHolders: r.holders, addedAt: Date.now(), history: [{ score: r.score, timestamp: Date.now() }] }];
+    setWatchlist(nw); localStorage.setItem("holdtech-watchlist", JSON.stringify(nw));
   };
+  const rmWatch = (mint: string) => { const nw = watchlist.filter(w => w.mint !== mint); setWatchlist(nw); localStorage.setItem("holdtech-watchlist", JSON.stringify(nw)); };
 
-  const removeFromWatchlist = (mint: string) => {
-    const newWl = watchlist.filter(w => w.mint !== mint);
-    setWatchlist(newWl);
-    localStorage.setItem("holdtech-watchlist", JSON.stringify(newWl));
-  };
-
-  // ── Bundler feed ──
   const fetchFeed = useCallback(async () => {
-    if (bundlers.length === 0) return;
-    setFeedLoading(true);
+    if (bundlers.length === 0) return; setFeedLoading(true);
     try {
-      const allEvents: FeedEvent[] = [];
+      const all: FeedEvent[] = [];
       for (let i = 0; i < bundlers.length; i += 10) {
-        const batch = bundlers.slice(i, i + 10).map(b => ({ address: b.address, name: b.label || b.address.slice(0, 8), emoji: b.emoji || "🚩", group: b.group || "tracked" }));
-        const res = await fetch("/api/bundler-feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallets: batch }) });
-        if (res.ok) { const data = await res.json(); allEvents.push(...(data.events || [])); }
+        const batch = bundlers.slice(i, i + 10).map(b => ({ address: b.address, name: b.label, emoji: b.emoji || "🚩", group: b.group || "tracked" }));
+        const r = await fetch("/api/bundler-feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallets: batch }) });
+        if (r.ok) { const d = await r.json(); all.push(...(d.events || [])); }
       }
-      allEvents.sort((a, b) => b.timestamp - a.timestamp);
-      setFeedEvents(allEvents);
-    } catch {}
-    setFeedLoading(false);
+      all.sort((a, b) => b.timestamp - a.timestamp); setFeedEvents(all);
+    } catch {} setFeedLoading(false);
   }, [bundlers]);
 
-  useEffect(() => {
-    if (tab === "bundlers" && bundlers.length > 0 && feedEvents.length === 0) fetchFeed();
-  }, [tab, bundlers.length]);
-
-  useEffect(() => {
-    if (autoRefresh && tab === "bundlers") {
-      intervalRef.current = setInterval(fetchFeed, 30000);
-      return () => clearInterval(intervalRef.current);
-    } else { if (intervalRef.current) clearInterval(intervalRef.current); }
-  }, [autoRefresh, tab, fetchFeed]);
+  useEffect(() => { if (tab === "bundlers" && bundlers.length > 0 && feedEvents.length === 0) fetchFeed(); }, [tab, bundlers.length]);
+  useEffect(() => { if (autoRefresh && tab === "bundlers") { intervalRef.current = setInterval(fetchFeed, 30000); return () => clearInterval(intervalRef.current); } else if (intervalRef.current) clearInterval(intervalRef.current); }, [autoRefresh, tab, fetchFeed]);
 
   const loadDefaults = async () => {
     try {
-      const res = await fetch("/bundlers-default.json");
-      const data = await res.json();
-      const existing = new Set(bundlers.map(b => b.address));
-      const newOnes = data.filter((d: any) => !existing.has(d.address)).map((d: any) => ({ address: d.address, label: d.name, emoji: d.emoji, group: d.group, addedAt: Date.now(), seenIn: [] as string[] }));
-      const newB = [...bundlers, ...newOnes];
-      setBundlers(newB);
-      localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
+      const r = await fetch("/bundlers-default.json"); const d = await r.json();
+      const ex = new Set(bundlers.map(b => b.address));
+      const nw = [...bundlers, ...d.filter((x: any) => !ex.has(x.address)).map((x: any) => ({ address: x.address, label: x.name, emoji: x.emoji, group: x.group, addedAt: Date.now(), seenIn: [] as string[] }))];
+      setBundlers(nw); localStorage.setItem("holdtech-bundlers", JSON.stringify(nw));
     } catch {}
   };
 
   // ── GATE ──
   if (!isDemo && !connected) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg, #f0f0f6)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "24px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-          <img src="/logo.png" alt="" width={32} height={32} />
-          <span style={{ fontSize: "22px", fontWeight: 800 }}><span style={{ color: "#9945FF" }}>HOLD</span><span style={{ color: "#888" }}>TECH</span></span>
-        </a>
-        <div style={{ textAlign: "center", maxWidth: "400px" }}>
-          <div style={{ fontSize: "14px", color: "#888", marginBottom: "24px", lineHeight: 1.6 }}>Connect your wallet to access the dashboard. Hold $HOLDTECH to unlock premium features.</div>
+      <div style={{ minHeight: "100vh", background: "#f0f0f6", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
+        <div style={{ textAlign: "center" }}>
+          <a href="/" style={{ display: "inline-flex", alignItems: "center", gap: "8px", textDecoration: "none", marginBottom: "24px" }}>
+            <img src="/logo.png" alt="" width={40} height={40} /><span style={{ fontSize: "26px", fontWeight: 800 }}><span style={{ color: "#9945FF" }}>HOLD</span><span style={{ color: "#888" }}>TECH</span></span>
+          </a>
+          <div style={{ fontSize: "14px", color: "#888", marginBottom: "24px" }}>Connect wallet to access dashboard</div>
           <WalletMultiButton />
         </div>
       </div>
     );
   }
 
-  const navLink = (href: string, label: string, active: boolean) => (
-    <a href={href} style={{ fontFamily: "'Courier New', monospace", fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", color: active ? "var(--accent, #9945FF)" : "var(--text-muted, #888)", background: active ? "rgba(153,69,255,0.08)" : "transparent", textDecoration: "none", transition: "all 0.15s" }}>{label}</a>
-  );
+  // Stats for overview
+  const avgScore = history.length > 0 ? Math.round(history.reduce((s, h) => s + h.score, 0) / history.length) : 0;
+  const bestScan = history.length > 0 ? history.reduce((b, h) => h.score > b.score ? h : b, history[0]) : null;
+  const worstScan = history.length > 0 ? history.reduce((w, h) => h.score < w.score ? h : w, history[0]) : null;
+  const recentScans = history.slice(0, 5);
+  const gradeDistribution = { A: 0, B: 0, C: 0, D: 0, F: 0 };
+  history.forEach(h => { const k = h.grade?.[0] as keyof typeof gradeDistribution; if (k in gradeDistribution) gradeDistribution[k]++; });
 
-  const tabBtn = (id: typeof tab, label: string, count?: number) => (
-    <button key={id} onClick={() => setTab(id)} style={{ fontFamily: "'Courier New', monospace", padding: "8px 14px", fontSize: "11px", fontWeight: 700, cursor: "pointer", border: "none", borderBottom: tab === id ? "2px solid var(--accent, #9945FF)" : "2px solid transparent", background: "none", color: tab === id ? "var(--accent, #9945FF)" : "var(--text-muted, #888)", transition: "all 0.15s" }}>{label}{count !== undefined ? ` (${count})` : ""}</button>
-  );
+  // Styles
+  const M: React.CSSProperties = { fontFamily: "'Courier New', monospace" };
 
-  const card = { background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.1))", borderRadius: "14px", padding: "20px" };
-  const mono = { fontFamily: "'Courier New', monospace" };
-  const input = { width: "100%", padding: "10px 12px", border: "1px solid var(--border, rgba(153,69,255,0.15))", borderRadius: "10px", fontSize: "12px", background: "var(--input-bg, rgba(255,255,255,0.8))", fontFamily: "'Courier New', monospace", outline: "none", color: "var(--text, #1a1a2e)" };
-  const btn = { padding: "8px 16px", background: "linear-gradient(135deg, #9945FF, #7B3FE4)", color: "white", border: "none", borderRadius: "10px", fontSize: "11px", fontWeight: 700, cursor: "pointer", fontFamily: "'Courier New', monospace" };
-  const btnOut = { padding: "6px 12px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.2)", borderRadius: "8px", fontSize: "10px", fontWeight: 600, cursor: "pointer", fontFamily: "'Courier New', monospace" };
-  const metricLabel = { fontSize: "9px", color: "var(--text-muted, #888)", textTransform: "uppercase" as const, ...mono, letterSpacing: "0.05em" };
-  const metricVal = { fontSize: "18px", fontWeight: 700, color: "var(--text, #1a1a2e)", ...mono, marginTop: "2px" };
+  const tabs = [
+    { id: "overview" as const, label: "Overview", icon: "◫" },
+    { id: "scan" as const, label: "Scan", icon: "⊕" },
+    { id: "watchlist" as const, label: `Watchlist`, icon: "◉", count: watchlist.length },
+    { id: "history" as const, label: "History", icon: "◷", count: history.length },
+    { id: "batch" as const, label: "Batch", icon: "▤" },
+    { id: "bundlers" as const, label: "Bundlers", icon: "⬡", count: bundlers.length },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg, #f0f0f6)", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", color: "var(--text, #1a1a2e)" }}>
-      {/* Grid bg */}
-      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", backgroundImage: "linear-gradient(rgba(153,69,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.06) 1px, transparent 1px)", backgroundSize: "40px 40px", maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)" }} />
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", backgroundImage: "linear-gradient(rgba(153,69,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(153,69,255,0.04) 1px, transparent 1px)", backgroundSize: "48px 48px", maskImage: "linear-gradient(to bottom, black 50%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 50%, transparent 100%)" }} />
 
-      <div style={{ position: "relative", zIndex: 1, maxWidth: "960px", margin: "0 auto", padding: "0 20px" }}>
-        {/* ═══ NAV ═══ */}
-        <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px", background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.1))" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-              <img src="/logo.png" alt="HoldTech" width={28} height={28} style={{ objectFit: "contain" }} />
-              <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent, #9945FF)" }}>HOLD</span><span style={{ color: "var(--text-muted, #888)" }}>TECH</span></span>
-            </a>
-            <span style={{ ...mono, fontSize: "10px", fontWeight: 700, color: tier.color, padding: "3px 8px", borderRadius: "6px", border: `1px solid ${tier.color}33`, background: `${tier.color}0a` }}>{tier.name}{isDemo && " · DEMO"}</span>
-            {navLink("/", "HOME", false)}
-            {navLink("/docs", "DOCS", false)}
-            {navLink("/dashboard", "DASHBOARD", true)}
+      <div style={{ position: "relative", zIndex: 1, display: "flex", minHeight: "100vh" }}>
+        {/* ═══ SIDEBAR ═══ */}
+        <div style={{ width: "220px", flexShrink: 0, padding: "16px", display: "flex", flexDirection: "column", gap: "4px", borderRight: "1px solid var(--border, rgba(153,69,255,0.08))", background: "var(--card-bg, rgba(255,255,255,0.3))", backdropFilter: "blur(8px)" }}>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", padding: "8px 12px", marginBottom: "8px" }}>
+            <img src="/logo.png" alt="" width={24} height={24} style={{ objectFit: "contain" }} />
+            <span style={{ fontSize: "16px", fontWeight: 800 }}><span style={{ color: "var(--accent, #9945FF)" }}>HOLD</span><span style={{ color: "var(--text-muted, #888)" }}>TECH</span></span>
+          </a>
+
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ ...M, display: "flex", alignItems: "center", gap: "10px", padding: "9px 12px", borderRadius: "10px", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600, textAlign: "left" as const, width: "100%", background: tab === t.id ? "rgba(153,69,255,0.1)" : "transparent", color: tab === t.id ? "var(--accent, #9945FF)" : "var(--text-muted, #888)", transition: "all 0.15s" }}>
+              <span style={{ fontSize: "14px", width: "18px", textAlign: "center" }}>{t.icon}</span>
+              <span style={{ flex: 1 }}>{t.label}</span>
+              {t.count !== undefined && t.count > 0 && <span style={{ fontSize: "9px", fontWeight: 700, background: tab === t.id ? "rgba(153,69,255,0.15)" : "rgba(0,0,0,0.04)", padding: "2px 6px", borderRadius: "4px" }}>{t.count}</span>}
+            </button>
+          ))}
+
+          <div style={{ flex: 1 }} />
+
+          {/* Tier badge */}
+          <div style={{ padding: "12px", borderRadius: "10px", background: `${tier.color}08`, border: `1px solid ${tier.color}20`, marginTop: "8px" }}>
+            <div style={{ ...M, fontSize: "9px", fontWeight: 700, color: tier.color, letterSpacing: "0.1em" }}>{tier.icon} {tier.name}{isDemo ? " · DEMO" : ""}</div>
+            {!isDemo && <div style={{ fontSize: "10px", color: "var(--text-muted, #888)", marginTop: "4px" }}>{tokenBalance.toLocaleString()} $HOLDTECH</div>}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <button onClick={toggleTheme} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted, #888)", fontSize: "18px" }}>{darkMode ? "☀️" : "🌙"}</button>
-            {!isDemo && <WalletMultiButton style={{ fontSize: "10px" }} />}
+
+          <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
+            <button onClick={toggleTheme} style={{ flex: 1, padding: "8px", borderRadius: "8px", border: "none", background: "rgba(0,0,0,0.03)", cursor: "pointer", fontSize: "14px" }}>{darkMode ? "☀️" : "🌙"}</button>
+            <a href="/docs" style={{ flex: 1, padding: "8px", borderRadius: "8px", background: "rgba(0,0,0,0.03)", textDecoration: "none", textAlign: "center", fontSize: "10px", fontWeight: 600, color: "var(--text-muted, #888)", display: "flex", alignItems: "center", justifyContent: "center" }}>DOCS</a>
           </div>
         </div>
 
-        {/* ═══ TABS ═══ */}
-        <div style={{ display: "flex", gap: "4px", padding: "16px 0 12px", borderBottom: "1px solid var(--border, rgba(153,69,255,0.08))", marginBottom: "16px" }}>
-          {tabBtn("scan", "SCAN")}
-          {tabBtn("watchlist", "WATCHLIST", watchlist.length)}
-          {tabBtn("history", "HISTORY", history.length)}
-          {tabBtn("batch", "BATCH")}
-          {tabBtn("bundlers", "🔩 BUNDLERS", bundlers.length)}
-        </div>
+        {/* ═══ MAIN ═══ */}
+        <div style={{ flex: 1, padding: "24px 32px", maxWidth: "800px" }}>
 
-        {/* ═══ SCAN ═══ */}
-        {tab === "scan" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan()} placeholder="Paste token address..." style={input} spellCheck={false} />
-              <button onClick={handleScan} disabled={scanning} style={{ ...btn, opacity: scanning ? 0.5 : 1 }}>{scanning ? "..." : "SCAN"}</button>
-            </div>
-            {scanning && <div style={{ textAlign: "center", padding: "32px", color: "var(--text-muted, #888)", fontSize: "13px" }}><div className="spinner" style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(153,69,255,0.15)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "8px" }} /><br/>{progress}</div>}
-            {scanResult && (
-              <div style={card}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-                  <div>
-                    <div style={{ fontSize: "18px", fontWeight: 700 }}>{scanResult.symbol}</div>
-                    <div style={{ ...mono, fontSize: "10px", color: "var(--text-muted, #888)" }}>{scanResult.mint.slice(0, 12)}...{scanResult.mint.slice(-6)}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <button onClick={() => addToWatchlist(scanResult)} style={btnOut}>+ Watch</button>
-                    <a href={`/?mint=${scanResult.mint}`} target="_blank" style={{ ...btnOut, textDecoration: "none" }}>Full Analysis →</a>
-                    <div style={{ ...mono, fontSize: "28px", fontWeight: 800, padding: "4px 16px", borderRadius: "10px", background: `${gradeColor(scanResult.grade)}18`, color: gradeColor(scanResult.grade) }}>{scanResult.grade}</div>
-                  </div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
-                  {[{ l: "Score", v: `${scanResult.score}/100` }, { l: "Holders", v: scanResult.holders.toLocaleString() }, { l: "Top 5", v: `${scanResult.top5Pct}%` }, { l: "Fresh", v: `${scanResult.freshPct}%` }, { l: "Avg Age", v: `${scanResult.avgAge}d` }].map(m => (
-                    <div key={m.l} style={{ background: "rgba(153,69,255,0.03)", borderRadius: "10px", padding: "12px" }}>
-                      <div style={metricLabel}>{m.l}</div>
-                      <div style={metricVal}>{m.v}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+          {/* ═══ OVERVIEW ═══ */}
+          {tab === "overview" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ ...M, fontSize: "18px", fontWeight: 800 }}>Dashboard</div>
 
-        {/* ═══ WATCHLIST ═══ */}
-        {tab === "watchlist" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            {watchlist.length === 0 && <div style={{ textAlign: "center", padding: "48px", color: "var(--text-muted, #aaa)", fontSize: "13px" }}><div style={{ fontSize: "32px", marginBottom: "8px", opacity: 0.5 }}>👁️</div>No tokens watched. Scan a token and click &quot;+ Watch&quot;.</div>}
-            {watchlist.map(w => (
-              <div key={w.mint} style={{ ...card, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                  <div style={{ ...mono, fontSize: "22px", fontWeight: 800, color: gradeColor(w.lastGrade), minWidth: "36px" }}>{w.lastGrade}</div>
-                  <div>
-                    <div style={{ fontSize: "14px", fontWeight: 700 }}>{w.symbol}</div>
-                    <div style={{ ...mono, fontSize: "10px", color: "var(--text-muted, #888)" }}>{w.mint.slice(0, 8)}...{w.mint.slice(-6)}</div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ ...mono, fontSize: "14px", fontWeight: 700 }}>{w.lastScore}/100</div>
-                    <div style={{ fontSize: "10px", color: "var(--text-muted, #888)" }}>{w.lastHolders.toLocaleString()} holders</div>
-                  </div>
-                  <button onClick={() => { setScanInput(w.mint); setTab("scan"); }} style={btnOut}>Rescan</button>
-                  <button onClick={() => removeFromWatchlist(w.mint)} style={{ ...btnOut, color: "#ef4444", borderColor: "rgba(239,68,68,0.2)" }}>×</button>
-                </div>
-              </div>
-            ))}
-            {watchlist.length > 0 && <div style={{ fontSize: "10px", color: "var(--text-muted, #888)", textAlign: "center", padding: "8px" }}>{watchlist.length}/{tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200} slots · {tier.name}</div>}
-          </div>
-        )}
-
-        {/* ═══ HISTORY ═══ */}
-        {tab === "history" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            {history.length === 0 && <div style={{ textAlign: "center", padding: "48px", color: "var(--text-muted, #aaa)", fontSize: "13px" }}><div style={{ fontSize: "32px", marginBottom: "8px", opacity: 0.5 }}>📜</div>No scan history.</div>}
-            {history.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "40px 1fr 70px 60px 60px 60px 80px", gap: "8px", padding: "8px 16px", ...mono, fontSize: "9px", color: "var(--text-muted, #888)", letterSpacing: "0.05em", textTransform: "uppercase" as const }}><span>Grade</span><span>Token</span><span>Score</span><span>Holders</span><span>Top 5</span><span>Fresh</span><span>When</span></div>}
-            {history.map((h, i) => (
-              <div key={`${h.mint}-${i}`} onClick={() => { setScanInput(h.mint); setTab("scan"); }} style={{ ...card, display: "grid", gridTemplateColumns: "40px 1fr 70px 60px 60px 60px 80px", gap: "8px", alignItems: "center", padding: "10px 16px", cursor: "pointer" }}>
-                <span style={{ ...mono, fontSize: "14px", fontWeight: 800, color: gradeColor(h.grade) }}>{h.grade}</span>
-                <div><div style={{ fontSize: "13px", fontWeight: 600 }}>{h.symbol}</div><div style={{ ...mono, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 6)}...{h.mint.slice(-4)}</div></div>
-                <span style={{ ...mono, fontSize: "13px", fontWeight: 700 }}>{h.score}/100</span>
-                <span style={{ ...mono, fontSize: "12px", color: "var(--text-secondary, #666)" }}>{h.holders.toLocaleString()}</span>
-                <span style={{ ...mono, fontSize: "12px", color: "var(--text-secondary, #666)" }}>{h.top5Pct}%</span>
-                <span style={{ ...mono, fontSize: "12px", color: h.freshPct > 40 ? "#ef4444" : "var(--text-secondary, #666)" }}>{h.freshPct}%</span>
-                <span style={{ fontSize: "10px", color: "var(--text-muted, #aaa)" }}>{timeAgo(h.timestamp)}</span>
-              </div>
-            ))}
-            {history.length > 0 && <button onClick={() => { setHistory([]); localStorage.removeItem("holdtech-history"); }} style={{ ...btnOut, alignSelf: "center", marginTop: "8px", color: "var(--text-muted, #888)", borderColor: "rgba(0,0,0,0.08)" }}>Clear History</button>}
-          </div>
-        )}
-
-        {/* ═══ BATCH ═══ */}
-        {tab === "batch" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={card}>
-              <div style={{ ...mono, fontSize: "12px", fontWeight: 700, marginBottom: "4px" }}>BATCH SCAN</div>
-              <div style={{ fontSize: "11px", color: "var(--text-muted, #888)", marginBottom: "12px" }}>Paste multiple token addresses. Max {tier.name === "FREE" ? 2 : tier.name === "SCOUT" ? 5 : tier.name === "OPERATOR" ? 20 : 50} per batch ({tier.name}).</div>
-              <textarea value={batchInput} onChange={e => setBatchInput(e.target.value)} placeholder={"Token addresses...\nOne per line or comma-separated"} style={{ ...input, minHeight: "100px", resize: "vertical" } as any} spellCheck={false} />
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
-                <span style={{ fontSize: "11px", color: "var(--text-muted, #888)" }}>{batchInput.split(/[\n,]+/).filter(s => s.trim().length > 30).length} tokens</span>
-                <button onClick={handleBatch} disabled={batchScanning} style={{ ...btn, opacity: batchScanning ? 0.5 : 1 }}>{batchScanning ? progress : "SCAN ALL"}</button>
-              </div>
-            </div>
-            {batchResults.length > 0 && (
-              <div style={card}>
-                <div style={{ ...mono, fontSize: "12px", fontWeight: 700, marginBottom: "12px" }}>RESULTS ({batchResults.length})</div>
-                {[...batchResults].sort((a, b) => b.score - a.score).map((r, i) => (
-                  <div key={r.mint} style={{ display: "grid", gridTemplateColumns: "40px 1fr 70px 60px 60px 60px", gap: "8px", alignItems: "center", padding: "8px 0", borderTop: i > 0 ? "1px solid var(--border, rgba(153,69,255,0.06))" : "none" }}>
-                    <span style={{ ...mono, fontSize: "16px", fontWeight: 800, color: gradeColor(r.grade) }}>{r.grade}</span>
-                    <div><span style={{ fontSize: "13px", fontWeight: 600 }}>{r.symbol}</span><a href={`/?mint=${r.mint}`} target="_blank" style={{ fontSize: "9px", color: "#9945FF", marginLeft: "6px" }}>→</a></div>
-                    <span style={{ ...mono, fontSize: "13px", fontWeight: 700 }}>{r.score}/100</span>
-                    <span style={{ ...mono, fontSize: "12px", color: "var(--text-secondary, #666)" }}>{r.holders.toLocaleString()}</span>
-                    <span style={{ ...mono, fontSize: "12px", color: "var(--text-secondary, #666)" }}>{r.top5Pct}%</span>
-                    <span style={{ ...mono, fontSize: "12px", color: r.freshPct > 40 ? "#ef4444" : "var(--text-secondary, #666)" }}>{r.freshPct}%</span>
+              {/* Stat cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px" }}>
+                {[
+                  { label: "Total Scans", value: history.length.toString(), sub: "all time" },
+                  { label: "Avg Score", value: avgScore ? `${avgScore}/100` : "—", sub: history.length > 0 ? `across ${history.length} scans` : "no data" },
+                  { label: "Watching", value: watchlist.length.toString(), sub: `of ${tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200} slots` },
+                  { label: "Bundlers", value: bundlers.length.toString(), sub: "wallets tracked" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "12px", padding: "16px" }}>
+                    <div style={{ ...M, fontSize: "9px", fontWeight: 700, color: "var(--text-muted, #888)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{s.label}</div>
+                    <div style={{ ...M, fontSize: "24px", fontWeight: 800, marginTop: "4px" }}>{s.value}</div>
+                    <div style={{ fontSize: "10px", color: "var(--text-muted, #aaa)", marginTop: "2px" }}>{s.sub}</div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        )}
 
-        {/* ═══ BUNDLERS ═══ */}
-        {tab === "bundlers" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ ...mono, fontSize: "12px", fontWeight: 700 }}>LIVE FEED</span>
-                <span style={{ fontSize: "11px", color: "var(--text-muted, #888)" }}>{bundlers.length} wallets</span>
-              </div>
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button onClick={() => setAutoRefresh(!autoRefresh)} style={{ ...btnOut, color: autoRefresh ? "#14F195" : "var(--text-muted, #888)", borderColor: autoRefresh ? "rgba(20,241,149,0.3)" : "var(--border, rgba(0,0,0,0.1))" }}>{autoRefresh ? "● LIVE" : "○ AUTO"}</button>
-                <button onClick={fetchFeed} disabled={feedLoading} style={{ ...btnOut, opacity: feedLoading ? 0.5 : 1 }}>{feedLoading ? "..." : "Refresh"}</button>
-                <button onClick={() => setShowManage(!showManage)} style={btnOut}>{showManage ? "Hide" : "Manage"}</button>
-              </div>
-            </div>
+              {/* Grade distribution */}
+              {history.length > 0 && (
+                <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "12px", padding: "20px" }}>
+                  <div style={{ ...M, fontSize: "11px", fontWeight: 700, marginBottom: "14px" }}>GRADE DISTRIBUTION</div>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "flex-end", height: "80px" }}>
+                    {(["A", "B", "C", "D", "F"] as const).map(g => {
+                      const count = gradeDistribution[g];
+                      const pct = history.length > 0 ? (count / history.length) * 100 : 0;
+                      return (
+                        <div key={g} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                          <div style={{ ...M, fontSize: "10px", fontWeight: 700, color: "var(--text-muted, #888)" }}>{count}</div>
+                          <div style={{ width: "100%", borderRadius: "4px 4px 0 0", background: gc(g), height: `${Math.max(pct, 4)}%`, minHeight: "3px", opacity: count > 0 ? 1 : 0.15, transition: "height 0.3s" }} />
+                          <div style={{ ...M, fontSize: "11px", fontWeight: 800, color: gc(g) }}>{g}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-            {/* Manage panel */}
-            {showManage && (
-              <div style={card}>
-                <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                  <input value={bundlerInput} onChange={e => setBundlerInput(e.target.value)} placeholder="Wallet address..." style={{ ...input, flex: 2 } as any} spellCheck={false} />
-                  <input value={bundlerLabel} onChange={e => setBundlerLabel(e.target.value)} placeholder="Label" style={{ ...input, flex: 1 } as any} />
-                  <button onClick={() => {
-                    const addr = bundlerInput.trim();
-                    if (!addr || addr.length < 32 || bundlers.find(b => b.address === addr)) return;
-                    const newB = [...bundlers, { address: addr, label: bundlerLabel.trim() || addr.slice(0, 8), emoji: "🚩", group: "custom", addedAt: Date.now(), seenIn: [] as string[] }];
-                    setBundlers(newB); localStorage.setItem("holdtech-bundlers", JSON.stringify(newB));
-                    setBundlerInput(""); setBundlerLabel("");
-                  }} style={btn}>ADD</button>
-                </div>
-                <div style={{ display: "flex", gap: "8px", marginBottom: "10px" }}>
-                  <button onClick={loadDefaults} style={btnOut}>Load Default Ruggers ({bundlers.length > 0 ? "merge" : "42"})</button>
-                  <button onClick={() => { navigator.clipboard.writeText(JSON.stringify(bundlers.map(b => ({ address: b.address, label: b.label, emoji: b.emoji, group: b.group })), null, 2)); }} style={btnOut}>Export JSON</button>
-                </div>
-                <textarea id="import-json" placeholder='Paste JSON array or wallet addresses...' style={{ ...input, minHeight: "50px", resize: "vertical", fontSize: "10px" } as any} spellCheck={false} />
-                <button onClick={() => {
-                  const el = document.getElementById("import-json") as HTMLTextAreaElement;
-                  if (!el?.value.trim()) return;
-                  const existing = new Set(bundlers.map(b => b.address));
-                  let newOnes: any[] = [];
-                  try {
-                    const parsed = JSON.parse(el.value);
-                    if (Array.isArray(parsed)) {
-                      newOnes = parsed.filter((d: any) => !existing.has(d.trackedWalletAddress || d.address)).map((d: any) => ({ address: d.trackedWalletAddress || d.address, label: d.name || d.label || (d.trackedWalletAddress || d.address).slice(0, 8), emoji: d.emoji || "🚩", group: d.groups?.[0] || d.group || "imported", addedAt: Date.now(), seenIn: [] as string[] }));
-                    }
-                  } catch { newOnes = el.value.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length >= 32 && !existing.has(s)).map(a => ({ address: a, label: a.slice(0, 8), emoji: "🚩", group: "imported", addedAt: Date.now(), seenIn: [] as string[] })); }
-                  if (newOnes.length) { const newB = [...bundlers, ...newOnes]; setBundlers(newB); localStorage.setItem("holdtech-bundlers", JSON.stringify(newB)); el.value = ""; }
-                }} style={{ ...btn, marginTop: "6px", fontSize: "10px" } as any}>IMPORT</button>
-                <div style={{ maxHeight: "180px", overflow: "auto", marginTop: "12px", borderTop: "1px solid var(--border, rgba(0,0,0,0.04))", paddingTop: "8px" }}>
-                  {bundlers.map((b, i) => (
-                    <div key={b.address} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 0", fontSize: "11px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <span>{b.emoji || "🚩"}</span>
-                        <span style={{ fontWeight: 600 }}>{b.label}</span>
-                        <span style={{ ...mono, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{b.address.slice(0, 6)}..{b.address.slice(-4)}</span>
-                        {b.group && <span style={{ fontSize: "8px", color: "#9945FF", background: "rgba(153,69,255,0.06)", padding: "1px 4px", borderRadius: "3px" }}>{b.group}</span>}
+              {/* Recent + Best/Worst */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                {/* Recent scans */}
+                <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "12px", padding: "20px" }}>
+                  <div style={{ ...M, fontSize: "11px", fontWeight: 700, marginBottom: "12px" }}>RECENT SCANS</div>
+                  {recentScans.length === 0 && <div style={{ fontSize: "12px", color: "var(--text-muted, #aaa)", padding: "12px 0" }}>No scans yet. <button onClick={() => setTab("scan")} style={{ background: "none", border: "none", color: "#9945FF", cursor: "pointer", fontWeight: 600, fontSize: "12px" }}>Start scanning →</button></div>}
+                  {recentScans.map((h, i) => (
+                    <div key={h.mint + i} onClick={() => { setScanInput(h.mint); setTab("scan"); }} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "8px 0", borderTop: i > 0 ? "1px solid var(--border, rgba(0,0,0,0.04))" : "none", cursor: "pointer" }}>
+                      <span style={{ ...M, fontSize: "16px", fontWeight: 800, color: gc(h.grade), minWidth: "28px" }}>{h.grade}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "12px", fontWeight: 600 }}>{h.symbol}</div>
+                        <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.score}/100 · {h.holders.toLocaleString()} holders</div>
                       </div>
-                      <button onClick={() => { const newB = bundlers.filter(x => x.address !== b.address); setBundlers(newB); localStorage.setItem("holdtech-bundlers", JSON.stringify(newB)); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", fontSize: "14px" }}>×</button>
+                      <span style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)" }}>{timeAgo(h.timestamp)}</span>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
 
-            {/* Empty */}
-            {bundlers.length === 0 && (
-              <div style={{ ...card, textAlign: "center", padding: "48px" }}>
-                <div style={{ fontSize: "32px", marginBottom: "12px", opacity: 0.5 }}>🔩</div>
-                <div style={{ fontSize: "14px", fontWeight: 600, marginBottom: "6px" }}>No bundler wallets tracked</div>
-                <div style={{ fontSize: "12px", color: "var(--text-muted, #888)", marginBottom: "16px" }}>Load the default rugger list or add your own.</div>
-                <button onClick={loadDefaults} style={btn}>Load Default Ruggers (42 wallets)</button>
-              </div>
-            )}
-
-            {/* Loading */}
-            {feedLoading && feedEvents.length === 0 && <div style={{ textAlign: "center", padding: "32px", color: "var(--text-muted, #888)", fontSize: "13px" }}><div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(153,69,255,0.15)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "8px" }} /><br/>Loading transactions...</div>}
-
-            {/* Feed */}
-            {feedEvents.length > 0 && (
-              <div style={{ ...mono, fontSize: "10px", color: "var(--text-muted, #888)", marginBottom: "4px" }}>Showing {Math.min(feedLimit, feedEvents.length)} of {feedEvents.length} transactions</div>
-            )}
-            {feedEvents.length > 0 && feedEvents.slice(0, feedLimit).map((ev, i) => (
-              <div key={`${ev.signature}-${i}`} style={{ ...card, display: "flex", alignItems: "center", gap: "12px", padding: "10px 16px" }}>
-                <div style={{ width: 40, height: 40, borderRadius: "10px", overflow: "hidden", flexShrink: 0, background: "rgba(153,69,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {ev.tokenImage ? <img src={ev.tokenImage} alt="" width={40} height={40} style={{ objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <span style={{ fontSize: "18px", opacity: 0.3 }}>🪙</span>}
-                </div>
-                <div style={{ ...mono, fontSize: "9px", fontWeight: 800, color: ev.type === "buy" ? "#14F195" : "#ef4444", background: ev.type === "buy" ? "rgba(20,241,149,0.1)" : "rgba(239,68,68,0.08)", padding: "4px 8px", borderRadius: "6px", minWidth: "34px", textAlign: "center" }}>{ev.type === "buy" ? "BUY" : "SELL"}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <span style={{ fontSize: "14px", fontWeight: 700 }}>${ev.tokenSymbol}</span>
-                    {ev.solAmount > 0 && <span style={{ ...mono, fontSize: "11px", color: "var(--text-muted, #888)" }}>{ev.solAmount.toFixed(2)} SOL</span>}
+                {/* Highlights */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {bestScan && (
+                    <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid rgba(20,241,149,0.15)", borderRadius: "12px", padding: "16px" }}>
+                      <div style={{ ...M, fontSize: "9px", fontWeight: 700, color: "#14F195", letterSpacing: "0.08em" }}>CLEANEST TOKEN</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
+                        <span style={{ ...M, fontSize: "24px", fontWeight: 800, color: gc(bestScan.grade) }}>{bestScan.grade}</span>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: 700 }}>{bestScan.symbol}</div>
+                          <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{bestScan.score}/100 · {bestScan.freshPct}% fresh</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {worstScan && worstScan.mint !== bestScan?.mint && (
+                    <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: "12px", padding: "16px" }}>
+                      <div style={{ ...M, fontSize: "9px", fontWeight: 700, color: "#ef4444", letterSpacing: "0.08em" }}>WORST TOKEN</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
+                        <span style={{ ...M, fontSize: "24px", fontWeight: 800, color: gc(worstScan.grade) }}>{worstScan.grade}</span>
+                        <div>
+                          <div style={{ fontSize: "14px", fontWeight: 700 }}>{worstScan.symbol}</div>
+                          <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{worstScan.score}/100 · {worstScan.freshPct}% fresh</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {/* Quick actions */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    <button onClick={() => setTab("scan")} style={{ ...M, padding: "14px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.12))", background: "var(--card-bg, rgba(255,255,255,0.6))", cursor: "pointer", fontSize: "11px", fontWeight: 700, color: "var(--accent, #9945FF)", textAlign: "left" }}>⊕ New Scan</button>
+                    <button onClick={() => setTab("bundlers")} style={{ ...M, padding: "14px", borderRadius: "10px", border: "1px solid var(--border, rgba(153,69,255,0.12))", background: "var(--card-bg, rgba(255,255,255,0.6))", cursor: "pointer", fontSize: "11px", fontWeight: 700, color: "var(--text-muted, #888)", textAlign: "left" }}>⬡ Bundler Feed</button>
                   </div>
-                  <div style={{ ...mono, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{ev.tokenMint.slice(0, 8)}...{ev.tokenMint.slice(-4)}</div>
                 </div>
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", justifyContent: "flex-end" }}>
-                    <span>{ev.walletEmoji}</span>
-                    <span style={{ fontSize: "11px", fontWeight: 600 }}>{ev.walletName}</span>
-                  </div>
-                  <div style={{ fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{new Date(ev.timestamp).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
-                </div>
-                <a href={`https://solscan.io/tx/${ev.signature}`} target="_blank" rel="noopener" style={{ color: "#9945FF", textDecoration: "none", fontSize: "11px", flexShrink: 0 }}>↗</a>
               </div>
-            ))}
-            {feedEvents.length > feedLimit && (
-              <button onClick={() => setFeedLimit(prev => prev + 50)} style={{ ...btnOut, alignSelf: "center", marginTop: "8px" }}>Load More ({feedEvents.length - feedLimit} remaining)</button>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {/* ═══ FOOTER ═══ */}
-        <div style={{ padding: "24px 0", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--border, rgba(153,69,255,0.06))", marginTop: "24px", fontSize: "11px", color: "var(--text-muted, #888)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <a href="/" style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--accent, #9945FF)", textDecoration: "none" }}>
-              <img src="/logo.png" alt="" width={16} height={16} style={{ objectFit: "contain" }} /> HOLDTECH
-            </a>
-            <a href="https://github.com/co-numina/holdtech" target="_blank" rel="noopener" style={{ color: "inherit", textDecoration: "none" }}>github</a>
-            <a href="https://x.com/co_numina" target="_blank" rel="noopener" style={{ color: "inherit", textDecoration: "none" }}>twitter</a>
-          </div>
-          <span style={{ ...mono, fontSize: "10px" }}>know before you ape</span>
+          {/* ═══ SCAN ═══ */}
+          {tab === "scan" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ ...M, fontSize: "18px", fontWeight: 800 }}>Scan Token</div>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input value={scanInput} onChange={e => setScanInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleScan()} placeholder="Paste token address..." style={{ flex: 1, padding: "12px 14px", border: "1px solid var(--border, rgba(153,69,255,0.15))", borderRadius: "12px", fontSize: "13px", background: "var(--card-bg, rgba(255,255,255,0.8))", ...M, outline: "none", color: "var(--text, #1a1a2e)" }} spellCheck={false} />
+                <button onClick={handleScan} disabled={scanning} style={{ ...M, padding: "12px 24px", background: "linear-gradient(135deg, #9945FF, #7B3FE4)", color: "white", border: "none", borderRadius: "12px", fontSize: "12px", fontWeight: 700, cursor: "pointer", opacity: scanning ? 0.5 : 1 }}>{scanning ? progress || "..." : "SCAN"}</button>
+              </div>
+              {scanning && <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted, #888)" }}><div style={{ display: "inline-block", width: 28, height: 28, border: "2.5px solid rgba(153,69,255,0.12)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "10px" }} /><div style={{ ...M, fontSize: "12px" }}>{progress}</div></div>}
+              {scanResult && (
+                <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "14px", padding: "24px" }}>
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
+                    <div>
+                      <div style={{ fontSize: "20px", fontWeight: 800 }}>{scanResult.symbol}</div>
+                      <div style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)", marginTop: "2px" }}>{scanResult.mint}</div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 14px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.2)", borderRadius: "8px", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>+ Watch</button>
+                      <a href={`/?mint=${scanResult.mint}`} target="_blank" style={{ ...M, padding: "6px 14px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.2)", borderRadius: "8px", fontSize: "11px", fontWeight: 600, textDecoration: "none" }}>Full →</a>
+                      <div style={{ ...M, fontSize: "32px", fontWeight: 800, color: gc(scanResult.grade), background: `${gc(scanResult.grade)}15`, padding: "4px 18px", borderRadius: "12px" }}>{scanResult.grade}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
+                    {[{ l: "Score", v: `${scanResult.score}/100` }, { l: "Holders", v: scanResult.holders.toLocaleString() }, { l: "Top 5", v: `${scanResult.top5Pct}%` }, { l: "Fresh", v: `${scanResult.freshPct}%` }, { l: "Avg Age", v: `${scanResult.avgAge}d` }].map(m => (
+                      <div key={m.l} style={{ background: "rgba(153,69,255,0.03)", borderRadius: "10px", padding: "12px" }}>
+                        <div style={{ ...M, fontSize: "9px", fontWeight: 700, color: "var(--text-muted, #888)", letterSpacing: "0.08em", textTransform: "uppercase" }}>{m.l}</div>
+                        <div style={{ ...M, fontSize: "20px", fontWeight: 800, marginTop: "4px" }}>{m.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═══ WATCHLIST ═══ */}
+          {tab === "watchlist" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <div style={{ ...M, fontSize: "18px", fontWeight: 800 }}>Watchlist</div>
+                <span style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{watchlist.length}/{tier.name === "FREE" ? 3 : tier.name === "SCOUT" ? 10 : tier.name === "OPERATOR" ? 50 : 200} · {tier.name}</span>
+              </div>
+              {watchlist.length === 0 && <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "14px", padding: "48px", textAlign: "center", color: "var(--text-muted, #aaa)" }}><div style={{ fontSize: "28px", marginBottom: "8px", opacity: 0.4 }}>◉</div><div style={{ fontSize: "13px" }}>Scan a token and click &quot;+ Watch&quot;</div></div>}
+              {watchlist.map(w => (
+                <div key={w.mint} style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "12px", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                    <span style={{ ...M, fontSize: "24px", fontWeight: 800, color: gc(w.lastGrade), minWidth: "36px" }}>{w.lastGrade}</span>
+                    <div>
+                      <div style={{ fontSize: "14px", fontWeight: 700 }}>{w.symbol}</div>
+                      <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{w.lastScore}/100 · {w.lastHolders.toLocaleString()} holders</div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    <button onClick={() => { setScanInput(w.mint); setTab("scan"); }} style={{ ...M, padding: "6px 12px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.2)", borderRadius: "8px", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>Rescan</button>
+                    <button onClick={() => rmWatch(w.mint)} style={{ ...M, padding: "6px 12px", background: "transparent", color: "#ef4444", border: "1px solid rgba(239,68,68,0.15)", borderRadius: "8px", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>×</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ═══ HISTORY ═══ */}
+          {tab === "history" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+                <div style={{ ...M, fontSize: "18px", fontWeight: 800 }}>Scan History</div>
+                {history.length > 0 && <button onClick={() => { setHistory([]); localStorage.removeItem("holdtech-history"); }} style={{ ...M, padding: "4px 10px", background: "transparent", color: "var(--text-muted, #aaa)", border: "1px solid rgba(0,0,0,0.06)", borderRadius: "6px", fontSize: "10px", cursor: "pointer" }}>Clear</button>}
+              </div>
+              {history.length === 0 && <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "14px", padding: "48px", textAlign: "center", color: "var(--text-muted, #aaa)" }}><div style={{ fontSize: "28px", marginBottom: "8px", opacity: 0.4 }}>◷</div><div style={{ fontSize: "13px" }}>No scans yet</div></div>}
+              {history.length > 0 && <div style={{ display: "grid", gridTemplateColumns: "36px 1fr 64px 64px 56px 56px 56px", gap: "6px", padding: "6px 16px", ...M, fontSize: "9px", color: "var(--text-muted, #888)", letterSpacing: "0.06em", textTransform: "uppercase" as const }}><span></span><span>Token</span><span>Score</span><span>Holders</span><span>Top 5</span><span>Fresh</span><span>When</span></div>}
+              {history.map((h, i) => (
+                <div key={h.mint + i} onClick={() => { setScanInput(h.mint); setTab("scan"); }} style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", border: "1px solid var(--border, rgba(153,69,255,0.06))", borderRadius: "10px", display: "grid", gridTemplateColumns: "36px 1fr 64px 64px 56px 56px 56px", gap: "6px", alignItems: "center", padding: "10px 16px", cursor: "pointer", transition: "border-color 0.15s" }}>
+                  <span style={{ ...M, fontSize: "16px", fontWeight: 800, color: gc(h.grade) }}>{h.grade}</span>
+                  <div><div style={{ fontSize: "12px", fontWeight: 600 }}>{h.symbol}</div><div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 6)}..{h.mint.slice(-4)}</div></div>
+                  <span style={{ ...M, fontSize: "12px", fontWeight: 700 }}>{h.score}</span>
+                  <span style={{ ...M, fontSize: "11px", color: "var(--text-secondary, #666)" }}>{h.holders.toLocaleString()}</span>
+                  <span style={{ ...M, fontSize: "11px", color: "var(--text-secondary, #666)" }}>{h.top5Pct}%</span>
+                  <span style={{ ...M, fontSize: "11px", color: h.freshPct > 40 ? "#ef4444" : "var(--text-secondary, #666)" }}>{h.freshPct}%</span>
+                  <span style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)" }}>{timeAgo(h.timestamp)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ═══ BATCH ═══ */}
+          {tab === "batch" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ ...M, fontSize: "18px", fontWeight: 800 }}>Batch Scan</div>
+              <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "14px", padding: "20px" }}>
+                <div style={{ fontSize: "12px", color: "var(--text-muted, #888)", marginBottom: "12px" }}>Paste multiple addresses. Max {tier.name === "FREE" ? 2 : tier.name === "SCOUT" ? 5 : tier.name === "OPERATOR" ? 20 : 50} ({tier.name})</div>
+                <textarea value={batchInput} onChange={e => setBatchInput(e.target.value)} placeholder="One per line or comma-separated..." style={{ width: "100%", padding: "12px", border: "1px solid var(--border, rgba(153,69,255,0.12))", borderRadius: "10px", fontSize: "12px", background: "var(--card-bg, rgba(255,255,255,0.8))", ...M, outline: "none", minHeight: "100px", resize: "vertical", color: "var(--text, #1a1a2e)" }} spellCheck={false} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
+                  <span style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)" }}>{batchInput.split(/[\n,]+/).filter(s => s.trim().length > 30).length} tokens</span>
+                  <button onClick={handleBatch} disabled={batchScanning} style={{ ...M, padding: "10px 20px", background: "linear-gradient(135deg, #9945FF, #7B3FE4)", color: "white", border: "none", borderRadius: "10px", fontSize: "11px", fontWeight: 700, cursor: "pointer", opacity: batchScanning ? 0.5 : 1 }}>{batchScanning ? `Scanning ${progress}` : "SCAN ALL"}</button>
+                </div>
+              </div>
+              {batchResults.length > 0 && [...batchResults].sort((a, b) => b.score - a.score).map((r, i) => (
+                <div key={r.mint} style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", border: "1px solid var(--border, rgba(153,69,255,0.06))", borderRadius: "10px", display: "flex", alignItems: "center", gap: "14px", padding: "12px 16px" }}>
+                  <span style={{ ...M, fontSize: "20px", fontWeight: 800, color: gc(r.grade), minWidth: "32px" }}>{r.grade}</span>
+                  <div style={{ flex: 1 }}><span style={{ fontSize: "13px", fontWeight: 700 }}>{r.symbol}</span></div>
+                  <span style={{ ...M, fontSize: "12px", fontWeight: 700 }}>{r.score}/100</span>
+                  <span style={{ ...M, fontSize: "11px", color: "var(--text-secondary, #666)" }}>{r.holders.toLocaleString()}</span>
+                  <span style={{ ...M, fontSize: "11px", color: "var(--text-secondary, #666)" }}>{r.top5Pct}%</span>
+                  <a href={`/?mint=${r.mint}`} target="_blank" style={{ ...M, fontSize: "10px", color: "#9945FF", textDecoration: "none" }}>→</a>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ═══ BUNDLERS ═══ */}
+          {tab === "bundlers" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ ...M, fontSize: "18px", fontWeight: 800 }}>Bundler Feed</div>
+                <div style={{ display: "flex", gap: "6px" }}>
+                  <button onClick={() => setAutoRefresh(!autoRefresh)} style={{ ...M, padding: "5px 10px", background: autoRefresh ? "rgba(20,241,149,0.08)" : "transparent", color: autoRefresh ? "#14F195" : "var(--text-muted, #888)", border: `1px solid ${autoRefresh ? "rgba(20,241,149,0.2)" : "var(--border, rgba(0,0,0,0.08))"}`, borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>{autoRefresh ? "● LIVE" : "○ AUTO"}</button>
+                  <button onClick={fetchFeed} disabled={feedLoading} style={{ ...M, padding: "5px 10px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.15)", borderRadius: "6px", fontSize: "10px", fontWeight: 600, cursor: "pointer", opacity: feedLoading ? 0.5 : 1 }}>{feedLoading ? "..." : "Refresh"}</button>
+                  <button onClick={() => setShowManage(!showManage)} style={{ ...M, padding: "5px 10px", background: "transparent", color: "var(--text-muted, #888)", border: "1px solid var(--border, rgba(0,0,0,0.08))", borderRadius: "6px", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>{showManage ? "Close" : "Manage"}</button>
+                </div>
+              </div>
+
+              {showManage && (
+                <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", backdropFilter: "blur(12px)", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "14px", padding: "16px" }}>
+                  <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+                    <input value={bundlerInput} onChange={e => setBundlerInput(e.target.value)} placeholder="Wallet address..." style={{ flex: 2, padding: "8px 10px", border: "1px solid var(--border, rgba(153,69,255,0.12))", borderRadius: "8px", fontSize: "11px", ...M, outline: "none", background: "var(--card-bg, rgba(255,255,255,0.8))", color: "var(--text, #1a1a2e)" }} spellCheck={false} />
+                    <input value={bundlerLabel} onChange={e => setBundlerLabel(e.target.value)} placeholder="Label" style={{ flex: 1, padding: "8px 10px", border: "1px solid var(--border, rgba(153,69,255,0.12))", borderRadius: "8px", fontSize: "11px", ...M, outline: "none", background: "var(--card-bg, rgba(255,255,255,0.8))", color: "var(--text, #1a1a2e)" }} />
+                    <button onClick={() => { const a = bundlerInput.trim(); if (!a || a.length < 32 || bundlers.find(b => b.address === a)) return; const n = [...bundlers, { address: a, label: bundlerLabel.trim() || a.slice(0, 8), emoji: "🚩", group: "custom", addedAt: Date.now(), seenIn: [] as string[] }]; setBundlers(n); localStorage.setItem("holdtech-bundlers", JSON.stringify(n)); setBundlerInput(""); setBundlerLabel(""); }} style={{ ...M, padding: "8px 14px", background: "linear-gradient(135deg, #9945FF, #7B3FE4)", color: "white", border: "none", borderRadius: "8px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>ADD</button>
+                  </div>
+                  <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+                    <button onClick={loadDefaults} style={{ ...M, padding: "5px 10px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.15)", borderRadius: "6px", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>Load Defaults ({bundlers.length > 0 ? "merge" : "42"})</button>
+                    <button onClick={() => navigator.clipboard.writeText(JSON.stringify(bundlers.map(b => ({ address: b.address, label: b.label, emoji: b.emoji, group: b.group })), null, 2))} style={{ ...M, padding: "5px 10px", background: "transparent", color: "var(--text-muted, #888)", border: "1px solid var(--border, rgba(0,0,0,0.06))", borderRadius: "6px", fontSize: "10px", fontWeight: 600, cursor: "pointer" }}>Export</button>
+                  </div>
+                  <textarea id="imp-json" placeholder="Paste JSON or addresses..." style={{ width: "100%", padding: "8px", border: "1px solid var(--border, rgba(153,69,255,0.1))", borderRadius: "8px", fontSize: "10px", ...M, outline: "none", minHeight: "40px", resize: "vertical", background: "var(--card-bg, rgba(255,255,255,0.8))", color: "var(--text, #1a1a2e)" }} spellCheck={false} />
+                  <button onClick={() => { const el = document.getElementById("imp-json") as HTMLTextAreaElement; if (!el?.value.trim()) return; const ex = new Set(bundlers.map(b => b.address)); let nw: any[] = []; try { const p = JSON.parse(el.value); if (Array.isArray(p)) nw = p.filter((d: any) => !ex.has(d.trackedWalletAddress || d.address)).map((d: any) => ({ address: d.trackedWalletAddress || d.address, label: d.name || d.label || "—", emoji: d.emoji || "🚩", group: d.groups?.[0] || d.group || "imported", addedAt: Date.now(), seenIn: [] as string[] })); } catch { nw = el.value.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length >= 32 && !ex.has(s)).map(a => ({ address: a, label: a.slice(0, 8), emoji: "🚩", group: "imported", addedAt: Date.now(), seenIn: [] as string[] })); } if (nw.length) { const nb = [...bundlers, ...nw]; setBundlers(nb); localStorage.setItem("holdtech-bundlers", JSON.stringify(nb)); el.value = ""; } }} style={{ ...M, padding: "6px 12px", background: "linear-gradient(135deg, #9945FF, #7B3FE4)", color: "white", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer", marginTop: "6px" }}>IMPORT</button>
+                  <div style={{ maxHeight: "160px", overflow: "auto", marginTop: "10px", borderTop: "1px solid var(--border, rgba(0,0,0,0.04))", paddingTop: "6px" }}>
+                    {bundlers.map(b => (
+                      <div key={b.address} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "3px 0", fontSize: "10px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <span>{b.emoji}</span><span style={{ fontWeight: 600 }}>{b.label}</span>
+                          <span style={{ ...M, fontSize: "8px", color: "var(--text-muted, #aaa)" }}>{b.address.slice(0, 6)}..{b.address.slice(-4)}</span>
+                          {b.group && <span style={{ fontSize: "7px", color: "#9945FF", background: "rgba(153,69,255,0.06)", padding: "1px 3px", borderRadius: "2px" }}>{b.group}</span>}
+                        </div>
+                        <button onClick={() => { const n = bundlers.filter(x => x.address !== b.address); setBundlers(n); localStorage.setItem("holdtech-bundlers", JSON.stringify(n)); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#ccc", fontSize: "12px" }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {bundlers.length === 0 && (
+                <div style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", border: "1px solid var(--border, rgba(153,69,255,0.08))", borderRadius: "14px", padding: "48px", textAlign: "center" }}>
+                  <div style={{ fontSize: "28px", marginBottom: "12px", opacity: 0.4 }}>⬡</div>
+                  <div style={{ fontSize: "13px", fontWeight: 600, marginBottom: "4px" }}>No bundler wallets tracked</div>
+                  <div style={{ fontSize: "11px", color: "var(--text-muted, #888)", marginBottom: "16px" }}>Load defaults or add your own</div>
+                  <button onClick={loadDefaults} style={{ ...M, padding: "10px 20px", background: "linear-gradient(135deg, #9945FF, #7B3FE4)", color: "white", border: "none", borderRadius: "10px", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>Load Default Ruggers</button>
+                </div>
+              )}
+
+              {feedLoading && feedEvents.length === 0 && <div style={{ textAlign: "center", padding: "40px", color: "var(--text-muted, #888)" }}><div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(153,69,255,0.12)", borderTopColor: "#9945FF", borderRadius: "50%", animation: "spin 1s linear infinite" }} /></div>}
+
+              {feedEvents.length > 0 && <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #888)" }}>{Math.min(feedLimit, feedEvents.length)} of {feedEvents.length} transactions</div>}
+
+              {feedEvents.slice(0, feedLimit).map((ev, i) => (
+                <div key={`${ev.signature}-${i}`} style={{ background: "var(--card-bg, rgba(255,255,255,0.6))", border: "1px solid var(--border, rgba(153,69,255,0.06))", borderRadius: "10px", display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px" }}>
+                  <div style={{ width: 38, height: 38, borderRadius: "8px", overflow: "hidden", flexShrink: 0, background: "rgba(153,69,255,0.03)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {ev.tokenImage ? <img src={ev.tokenImage} alt="" width={38} height={38} style={{ objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <span style={{ fontSize: "16px", opacity: 0.25 }}>🪙</span>}
+                  </div>
+                  <div style={{ ...M, fontSize: "9px", fontWeight: 800, color: ev.type === "buy" ? "#14F195" : "#ef4444", background: ev.type === "buy" ? "rgba(20,241,149,0.08)" : "rgba(239,68,68,0.06)", padding: "3px 7px", borderRadius: "5px" }}>{ev.type === "buy" ? "BUY" : "SELL"}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: "13px", fontWeight: 700 }}>${ev.tokenSymbol}{ev.solAmount > 0 && <span style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)", marginLeft: "6px" }}>{ev.solAmount.toFixed(2)} SOL</span>}</div>
+                    <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{ev.tokenMint.slice(0, 8)}..{ev.tokenMint.slice(-4)}</div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: "11px", fontWeight: 600 }}>{ev.walletEmoji} {ev.walletName}</div>
+                    <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{new Date(ev.timestamp).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                  </div>
+                  <a href={`https://solscan.io/tx/${ev.signature}`} target="_blank" rel="noopener" style={{ color: "#9945FF", textDecoration: "none", fontSize: "11px" }}>↗</a>
+                </div>
+              ))}
+              {feedEvents.length > feedLimit && <button onClick={() => setFeedLimit(p => p + 50)} style={{ ...M, padding: "8px", background: "transparent", color: "var(--accent, #9945FF)", border: "1px solid rgba(153,69,255,0.15)", borderRadius: "8px", fontSize: "10px", fontWeight: 600, cursor: "pointer", alignSelf: "center" }}>Load More ({feedEvents.length - feedLimit})</button>}
+            </div>
+          )}
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
