@@ -769,6 +769,7 @@ export default function Home() {
   const [deployerProfile, setDeployerProfile] = useState<{ deployer: string; totalLaunches: number; alive: number; dead: number; rugRate: number; graduated: number; gradRate: number; avgTimeToAthMs: number | null; avgAthMarketCap: number | null; bestLaunch: { mint: string; symbol: string; name: string; athMarketCap: number | null } | null; deployVelocity: number | null; currentToken: string; tokens: Array<{ mint: string; name: string; symbol: string; deployedAt: number | null; image: string | null; alive: boolean; liquidity: number | null; athMarketCap: number | null; graduated: boolean; timeToAthMs: number | null }> } | null>(null);
   const [deployerLoading, setDeployerLoading] = useState(false);
   const [deployerOverlap, setDeployerOverlap] = useState<{ pairs: Array<{ tokenA: { symbol: string }; tokenB: { symbol: string }; sharedWallets: number; overlapScore: number }>; coordination: string; maxOverlap: number } | null>(null);
+  const [smartMoneyIn, setSmartMoneyIn] = useState<{ found: number; wallets: Array<{ wallet: string; amount: number }>; totalTracked: number } | null>(null);
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
   const [analyzeLimit, setAnalyzeLimit] = useState(20);
@@ -802,7 +803,7 @@ export default function Home() {
     const addr = mint.trim();
     if (!addr) return;
     const useLimit = limit || analyzeLimit;
-    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setDeployerProfile(null); setDeployerOverlap(null); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
+    setLoading(true); setError(""); setResult(null); setVerdict(null); setDeepScan(null); setDeepScanError(""); setDeployerProfile(null); setDeployerOverlap(null); setSmartMoneyIn(null); setProgress(`${t.fetchingHolders} ${useLimit} ${t.holders}`);
     setTokenInfo(null);
 
     try {
@@ -825,6 +826,12 @@ export default function Home() {
       const data: AnalysisResult = await res.json();
       setResult(data);
       setProgress(t.countingHolders);
+
+      // Smart money check (non-blocking)
+      fetch("/api/smart-money", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr, holders: data.wallets?.map((w: any) => ({ address: w.address, balance: w.balance })) }) })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setSmartMoneyIn(d); })
+        .catch(() => {});
 
       // Get accurate holder count before verdict
       let realHolderCount = data.totalHolders;
@@ -958,6 +965,11 @@ export default function Home() {
               onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               OVERLAP
+            </a>
+            <a href="/smart-money" className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={(e: React.MouseEvent<HTMLAnchorElement>) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              SMART MONEY
             </a>
           </div>
           {/* Right: Wallet + controls */}
@@ -1501,6 +1513,22 @@ export default function Home() {
             </div>
 
             {/* Deep scan loading */}
+            {/* Smart Money Signal */}
+            {smartMoneyIn && smartMoneyIn.found > 0 && (
+              <div style={{ padding: "14px 18px", borderRadius: "12px", background: "rgba(20,241,149,0.04)", border: "1px solid rgba(20,241,149,0.15)", display: "flex", alignItems: "center", gap: "12px" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14F195" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 800, color: "#14F195" }}>
+                    {smartMoneyIn.found} Smart Money Wallet{smartMoneyIn.found > 1 ? "s" : ""} In
+                  </div>
+                  <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)", marginTop: "2px" }}>
+                    {smartMoneyIn.wallets.map(w => `${w.wallet.slice(0, 4)}...${w.wallet.slice(-4)}`).join(", ")} — tracked {smartMoneyIn.totalTracked} wallets
+                  </div>
+                </div>
+                <a href="/smart-money" style={{ fontSize: "10px", fontWeight: 700, color: "var(--accent)", textDecoration: "none" }}>VIEW →</a>
+              </div>
+            )}
+
             {deepScanLoading && (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
                 <div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(153,69,255,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "12px" }} />
