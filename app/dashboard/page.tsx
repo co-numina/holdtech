@@ -13,9 +13,19 @@ const TIERS = [
   { name: "WHALE", min: 20_000_000, color: "#14F195", icon: "◆" },
 ];
 
+interface ScanMetrics {
+  freshWalletPct: number; veryFreshWalletPct: number; veteranHolderPct: number; ogHolderPct: number;
+  lowActivityPct: number; singleTokenPct: number; avgWalletAgeDays: number; medianWalletAgeDays: number;
+  avgTxCount: number; avgSolBalance: number; diamondHandsPct: number;
+}
+interface DistBucket { label: string; count: number; pct: number; }
+interface TopHolder { address: string; balancePct: number; walletAgeDays: number; holdDurationDays: number; totalTxCount: number; isFresh: boolean; isPool?: boolean; }
+interface ScanVerdict { score: number; grade: string; verdict: string; flags: string[]; }
 interface ScanResult {
   mint: string; symbol: string; score: number; grade: string;
   holders: number; top5Pct: number; freshPct: number; avgAge: number; timestamp: number;
+  metrics?: ScanMetrics; distribution?: { walletAge: DistBucket[]; holdDuration: DistBucket[]; };
+  topHolders?: TopHolder[]; verdict?: ScanVerdict;
 }
 interface WatchlistItem {
   mint: string; symbol: string; lastScore: number; lastGrade: string;
@@ -128,7 +138,13 @@ export default function Dashboard() {
       const totalHolders = holderCount || (a.totalHolders > a.analyzedHolders ? a.totalHolders : null) || a.analyzedHolders;
       const vR = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: a.metrics, totalHolders, analyzedHolders: a.analyzedHolders, tokenSymbol: a.tokenSymbol }) });
       const v = vR.ok ? await vR.json() : null;
-      return { mint, symbol: a.tokenSymbol || mint.slice(0, 6), score: v?.score ?? 0, grade: v?.grade || "?", holders: totalHolders, top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)), freshPct: a.metrics?.freshWalletPct ?? 0, avgAge: Math.round(a.metrics?.avgWalletAgeDays ?? 0), timestamp: Date.now() };
+      return {
+        mint, symbol: a.tokenSymbol || mint.slice(0, 6), score: v?.score ?? 0, grade: v?.grade || "?",
+        holders: totalHolders, top5Pct: parseFloat(((top5 / supply) * 100).toFixed(1)),
+        freshPct: a.metrics?.freshWalletPct ?? 0, avgAge: Math.round(a.metrics?.avgWalletAgeDays ?? 0),
+        timestamp: Date.now(), metrics: a.metrics || undefined, distribution: a.distribution || undefined,
+        topHolders: a.topHolders || undefined, verdict: v || undefined,
+      };
     } catch { return null; }
   }, []);
 
@@ -754,31 +770,131 @@ export default function Dashboard() {
               {/* Recent scans for quick re-access */}
               {/* ── Scan Result ── */}
               {scanResult && (
-                <div style={{ ...card({ padding: "20px" }), borderLeft: `3px solid ${gc(scanResult.grade)}` }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "14px" }}>
-                    <span style={{ ...M, fontSize: "32px", fontWeight: 900, color: gc(scanResult.grade) }}>{scanResult.grade}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ ...M, fontSize: "16px", fontWeight: 800 }}>{scanResult.symbol} <span style={{ fontSize: "12px", fontWeight: 500, color: "var(--text-muted, #888)" }}>{scanResult.score}/100</span></div>
-                      <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)", fontFamily: "var(--mono)" }}>{scanResult.mint}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>+ Watch</button>
-                      <button onClick={() => window.open(`/?mint=${scanResult.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full View →</button>
-                    </div>
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: "10px" }}>
-                    {[
-                      { label: "Holders", value: scanResult.holders.toLocaleString() },
-                      { label: "Fresh Wallets", value: `${scanResult.freshPct}%` },
-                      { label: "Top 5 Hold", value: `${scanResult.top5Pct}%` },
-                      { label: "Avg Age", value: `${scanResult.avgAge}d` },
-                    ].map(m => (
-                      <div key={m.label} style={{ padding: "8px 10px", background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(153,69,255,0.03)", borderRadius: "6px" }}>
-                        <div style={{ ...M, fontSize: "8px", fontWeight: 700, color: "var(--text-muted, #999)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{m.label}</div>
-                        <div style={{ ...M, fontSize: "16px", fontWeight: 800, marginTop: "2px" }}>{m.value}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {/* Header */}
+                  <div style={{ ...card({ padding: "20px" }), borderLeft: `3px solid ${gc(scanResult.grade)}` }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                      <div style={{ textAlign: "center" }}>
+                        <div style={{ width: 56, height: 56, borderRadius: "50%", background: gc(scanResult.grade), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ ...M, fontSize: "22px", fontWeight: 900, color: "#000" }}>{scanResult.score}</span>
+                        </div>
+                        <div style={{ ...M, fontSize: "20px", fontWeight: 900, color: gc(scanResult.grade), marginTop: "2px" }}>{scanResult.grade}</div>
                       </div>
-                    ))}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ ...M, fontSize: "16px", fontWeight: 800 }}>{scanResult.symbol}</div>
+                        <div style={{ ...M, fontSize: "10px", color: "var(--text-muted, #aaa)", fontFamily: "var(--mono)" }}>{scanResult.mint}</div>
+                        <div style={{ ...M, fontSize: "11px", color: "var(--text-muted, #888)", marginTop: "4px" }}>{scanResult.holders.toLocaleString()} holders · scanned {timeAgo(scanResult.timestamp)}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>+ Watch</button>
+                        <button onClick={() => window.open(`/?mint=${scanResult.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
+                      </div>
+                    </div>
+                    {scanResult.verdict && (
+                      <div style={{ marginTop: "14px", padding: "12px", background: darkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", borderRadius: "8px", fontSize: "12px", lineHeight: 1.6, color: "var(--text-secondary, #666)" }}>
+                        {scanResult.verdict.verdict}
+                      </div>
+                    )}
+                    {scanResult.verdict?.flags && scanResult.verdict.flags.length > 0 && (
+                      <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                        {scanResult.verdict.flags.map((f, i) => (
+                          <div key={i} style={{ fontSize: "11px", color: "var(--text-secondary, #777)", padding: "5px 8px", borderRadius: "6px", background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(153,69,255,0.03)" }}>{f}</div>
+                        ))}
+                      </div>
+                    )}
                   </div>
+
+                  {/* Metrics Grid */}
+                  {scanResult.metrics && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                      {[
+                        { label: "Fresh Wallets", value: `${scanResult.metrics.freshWalletPct}%`, sub: `${scanResult.metrics.veryFreshWalletPct}% <24h`, warn: scanResult.metrics.freshWalletPct > 40 },
+                        { label: "Veterans (90d+)", value: `${scanResult.metrics.veteranHolderPct}%`, sub: `${scanResult.metrics.ogHolderPct}% OG (180d+)` },
+                        { label: "Low Activity", value: `${scanResult.metrics.lowActivityPct}%`, sub: "<10 txs", warn: scanResult.metrics.lowActivityPct > 40 },
+                        { label: "Single Token", value: `${scanResult.metrics.singleTokenPct}%`, sub: "only hold this", warn: scanResult.metrics.singleTokenPct > 30 },
+                        { label: "Avg Wallet Age", value: `${scanResult.metrics.avgWalletAgeDays}d`, sub: `median: ${scanResult.metrics.medianWalletAgeDays}d` },
+                        { label: "Avg Tx Count", value: `${scanResult.metrics.avgTxCount}`, sub: "lifetime txs" },
+                        { label: "Avg SOL Balance", value: `${scanResult.metrics.avgSolBalance}`, sub: "SOL/wallet", warn: scanResult.metrics.avgSolBalance < 0.5 },
+                        { label: "Diamond Hands", value: `${scanResult.metrics.diamondHandsPct}%`, sub: "holding 2d+" },
+                      ].map(m => (
+                        <div key={m.label} style={{ ...card({ padding: "10px" }), borderColor: m.warn ? "rgba(239,68,68,0.25)" : undefined }}>
+                          <div style={{ ...M, fontSize: "8px", fontWeight: 700, color: "var(--text-muted, #999)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{m.label}</div>
+                          <div style={{ ...M, fontSize: "18px", fontWeight: 800, marginTop: "2px", color: m.warn ? "#ef4444" : undefined }}>{m.value}</div>
+                          {m.sub && <div style={{ fontSize: "9px", color: "var(--text-muted, #aaa)", marginTop: "1px" }}>{m.sub}</div>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Distribution Bars */}
+                  {scanResult.distribution && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                      {[
+                        { title: "Wallet Age Distribution", data: scanResult.distribution.walletAge, color: "#9945FF" },
+                        { title: "Hold Duration Distribution", data: scanResult.distribution.holdDuration, color: "#14F195" },
+                      ].map(chart => (
+                        <div key={chart.title} style={card({ padding: "14px" })}>
+                          <div style={{ ...M, fontSize: "11px", fontWeight: 700, color: "var(--text-muted, #888)", marginBottom: "10px" }}>{chart.title}</div>
+                          {chart.data.map((d: DistBucket) => {
+                            const max = Math.max(...chart.data.map((x: DistBucket) => x.pct), 1);
+                            return (
+                              <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px", fontSize: "10px" }}>
+                                <span style={{ width: "70px", textAlign: "right", color: "var(--text-muted, #888)", flexShrink: 0, ...M }}>{d.label}</span>
+                                <div style={{ flex: 1, height: "14px", borderRadius: "3px", background: darkMode ? "rgba(255,255,255,0.04)" : "rgba(153,69,255,0.04)", overflow: "hidden" }}>
+                                  <div style={{ height: "100%", width: `${(d.pct / max) * 100}%`, background: chart.color, borderRadius: "3px", transition: "width 0.4s" }} />
+                                </div>
+                                <span style={{ width: "55px", flexShrink: 0, color: "var(--text-secondary, #666)", ...M }}>{d.pct}% ({d.count})</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Top Holders Table */}
+                  {scanResult.topHolders && scanResult.topHolders.length > 0 && (
+                    <div style={card({ padding: "0", overflow: "hidden" })}>
+                      <div style={{ padding: "12px 16px", borderBottom: `1px solid ${darkMode ? "rgba(255,255,255,0.06)" : "rgba(153,69,255,0.08)"}`, ...M, fontSize: "11px", fontWeight: 700 }}>Top {scanResult.topHolders.length} Holders</div>
+                      <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", fontSize: "10px", borderCollapse: "collapse" }}>
+                          <thead>
+                            <tr style={{ borderBottom: `1px solid ${darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}` }}>
+                              {["#", "Wallet", "Balance %", "Age", "Txs", "Status"].map(h => (
+                                <th key={h} style={{ ...M, padding: "8px 10px", textAlign: h === "#" || h === "Wallet" ? "left" : "right", fontSize: "8px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted, #999)", fontWeight: 700 }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {scanResult.topHolders.map((h, i) => (
+                              <tr key={h.address} style={{ borderBottom: `1px solid ${darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"}` }}>
+                                <td style={{ ...M, padding: "7px 10px", color: "var(--text-muted, #999)" }}>{i + 1}</td>
+                                <td style={{ ...M, padding: "7px 10px", fontFamily: "var(--mono, monospace)" }}>
+                                  <a href={`https://solscan.io/account/${h.address}`} target="_blank" rel="noopener" style={{ color: "#9945FF", textDecoration: "none" }}>{h.address.slice(0, 4)}...{h.address.slice(-4)}</a>
+                                </td>
+                                <td style={{ ...M, padding: "7px 10px", textAlign: "right" }}>{h.balancePct}%</td>
+                                <td style={{ ...M, padding: "7px 10px", textAlign: "right", color: h.walletAgeDays < 7 ? "#ef4444" : h.walletAgeDays > 90 ? "#14F195" : "var(--text-secondary, #666)" }}>
+                                  {h.walletAgeDays < 1 ? "<1d" : `${Math.round(h.walletAgeDays)}d`}
+                                </td>
+                                <td style={{ ...M, padding: "7px 10px", textAlign: "right", color: h.totalTxCount < 10 ? "#ef4444" : "var(--text-secondary, #666)" }}>{h.totalTxCount.toLocaleString()}</td>
+                                <td style={{ padding: "7px 10px", textAlign: "right" }}>
+                                  {h.isPool ? (
+                                    <span style={{ color: "#a78bfa", background: "rgba(167,139,250,0.1)", padding: "2px 5px", borderRadius: "3px", fontSize: "8px", fontWeight: 700 }}>POOL</span>
+                                  ) : h.isFresh ? (
+                                    <span style={{ color: "#ef4444", background: "rgba(239,68,68,0.1)", padding: "2px 5px", borderRadius: "3px", fontSize: "8px", fontWeight: 700 }}>FRESH</span>
+                                  ) : h.walletAgeDays > 180 ? (
+                                    <span style={{ color: "#14F195", background: "rgba(20,241,149,0.1)", padding: "2px 5px", borderRadius: "3px", fontSize: "8px", fontWeight: 700 }}>OG</span>
+                                  ) : h.walletAgeDays > 90 ? (
+                                    <span style={{ color: "#9945FF", background: "rgba(153,69,255,0.1)", padding: "2px 5px", borderRadius: "3px", fontSize: "8px", fontWeight: 700 }}>VET</span>
+                                  ) : <span style={{ color: "var(--text-muted, #999)" }}>—</span>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
