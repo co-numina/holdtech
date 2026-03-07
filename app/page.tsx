@@ -154,7 +154,7 @@ function TokenCard({ info }: { info: TokenInfo }) {
   const pctStr = (v: number | null) => v === null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`;
 
   return (
-    <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
+    <div className="glass xray-scan" style={{ borderRadius: "20px", overflow: "hidden" }}>
       <div style={{ padding: "20px 24px", display: "flex", gap: "20px", alignItems: "center" }}>
         {/* Token image */}
         {info.image ? (
@@ -273,7 +273,7 @@ function BarChart({ data, color = "bg-cyan-500" }: { data: DistBucket[]; color?:
 
 function MetricCard({ label, value, sub, warn }: { label: string; value: string; sub?: string; warn?: boolean }) {
   return (
-    <div style={{ background: "var(--bg-card-alt)", border: `1px solid ${warn ? "rgba(239,68,68,0.3)" : "var(--border)"}`, borderRadius: "12px", padding: "14px" }}>
+    <div className="glass-alt" style={{ borderRadius: "12px", padding: "14px", borderColor: warn ? "rgba(239,68,68,0.3) !important" : undefined }}>
       <div className="font-mono" style={{ fontSize: "9px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted)", marginBottom: "4px" }}>{label}</div>
       <div className="font-mono" style={{ fontSize: "22px", fontWeight: 700, color: warn ? "var(--red)" : "var(--text)", lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>{sub}</div>}
@@ -290,7 +290,7 @@ function ConcentrationBar({ concentration }: { concentration: DeepScanResult["co
   const top10Only = concentration.top10Pct - concentration.top5Pct;
   const top20Only = concentration.top20Pct - concentration.top10Pct;
   return (
-    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+    <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Token Concentration</div>
       <div style={{ height: "32px", borderRadius: "8px", overflow: "hidden", display: "flex" }}>
         {top5 > 0 && <div className="group relative" style={{ width: `${top5}%`, background: "var(--red)", height: "100%" }}><span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">Top 5: {top5.toFixed(1)}%</span></div>}
@@ -377,7 +377,7 @@ function BuyTimeline({ timeline }: { timeline: DeepScanResult["buyTimeline"] }) 
   if (!timeline.length) return null;
   const maxMin = Math.max(...timeline.map(t => t.minutesAfterFirst), 1);
   return (
-    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+    <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Buy Timeline</div>
       <div style={{ position: "relative", height: "64px", background: "rgba(153,69,255,0.04)", borderRadius: "8px", overflow: "hidden" }}>
         {timeline.map((t, i) => {
@@ -411,7 +411,7 @@ function SolDistChart({ dist }: { dist: DeepScanResult["solDistribution"] }) {
   const colors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-cyan-500", "bg-emerald-500"];
   const max = Math.max(...buckets.map(b => b.pct), 1);
   return (
-    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+    <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>SOL Balance Distribution</div>
       <div className="space-y-1.5">
         {buckets.map((d, i) => (
@@ -442,7 +442,7 @@ function RadarChart({ metrics }: { metrics: AnalysisResult["metrics"] }) {
   const pt = (i: number, pct: number) => ({ x: cx + (r * pct / 100) * Math.cos(start + i * step), y: cy + (r * pct / 100) * Math.sin(start + i * step) });
   const valPts = axes.map((a, i) => pt(i, a.value)).map(p => `${p.x},${p.y}`).join(" ");
   return (
-    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+    <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Holderbase Radar</div>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <svg viewBox="0 0 300 300" style={{ width: 256, height: 256 }}>
@@ -468,7 +468,7 @@ function BubbleScatter({ wallets, totalSupply }: { wallets: WalletAnalysis[]; to
   const plotW = W - PAD * 2, plotH = H - PAD * 2;
 
   return (
-    <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+    <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Wallet Scatter (Age vs Holdings)</div>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
         {/* Grid lines */}
@@ -625,7 +625,7 @@ export default function Home() {
       <div style={{ position: "relative", zIndex: 10, maxWidth: "1100px", margin: "0 auto", padding: "0 32px" }}>
 
         {/* ═══ NAV ═══ */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "2px solid var(--border)" }}>
+        <div className="glass" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderRadius: "16px", marginTop: "16px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <img src="/logo.png" alt="HolderScope" width={28} height={28} style={{ objectFit: "contain" }} />
@@ -696,8 +696,10 @@ export default function Home() {
                 data-form-type="other"
                 className="font-mono"
                 style={{
-                  width: "100%", background: "var(--bg-card)", border: "2px solid var(--border)", borderRadius: "14px",
+                  width: "100%", background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+                  border: "2px solid rgba(255,255,255,0.5)", borderRadius: "14px",
                   padding: "14px 16px 14px 16px", fontSize: "13px", color: "var(--text)", outline: "none",
+                  boxShadow: "0 4px 16px rgba(153,69,255,0.04), inset 0 1px 0 rgba(255,255,255,0.4)",
                 }}
                 onFocus={e => { e.currentTarget.style.borderColor = "var(--accent-dark)"; }}
                 onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; }}
@@ -719,7 +721,7 @@ export default function Home() {
         {/* ═══ THESIS ═══ */}
         {!result && !loading && (
           <>
-            <div className="reveal" style={{ marginBottom: "24px", background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
+            <div className="reveal glass xray-scan" style={{ marginBottom: "24px", borderRadius: "20px", overflow: "hidden" }}>
               <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                 <EyeIcon size={20} color="white" />
                 <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Why holderbase quality matters</span>
@@ -762,12 +764,12 @@ export default function Home() {
                 { icon: <LayersIcon size={20} color="var(--accent)" />, title: "Wallet Quality Scoring", desc: "Age, tx count, SOL balance, token diversity. Each wallet profiled individually. Aggregated into holderbase metrics." },
                 { icon: <TrendIcon size={20} color="var(--green)" />, title: "Concentration Analysis", desc: "Top 5/10/20 holder dominance, Gini coefficient, HHI index. Detects whale risk and distribution health." },
               ].map((card, i) => (
-                <div key={i} style={{
-                  padding: "24px", borderRadius: "16px", border: "1px solid var(--border)", background: "var(--bg-card)",
-                  display: "flex", flexDirection: "column", gap: "12px", transition: "all 0.2s ease",
+                <div key={i} className="glass" style={{
+                  padding: "24px", borderRadius: "16px",
+                  display: "flex", flexDirection: "column", gap: "12px", transition: "all 0.3s ease",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(153,69,255,0.05)"; e.currentTarget.style.borderColor = "var(--border-accent)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(153,69,255,0.1), inset 0 1px 0 rgba(255,255,255,0.5)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.4)"; }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                     {card.icon}
@@ -779,7 +781,7 @@ export default function Home() {
             </div>
 
             {/* ═══ HOW IT WORKS ═══ */}
-            <div className="reveal" style={{ marginBottom: "24px", background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", padding: "24px 28px" }}>
+            <div className="reveal glass" style={{ marginBottom: "24px", borderRadius: "20px", padding: "24px 28px" }}>
               <div className="font-mono" style={{ fontSize: "11px", fontWeight: 600, color: "var(--accent)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "16px" }}>
                 How it works
               </div>
@@ -894,7 +896,7 @@ export default function Home() {
 
             {/* Verdict card */}
             {verdict && (
-              <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: `2px solid`, borderColor: scoreBorderColor(verdict.score).replace("border-", "").replace("/30", ""), overflow: "hidden" }}>
+              <div className="glass xray-scan" style={{ borderRadius: "20px", overflow: "hidden" }}>
                 <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                   <ShieldIcon size={20} color="white" />
                   <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>Holderbase Verdict</span>
@@ -932,11 +934,11 @@ export default function Home() {
 
             {/* Distributions + Radar */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
-              <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+              <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Wallet Age Distribution</div>
                 <BarChart data={result.distribution.walletAge} color="bg-cyan-500" />
               </div>
-              <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+              <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Hold Duration Distribution</div>
                 <BarChart data={result.distribution.holdDuration} color="bg-emerald-500" />
               </div>
@@ -944,8 +946,8 @@ export default function Home() {
             </div>
 
             {/* Top Holders Table */}
-            <div style={{ background: "var(--bg-card)", borderRadius: "20px", border: "2px solid var(--border)", overflow: "hidden" }}>
-              <div style={{ padding: "14px 24px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="glass" style={{ borderRadius: "20px", overflow: "hidden" }}>
+              <div style={{ padding: "14px 24px", borderBottom: "1px solid rgba(153,69,255,0.1)", display: "flex", alignItems: "center", gap: "10px" }}>
                 <LayersIcon size={16} color="var(--accent-dark)" />
                 <span style={{ fontSize: "14px", fontWeight: 700, color: "var(--text)" }}>Top 20 Holders</span>
               </div>
@@ -991,7 +993,7 @@ export default function Home() {
             </div>
 
             {/* All Wallets (collapsible) */}
-            <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
+            <div className="glass-alt" style={{ borderRadius: "14px", padding: "16px" }}>
               <button onClick={() => setShowWallets(!showWallets)} style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
                 <span>{showWallets ? "▼" : "▶"}</span> All Analyzed Wallets ({result.wallets.length})
               </button>

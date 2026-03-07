@@ -2,9 +2,9 @@
 
 :root {
   --bg: #f0f0f6;
-  --bg-card: #ffffff;
-  --bg-card-alt: #f7f7fc;
-  --bg-deep: #e8e8f0;
+  --bg-card: rgba(255, 255, 255, 0.55);
+  --bg-card-alt: rgba(247, 247, 252, 0.6);
+  --bg-deep: rgba(232, 232, 240, 0.5);
   --text: #1a1a2e;
   --text-secondary: #4a4a6a;
   --text-muted: #8888a8;
@@ -20,6 +20,11 @@
   --border-accent: rgba(153, 69, 255, 0.25);
   --gradient-solana: linear-gradient(135deg, #9945FF, #14F195);
   --gradient-solana-soft: linear-gradient(135deg, rgba(153,69,255,0.08), rgba(20,241,149,0.08));
+  --glass-blur: 16px;
+  --glass-card: rgba(255, 255, 255, 0.45);
+  --glass-card-alt: rgba(255, 255, 255, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px rgba(153, 69, 255, 0.06);
 }
 
 body {
@@ -53,6 +58,54 @@ body::before {
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(153,69,255,0.2); } 50% { box-shadow: 0 0 24px rgba(153,69,255,0.35); } }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Glassmorphism */
+.glass {
+  background: var(--glass-card) !important;
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.glass-alt {
+  background: var(--glass-card-alt) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.35) !important;
+  box-shadow: 0 4px 16px rgba(153, 69, 255, 0.04);
+}
+
+/* X-ray scan line */
+@keyframes xray-scan {
+  0% { top: -2px; }
+  100% { top: 100%; }
+}
+
+.xray-scan {
+  position: relative;
+  overflow: hidden;
+}
+
+.xray-scan::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(153,69,255,0.4), rgba(20,241,149,0.3), transparent);
+  box-shadow: 0 0 12px rgba(153,69,255,0.3), 0 0 24px rgba(20,241,149,0.15);
+  animation: xray-scan 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Xray glow on hover */
+.glass:hover {
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,0.5), 0 0 24px rgba(153,69,255,0.08);
+  border-color: rgba(153,69,255,0.2) !important;
+  transition: all 0.3s ease;
+}
 
 ::selection { background: rgba(153,69,255,0.15); }
 
