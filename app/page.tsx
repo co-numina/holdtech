@@ -98,6 +98,12 @@ const GitHubIcon = ({ size = 18, color = "currentColor" }: { size?: number; colo
 const XIcon = ({ size = 18, color = "currentColor" }: { size?: number; color?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill={color}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
 );
+const PumpFunIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2"/><path d="M11 20c0-3 2-5 5-5s5 2 5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/><circle cx="13" cy="13" r="1.5" fill="currentColor"/><circle cx="19" cy="13" r="1.5" fill="currentColor"/></svg>
+);
+const DexScreenerIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 32 32" fill="none"><rect x="4" y="4" width="24" height="24" rx="4" stroke="currentColor" strokeWidth="2"/><path d="M9 22l4-6 4 3 6-9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+);
 
 // ============================================================
 // UTILITY
@@ -622,16 +628,35 @@ export default function Home() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "2px solid var(--border)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <ShieldIcon size={24} color="var(--accent)" />
+              <img src="/logo.png" alt="HolderScope" width={28} height={28} style={{ objectFit: "contain" }} />
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
             </div>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(34,211,238,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <a href="https://github.com/co-numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <a href="https://pump.fun" target="_blank" rel="noopener" title="Pump.fun"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              <PumpFunIcon size={20} />
+            </a>
+            <a href="https://dexscreener.com" target="_blank" rel="noopener" title="DexScreener"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              <DexScreenerIcon size={20} />
+            </a>
+            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
+            <a href="https://github.com/co-numina" target="_blank" rel="noopener" title="GitHub"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <GitHubIcon size={20} />
             </a>
-            <a href="https://x.com/latebuild" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none" }}>
+            <a href="https://x.com/latebuild" target="_blank" rel="noopener" title="Twitter"
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <XIcon size={18} />
             </a>
           </div>
@@ -1027,7 +1052,7 @@ export default function Home() {
         <div style={{ padding: "16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "2px solid var(--border)", marginTop: "8px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "12px", color: "var(--text-muted)" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, color: "var(--accent-dark)" }}>
-              <ShieldIcon size={14} color="var(--accent-dark)" /> HOLDERSCOPE
+              <img src="/logo.png" alt="" width={16} height={16} style={{ objectFit: "contain" }} /> HOLDERSCOPE
             </span>
             <a href="https://github.com/co-numina" target="_blank" rel="noopener" style={{ display: "flex", alignItems: "center", gap: "4px", color: "inherit", textDecoration: "none" }}>
               <GitHubIcon size={14} /> github
