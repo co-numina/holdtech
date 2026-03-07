@@ -1315,24 +1315,42 @@ export default function Dashboard() {
           <div style={{ background: darkMode ? "#1a1a2e" : "#fff", borderRadius: "16px", padding: "20px", maxWidth: "660px", width: "90%", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
               <span style={{ ...M, fontSize: "14px", fontWeight: 800 }}>Share Card — ${shareCard.symbol}</span>
-              <button onClick={() => { setShareCard(null); setShareCopied(false); }} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-muted, #888)" }}>✕</button>
+              <button onClick={() => { setShareCard(null); setShareCopied(false); }} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-muted, #888)", padding: "4px 8px" }}>✕</button>
             </div>
-            <img src={shareCard.url} alt={`${shareCard.symbol} scan card`} style={{ width: "100%", borderRadius: "10px", border: "1px solid rgba(153,69,255,0.15)" }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              id="share-card-img"
+              src={shareCard.url}
+              alt={`${shareCard.symbol} scan card`}
+              crossOrigin="anonymous"
+              style={{ width: "100%", borderRadius: "10px", border: "1px solid rgba(153,69,255,0.15)", display: "block" }}
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
             <div style={{ display: "flex", gap: "8px", marginTop: "14px" }}>
               <button onClick={async () => {
                 try {
-                  const res = await fetch(shareCard.url);
-                  const blob = await res.blob();
+                  const img = document.getElementById("share-card-img") as HTMLImageElement;
+                  if (!img) return;
+                  const canvas = document.createElement("canvas");
+                  canvas.width = 1200; canvas.height = 630;
+                  const ctx = canvas.getContext("2d");
+                  if (!ctx) return;
+                  ctx.drawImage(img, 0, 0, 1200, 630);
+                  const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, "image/png"));
+                  if (!blob) return;
                   await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
                   setShareCopied(true); setTimeout(() => setShareCopied(false), 2000);
-                } catch { /* fallback: download */ const res = await fetch(shareCard.url); const blob = await res.blob(); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `holdtech-${shareCard.symbol}.png`; a.click(); }
+                } catch (err) {
+                  // Fallback: open image in new tab
+                  window.open(shareCard.url, "_blank");
+                }
               }} style={{ ...M, flex: 1, padding: "10px", background: shareCopied ? "rgba(20,241,149,0.15)" : "rgba(153,69,255,0.1)", color: shareCopied ? "#14F195" : "#9945FF", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
                 {shareCopied ? "✓ Copied to clipboard" : "📋 Copy Image"}
               </button>
-              <button onClick={async () => {
-                const res = await fetch(shareCard.url); const blob = await res.blob();
-                const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
-                a.download = `holdtech-${shareCard.symbol}.png`; a.click(); URL.revokeObjectURL(a.href);
+              <button onClick={() => {
+                const a = document.createElement("a");
+                a.href = shareCard.url; a.download = `holdtech-${shareCard.symbol}.png`;
+                a.target = "_blank"; a.click();
               }} style={{ ...M, padding: "10px 20px", background: "rgba(20,241,149,0.1)", color: "#14F195", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>
                 ⬇ Download
               </button>
