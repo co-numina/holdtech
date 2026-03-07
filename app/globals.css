@@ -1,22 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #06080c;
-  --bg-card: #0c1018;
-  --bg-card-alt: #0f1520;
-  --bg-deep: #050710;
-  --text: #e8edf5;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --accent: #22d3ee;
-  --accent-dark: #0891b2;
-  --accent-bright: #67e8f9;
-  --accent-glow: rgba(34, 211, 238, 0.15);
-  --green: #10b981;
-  --yellow: #eab308;
+  --bg: #fafbff;
+  --bg-card: #ffffff;
+  --bg-card-alt: #f4f5fb;
+  --bg-deep: #eef0f8;
+  --text: #1a1a2e;
+  --text-secondary: #4a4a6a;
+  --text-muted: #8b8ba8;
+  --accent: #9945FF;
+  --accent-dark: #7c3aed;
+  --accent-bright: #b06aff;
+  --accent-glow: rgba(153, 69, 255, 0.15);
+  --green: #14F195;
+  --green-text: #059669;
+  --yellow: #f59e0b;
   --red: #ef4444;
-  --border: rgba(148, 163, 184, 0.1);
-  --border-accent: rgba(34, 211, 238, 0.15);
+  --border: rgba(153, 69, 255, 0.1);
+  --border-accent: rgba(153, 69, 255, 0.2);
+  --gradient-solana: linear-gradient(135deg, #9945FF, #14F195);
+  --gradient-solana-soft: linear-gradient(135deg, rgba(153,69,255,0.08), rgba(20,241,149,0.08));
 }
 
 body {
@@ -26,6 +29,21 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(153, 69, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(153, 69, 255, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black 20%, transparent 70%);
+}
+
 * { box-sizing: border-box; }
 
 .font-mono {
@@ -33,7 +51,14 @@ body {
 }
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
-@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(34,211,238,0.2); } 50% { box-shadow: 0 0 20px rgba(34,211,238,0.4); } }
+@keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 8px rgba(153,69,255,0.15); } 50% { box-shadow: 0 0 24px rgba(153,69,255,0.3); } }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-::selection { background: rgba(34,211,238,0.2); }
+::selection { background: rgba(153,69,255,0.15); }
+
+/* Override Tailwind bg classes for chart bars on light mode */
+.bg-cyan-500 { background-color: #9945FF !important; }
+.bg-emerald-500 { background-color: #14F195 !important; }
+.bg-red-500 { background-color: #ef4444 !important; }
+.bg-orange-500 { background-color: #f97316 !important; }
+.bg-yellow-500 { background-color: #f59e0b !important; }

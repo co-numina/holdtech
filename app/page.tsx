@@ -109,9 +109,9 @@ const DexScreenerIcon = ({ size = 18 }: { size?: number }) => (
 // UTILITY
 // ============================================================
 function shortenAddr(addr: string) { return addr.slice(0, 4) + "..." + addr.slice(-4); }
-function gradeColor(g: string) { return g === "A" ? "text-emerald-400" : g === "B" ? "text-cyan-400" : g === "C" ? "text-yellow-400" : g === "D" ? "text-orange-400" : "text-red-400"; }
-function scoreColor(s: number) { return s >= 80 ? "bg-emerald-500" : s >= 65 ? "bg-cyan-500" : s >= 50 ? "bg-yellow-500" : s >= 35 ? "bg-orange-500" : "bg-red-500"; }
-function scoreBorderColor(s: number) { return s >= 80 ? "border-emerald-500/30" : s >= 65 ? "border-cyan-500/30" : s >= 50 ? "border-yellow-500/30" : s >= 35 ? "border-orange-500/30" : "border-red-500/30"; }
+function gradeColor(g: string) { return g === "A" ? "text-emerald-600" : g === "B" ? "text-violet-600" : g === "C" ? "text-yellow-600" : g === "D" ? "text-orange-600" : "text-red-600"; }
+function scoreColor(s: number) { return s >= 80 ? "bg-emerald-500" : s >= 65 ? "bg-violet-500" : s >= 50 ? "bg-yellow-500" : s >= 35 ? "bg-orange-500" : "bg-red-500"; }
+function scoreBorderColor(s: number) { return s >= 80 ? "border-emerald-500/30" : s >= 65 ? "border-violet-500/30" : s >= 50 ? "border-yellow-500/30" : s >= 35 ? "border-orange-500/30" : "border-red-500/30"; }
 
 // ============================================================
 // SPARKLINE + TOKEN CARD
@@ -248,7 +248,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
       className="font-mono inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-all"
-      style={{ background: copied ? "rgba(34,211,238,0.1)" : "var(--bg-card-alt)", borderColor: copied ? "var(--accent)" : "var(--border)", color: copied ? "var(--accent)" : "var(--text-muted)" }}>
+      style={{ background: copied ? "rgba(153,69,255,0.1)" : "var(--bg-card-alt)", borderColor: copied ? "var(--accent)" : "var(--border)", color: copied ? "var(--accent)" : "var(--text-muted)" }}>
       {text} {copied ? "✓" : "⧉"}
     </button>
   );
@@ -261,7 +261,7 @@ function BarChart({ data, color = "bg-cyan-500" }: { data: DistBucket[]; color?:
       {data.map(d => (
         <div key={d.label} className="flex items-center gap-2 text-xs">
           <span className="w-24 text-right shrink-0" style={{ color: "var(--text-muted)" }}>{d.label}</span>
-          <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+          <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(153,69,255,0.04)" }}>
             <div className={`h-full ${color} rounded transition-all duration-500`} style={{ width: `${(d.pct / max) * 100}%` }} />
           </div>
           <span className="w-16 shrink-0" style={{ color: "var(--text-secondary)" }}>{d.pct}% ({d.count})</span>
@@ -296,7 +296,7 @@ function ConcentrationBar({ concentration }: { concentration: DeepScanResult["co
         {top5 > 0 && <div className="group relative" style={{ width: `${top5}%`, background: "var(--red)", height: "100%" }}><span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-black opacity-0 group-hover:opacity-100">Top 5: {top5.toFixed(1)}%</span></div>}
         {top10Only > 0 && <div style={{ width: `${top10Only}%`, background: "var(--yellow)", height: "100%" }} />}
         {top20Only > 0 && <div style={{ width: `${top20Only}%`, background: "var(--accent)", height: "100%" }} />}
-        {rest > 0 && <div style={{ width: `${rest}%`, background: "rgba(255,255,255,0.08)", height: "100%" }} />}
+        {rest > 0 && <div style={{ width: `${rest}%`, background: "rgba(153,69,255,0.06)", height: "100%" }} />}
       </div>
       <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)" }}>
         <span>🔴 Top 5 ({top5.toFixed(1)}%)</span>
@@ -322,7 +322,7 @@ function BundleDetection({ bundles, bundleCount, bundledWalletCount }: { bundles
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {bundles.map((b, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "12px" }}>
+          <div key={i} style={{ background: "rgba(153,69,255,0.04)", borderRadius: "10px", padding: "12px" }}>
             <button onClick={() => setExpanded(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", alignItems: "center", gap: "12px", fontSize: "11px", textAlign: "left", background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
               <span style={{ color: "var(--text-muted)" }}>{expanded[i] ? "▼" : "▶"}</span>
               <span>Slot {b.slot.toLocaleString()}</span>
@@ -355,7 +355,7 @@ function FundingClusters({ clusters, clusterCount, clusteredWalletCount }: { clu
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
         {clusters.map((c, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "10px", padding: "12px", border: c.count >= 3 ? "1px solid rgba(239,68,68,0.3)" : "none" }}>
+          <div key={i} style={{ background: "rgba(153,69,255,0.04)", borderRadius: "10px", padding: "12px", border: c.count >= 3 ? "1px solid rgba(239,68,68,0.3)" : "none" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px", marginBottom: "6px" }}>
               {c.count >= 3 && <span style={{ color: "var(--red)", fontSize: "10px", fontWeight: 700, background: "rgba(239,68,68,0.1)", padding: "2px 6px", borderRadius: "4px" }}>RED FLAG</span>}
               <a href={`https://solscan.io/account/${c.funder}`} target="_blank" rel="noopener" className="font-mono" style={{ color: "var(--yellow)", textDecoration: "none" }}>{shortenAddr(c.funder)}</a>
@@ -379,7 +379,7 @@ function BuyTimeline({ timeline }: { timeline: DeepScanResult["buyTimeline"] }) 
   return (
     <div style={{ background: "var(--bg-card-alt)", border: "1px solid var(--border)", borderRadius: "14px", padding: "16px" }}>
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Buy Timeline</div>
-      <div style={{ position: "relative", height: "64px", background: "rgba(255,255,255,0.03)", borderRadius: "8px", overflow: "hidden" }}>
+      <div style={{ position: "relative", height: "64px", background: "rgba(153,69,255,0.04)", borderRadius: "8px", overflow: "hidden" }}>
         {timeline.map((t, i) => {
           const left = (t.minutesAfterFirst / maxMin) * 100;
           const bg = t.minutesAfterFirst < 5 ? "var(--red)" : t.minutesAfterFirst < 60 ? "var(--yellow)" : "var(--green)";
@@ -417,7 +417,7 @@ function SolDistChart({ dist }: { dist: DeepScanResult["solDistribution"] }) {
         {buckets.map((d, i) => (
           <div key={d.label} className="flex items-center gap-2 text-xs">
             <span className="w-24 text-right shrink-0" style={{ color: "var(--text-muted)" }}>{d.label}</span>
-            <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(255,255,255,0.03)" }}>
+            <div className="flex-1 h-5 rounded overflow-hidden" style={{ background: "rgba(153,69,255,0.04)" }}>
               <div className={`h-full ${colors[i]} rounded`} style={{ width: `${(d.pct / max) * 100}%` }} />
             </div>
             <span className="w-16 shrink-0" style={{ color: "var(--text-secondary)" }}>{d.pct}% ({d.count})</span>
@@ -446,11 +446,11 @@ function RadarChart({ metrics }: { metrics: AnalysisResult["metrics"] }) {
       <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "12px" }}>Holderbase Radar</div>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <svg viewBox="0 0 300 300" style={{ width: 256, height: 256 }}>
-          {[25, 50, 75, 100].map(p => <polygon key={p} points={Array.from({ length: 6 }, (_, i) => pt(i, p)).map(p => `${p.x},${p.y}`).join(" ")} fill="none" stroke="white" strokeOpacity={0.08} />)}
-          {Array.from({ length: 6 }, (_, i) => { const p = pt(i, 100); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="white" strokeOpacity={0.08} />; })}
-          <polygon points={valPts} fill="rgba(34,211,238,0.15)" stroke="rgb(34,211,238)" strokeWidth={2} />
-          {axes.map((a, i) => { const p = pt(i, a.value); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="rgb(34,211,238)" />; })}
-          {axes.map((a, i) => { const p = pt(i, 125); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="white" fillOpacity={0.4} fontSize={10}>{a.label}</text>; })}
+          {[25, 50, 75, 100].map(p => <polygon key={p} points={Array.from({ length: 6 }, (_, i) => pt(i, p)).map(p => `${p.x},${p.y}`).join(" ")} fill="none" stroke="#9945FF" strokeOpacity={0.1} />)}
+          {Array.from({ length: 6 }, (_, i) => { const p = pt(i, 100); return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#9945FF" strokeOpacity={0.1} />; })}
+          <polygon points={valPts} fill="rgba(153,69,255,0.12)" stroke="#9945FF" strokeWidth={2} />
+          {axes.map((a, i) => { const p = pt(i, a.value); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="#9945FF" />; })}
+          {axes.map((a, i) => { const p = pt(i, 125); return <text key={i} x={p.x} y={p.y} textAnchor="middle" dominantBaseline="middle" fill="#4a4a6a" fontSize={10}>{a.label}</text>; })}
         </svg>
       </div>
     </div>
@@ -473,14 +473,14 @@ function BubbleScatter({ wallets, totalSupply }: { wallets: WalletAnalysis[]; to
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }}>
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map(p => (
-          <line key={`h${p}`} x1={PAD} y1={PAD + plotH * (1 - p)} x2={PAD + plotW} y2={PAD + plotH * (1 - p)} stroke="white" strokeOpacity={0.06} />
+          <line key={`h${p}`} x1={PAD} y1={PAD + plotH * (1 - p)} x2={PAD + plotW} y2={PAD + plotH * (1 - p)} stroke="#9945FF" strokeOpacity={0.08} />
         ))}
         {[0, 0.25, 0.5, 0.75, 1].map(p => (
-          <line key={`v${p}`} x1={PAD + plotW * p} y1={PAD} x2={PAD + plotW * p} y2={PAD + plotH} stroke="white" strokeOpacity={0.06} />
+          <line key={`v${p}`} x1={PAD + plotW * p} y1={PAD} x2={PAD + plotW * p} y2={PAD + plotH} stroke="#9945FF" strokeOpacity={0.08} />
         ))}
         {/* Axes */}
-        <line x1={PAD} y1={PAD + plotH} x2={PAD + plotW} y2={PAD + plotH} stroke="white" strokeOpacity={0.15} />
-        <line x1={PAD} y1={PAD} x2={PAD} y2={PAD + plotH} stroke="white" strokeOpacity={0.15} />
+        <line x1={PAD} y1={PAD + plotH} x2={PAD + plotW} y2={PAD + plotH} stroke="#9945FF" strokeOpacity={0.2} />
+        <line x1={PAD} y1={PAD} x2={PAD} y2={PAD + plotH} stroke="#9945FF" strokeOpacity={0.2} />
         {/* Dots */}
         {wallets.map(w => {
           const xNorm = logMax > 0 ? Math.log10(w.walletAgeDays + 1) / logMax : 0;
@@ -488,16 +488,16 @@ function BubbleScatter({ wallets, totalSupply }: { wallets: WalletAnalysis[]; to
           const cx = PAD + xNorm * plotW;
           const cy = PAD + plotH - yNorm * plotH;
           const r = Math.max(3, Math.min(Math.sqrt(w.totalTxCount) * 0.8, 16));
-          const fill = w.walletAgeDays < 7 ? "#ef4444" : w.walletAgeDays >= 180 ? "#10b981" : "#22d3ee";
+          const fill = w.walletAgeDays < 7 ? "#ef4444" : w.walletAgeDays >= 180 ? "#14F195" : "#9945FF";
           return <circle key={w.address} cx={cx} cy={cy} r={r} fill={fill} fillOpacity={0.6} stroke={fill} strokeOpacity={0.3} strokeWidth={1}>
             <title>{`${shortenAddr(w.address)} — Age: ${w.walletAgeDays.toFixed(0)}d | ${(w.balance / (totalSupply || 1) * 100).toFixed(2)}% | Txs: ${w.totalTxCount}`}</title>
           </circle>;
         })}
         {/* Axis labels */}
-        <text x={PAD} y={H - 4} fill="white" fillOpacity={0.3} fontSize={10}>0d</text>
-        <text x={PAD + plotW} y={H - 4} fill="white" fillOpacity={0.3} fontSize={10} textAnchor="end">{maxAge.toFixed(0)}d</text>
-        <text x={PAD + plotW / 2} y={H - 4} fill="white" fillOpacity={0.2} fontSize={9} textAnchor="middle">wallet age →</text>
-        <text x={8} y={PAD + plotH / 2} fill="white" fillOpacity={0.2} fontSize={9} textAnchor="middle" transform={`rotate(-90, 8, ${PAD + plotH / 2})`}>holdings % →</text>
+        <text x={PAD} y={H - 4} fill="#8b8ba8" fontSize={10}>0d</text>
+        <text x={PAD + plotW} y={H - 4} fill="#8b8ba8" fontSize={10} textAnchor="end">{maxAge.toFixed(0)}d</text>
+        <text x={PAD + plotW / 2} y={H - 4} fill="#8b8ba8" fontSize={9} textAnchor="middle">wallet age →</text>
+        <text x={8} y={PAD + plotH / 2} fill="#8b8ba8" fontSize={9} textAnchor="middle" transform={`rotate(-90, 8, ${PAD + plotH / 2})`}>holdings % →</text>
       </svg>
       <div style={{ display: "flex", gap: "16px", marginTop: "8px", fontSize: "10px", color: "var(--text-muted)", justifyContent: "center" }}>
         <span>🔴 Fresh (&lt;7d)</span>
@@ -631,31 +631,31 @@ export default function Home() {
               <img src="/logo.png" alt="HolderScope" width={28} height={28} style={{ objectFit: "contain" }} />
               <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
             </div>
-            <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(34,211,238,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
+            <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <a href="https://pump.fun" target="_blank" rel="noopener" title="Pump.fun"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <PumpFunIcon size={20} />
             </a>
             <a href="https://dexscreener.com" target="_blank" rel="noopener" title="DexScreener"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <DexScreenerIcon size={20} />
             </a>
             <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
             <a href="https://github.com/co-numina" target="_blank" rel="noopener" title="GitHub"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <GitHubIcon size={20} />
             </a>
             <a href="https://x.com/latebuild" target="_blank" rel="noopener" title="Twitter"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
-              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(34,211,238,0.08)"; }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
               onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
               <XIcon size={18} />
             </a>
@@ -738,7 +738,7 @@ export default function Home() {
                     HolderScope analyzes every wallet individually. <strong style={{ color: "var(--text)" }}>Wallet age, transaction history, SOL balance, token diversity, funding source, buy timing, and bundle patterns.</strong> We compute concentration metrics (Gini, HHI), detect same-slot buys, trace funding clusters, and score the entire holderbase on a 0-100 scale.
                   </p>
                 </div>
-                <div style={{ background: "linear-gradient(135deg, rgba(34,211,238,0.06), rgba(8,145,178,0.06))", borderRadius: "14px", padding: "24px", border: "1px solid var(--border-accent)" }}>
+                <div style={{ background: "linear-gradient(135deg, rgba(153,69,255,0.06), rgba(8,145,178,0.06))", borderRadius: "14px", padding: "24px", border: "1px solid var(--border-accent)" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
                     <ShieldIcon size={20} color="var(--accent)" />
                     <span style={{ fontSize: "16px", fontWeight: 700, color: "var(--accent)" }}>Plain-English verdict</span>
@@ -761,7 +761,7 @@ export default function Home() {
                   padding: "24px", borderRadius: "16px", border: "1px solid var(--border)", background: "var(--bg-card)",
                   display: "flex", flexDirection: "column", gap: "12px", transition: "all 0.2s ease",
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(34,211,238,0.06)"; e.currentTarget.style.borderColor = "var(--border-accent)"; }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(153,69,255,0.06)"; e.currentTarget.style.borderColor = "var(--border-accent)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.borderColor = "var(--border)"; }}
                 >
                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -791,7 +791,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-              <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(34,211,238,0.04)", border: "1px solid var(--border-accent)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              <div style={{ marginTop: "14px", padding: "10px 14px", borderRadius: "10px", background: "rgba(153,69,255,0.04)", border: "1px solid var(--border-accent)", fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
                 <strong style={{ color: "var(--accent-dark)" }}>Data source:</strong> Helius RPC (enhanced transactions, DAS). No third-party APIs that can be gamed. All analysis runs on raw on-chain data.
               </div>
             </div>
@@ -810,7 +810,7 @@ export default function Home() {
                   Shows wallet clusters visually. Useful but no scoring, no age analysis, no automated verdict. <strong style={{ color: "var(--yellow)" }}>Manual interpretation required.</strong>
                 </div>
               </div>
-              <div style={{ background: "rgba(34,211,238,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
+              <div style={{ background: "rgba(153,69,255,0.04)", borderRadius: "14px", padding: "20px", border: "1px solid var(--border-accent)" }}>
                 <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--accent)", marginBottom: "10px" }}>✓ HolderScope</div>
                 <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.7 }}>
                   Individual wallet profiling, funding trace, bundle detection, buy timing, concentration metrics, and AI-scored verdict. <strong style={{ color: "var(--accent)" }}>Full picture, plain English.</strong>
@@ -830,7 +830,7 @@ export default function Home() {
         {/* ═══ LOADING ═══ */}
         {loading && (
           <div style={{ textAlign: "center", padding: "48px 0" }}>
-            <div style={{ display: "inline-block", width: 32, height: 32, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "16px" }} />
+            <div style={{ display: "inline-block", width: 32, height: 32, border: "2px solid rgba(153,69,255,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "16px" }} />
             <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>{progress}</div>
             <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Analyzing top 100 holders — takes ~15-20 seconds</div>
           </div>
@@ -956,7 +956,7 @@ export default function Home() {
                   <tbody>
                     {result.topHolders.map((h, i) => (
                       <tr key={h.address} style={{ borderBottom: "1px solid var(--border)" }}
-                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(34,211,238,0.03)"; }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "rgba(153,69,255,0.03)"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}>
                         <td style={{ padding: "8px 12px", color: "var(--text-muted)" }}>{i + 1}</td>
                         <td className="font-mono" style={{ padding: "8px 12px" }}>
@@ -975,7 +975,7 @@ export default function Home() {
                           ) : h.walletAgeDays > 180 ? (
                             <span style={{ color: "var(--green)", background: "rgba(16,185,129,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>OG</span>
                           ) : h.walletAgeDays > 90 ? (
-                            <span style={{ color: "var(--accent)", background: "rgba(34,211,238,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>VET</span>
+                            <span style={{ color: "var(--accent)", background: "rgba(153,69,255,0.1)", padding: "2px 6px", borderRadius: "4px", fontSize: "9px", fontWeight: 700 }}>VET</span>
                           ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
                         </td>
                       </tr>
@@ -1022,7 +1022,7 @@ export default function Home() {
             {/* Deep scan loading */}
             {deepScanLoading && (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-accent)", borderRadius: "14px", padding: "24px", textAlign: "center" }}>
-                <div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(34,211,238,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "12px" }} />
+                <div style={{ display: "inline-block", width: 24, height: 24, border: "2px solid rgba(153,69,255,0.2)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 1s linear infinite", marginBottom: "12px" }} />
                 <div style={{ fontSize: "13px", color: "var(--accent-dark)" }}>Running deep scan...</div>
                 <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "4px" }}>Analyzing bundles, funding sources, and buy patterns</div>
               </div>
