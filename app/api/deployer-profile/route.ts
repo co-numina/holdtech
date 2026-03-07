@@ -297,8 +297,8 @@ export async function POST(req: NextRequest) {
     if (withDates.length >= 2) {
       const oldest = Math.min(...withDates);
       const newest = Math.max(...withDates);
-      const weeks = (newest - oldest) / (7 * 24 * 60 * 60 * 1000);
-      deployVelocity = weeks > 0 ? Math.round((withDates.length / weeks) * 10) / 10 : null;
+      const weeks = Math.max(1, (newest - oldest) / (7 * 24 * 60 * 60 * 1000));
+      deployVelocity = Math.round((withDates.length / weeks) * 10) / 10;
     }
 
     return NextResponse.json({
