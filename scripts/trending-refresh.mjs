@@ -342,18 +342,51 @@ async function getDexBoosted() {
   } catch { return []; }
 }
 
+// Fetch real holder counts + top holders from pump.fun advanced API
+async function getAdvancedHolderData() {
+  const holderMap = new Map(); // mint -> { numHolders, holders[] }
+  try {
+    const res = await fetch("https://advanced-api-v2.pump.fun/coins/graduated?limit=100", {
+      headers: { "Accept": "application/json", "Origin": "https://pump.fun" },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return holderMap;
+    const data = await res.json();
+    const coins = data?.coins || [];
+    for (const c of coins) {
+      if (c.coinMint) {
+        holderMap.set(c.coinMint, {
+          numHolders: c.numHolders || 0,
+          sniperCount: c.sniperCount || 0,
+          holders: (c.holders || []).map(h => ({
+            address: h.holderId,
+            balancePct: h.ownedPercentage || 0,
+            isSniper: h.isSniper || false,
+            amount: h.totalTokenAmountHeld || 0,
+          })),
+        });
+      }
+    }
+    console.log(`  Advanced API: ${holderMap.size} tokens with real holder counts`);
+  } catch (e) {
+    console.warn(`  Advanced API failed: ${e.message}`);
+  }
+  return holderMap;
+}
+
 // ─── Main ───
 async function main() {
   const startTime = Date.now();
   console.log(`\n🔍 Trending refresh started at ${new Date().toLocaleTimeString()}`);
 
-  // Fetch all sources
-  const [hot, live, graduated, active, boosted] = await Promise.all([
+  // Fetch all sources + advanced holder data in parallel
+  const [hot, live, graduated, active, boosted, advancedHolders] = await Promise.all([
     getPumpCoins("?limit=10&sort=market_cap&order=DESC&includeNsfw=false", "pump_hot"),
     getPumpCoins("/currently-live?limit=10&includeNsfw=false", "pump_live"),
     getPumpCoins("?limit=15&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_graduated"),
     getPumpCoins("?limit=10&sort=last_trade_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_active"),
     getDexBoosted(),
+    getAdvancedHolderData(),
   ]);
 
   console.log(`  Sources: hot=${hot.length} live=${live.length} grad=${graduated.length} active=${active.length} boosted=${boosted.length}`);
@@ -384,10 +417,13 @@ async function main() {
           console.log(`  ✗ ${token.symbol} (${token.source}) — failed [${elapsed}s]`);
           return { ...token, holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
         }
-        const verdict = generateVerdict(scan.metrics, scan.totalHolders, scan.tokenSymbol, token.mint);
-        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s]`);
+        // Use real holder count from advanced API if available
+        const adv = advancedHolders.get(token.mint);
+        const realHolderCount = adv?.numHolders || scan.totalHolders;
+        const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint);
+        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s] holders:${realHolderCount}`);
         return {
-          ...token, holderCount: scan.totalHolders,
+          ...token, holderCount: realHolderCount, sniperCount: adv?.sniperCount || 0,
           freshPct: scan.metrics.freshWalletPct, avgWalletAgeDays: scan.metrics.avgWalletAgeDays,
           grade: verdict.grade, score: verdict.score, verdict: verdict.verdict, flags: verdict.flags,
           metrics: scan.metrics, topHolders: scan.topHolders, distribution: scan.distribution,
