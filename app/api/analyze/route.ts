@@ -190,29 +190,25 @@ export async function POST(req: NextRequest) {
     // Get real holder count via Helius DAS (must request limit >= actual count to get true total)
     let realHolderCount = topAccounts.length;
     try {
-      const dasRes = await fetch(HELIUS_RPC, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0", id: "hc", method: "getTokenAccounts",
-          params: { mint, limit: 1000, page: 1 },
-        }),
-      });
-      const dasData = await dasRes.json();
-      const dasTotal = dasData.result?.total;
-      if (dasTotal && dasTotal > realHolderCount) realHolderCount = dasTotal;
-      // If exactly 1000, there might be more pages
-      if (dasTotal === 1000) {
-        try {
-          const p2 = await fetch(HELIUS_RPC, {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jsonrpc: "2.0", id: "hc2", method: "getTokenAccounts", params: { mint, limit: 1000, page: 2 } }),
-          });
-          const p2Data = await p2.json();
-          const p2Total = p2Data.result?.token_accounts?.length || 0;
-          realHolderCount = 1000 + p2Total;
-        } catch { /* keep 1000 */ }
+      // Paginate through all holders to get accurate count
+      let page = 1;
+      let totalCounted = 0;
+      while (page <= 50) { // safety cap at 50 pages = 50k holders max
+        const dasRes = await fetch(HELIUS_RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: `hc-${page}`, method: "getTokenAccounts",
+            params: { mint, limit: 1000, page },
+          }),
+        });
+        const dasData = await dasRes.json();
+        const accounts = dasData.result?.token_accounts || [];
+        totalCounted += accounts.length;
+        if (accounts.length < 1000) break; // last page
+        page++;
       }
+      if (totalCounted > realHolderCount) realHolderCount = totalCounted;
     } catch { /* keep topAccounts.length */ }
 
     // Step 3: Resolve owners — do sequentially to avoid rate limit
