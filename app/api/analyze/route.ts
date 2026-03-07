@@ -174,8 +174,12 @@ export async function POST(req: NextRequest) {
     // Step 1: Get token metadata (1 call, or 0 if pump.fun works)
     const meta = await getTokenMetadata(mint);
 
-    // Step 2: Get top 20 token accounts (1 RPC call)
-    const topAccounts = await getTopHolders(mint);
+    // Step 2: Get total supply + top 20 token accounts (2 RPC calls)
+    const [supplyResult, topAccounts] = await Promise.all([
+      heliusRpc("getTokenSupply", [mint]),
+      getTopHolders(mint),
+    ]);
+    const totalSupplyRaw = parseFloat(supplyResult?.value?.uiAmountString || "0");
     if (!topAccounts || topAccounts.length === 0) {
       return NextResponse.json({ error: "No holders found" }, { status: 404 });
     }
@@ -203,7 +207,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Could not resolve holder wallets" }, { status: 404 });
     }
 
-    const totalSupply = holders.reduce((s, h) => s + h.amount, 0);
+    const totalSupply = totalSupplyRaw > 0 ? totalSupplyRaw : holders.reduce((s, h) => s + h.amount, 0);
     const now = Date.now();
     const wallets: WalletAnalysis[] = [];
 
