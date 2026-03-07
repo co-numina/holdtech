@@ -202,70 +202,83 @@ async function getDexBoosted(): Promise<TrendingToken[]> {
   } catch { return []; }
 }
 
-async function quickScore(mint: string): Promise<{ holderCount: number; freshPct: number; avgWalletAgeDays: number; grade: string; score: number }> {
+async function quickScore(mint: string): Promise<{ holderCount: number; freshPct: number; avgWalletAgeDays: number; grade: string; score: number; sniperCount?: number; topHoldersPct?: number; devHoldingsPct?: number }> {
+  // Try pump.fun frontend API first — has holder count, market cap, completion status
   try {
-    // Get holders via DAS
+    const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    if (pumpRes.ok) {
+      const text = await pumpRes.text();
+      if (text) {
+        const coin = JSON.parse(text);
+        // Use pump.fun data for a quick grade
+        const replyCount = coin.reply_count || 0;
+        const graduated = coin.complete === true;
+        const mcap = coin.usd_market_cap || 0;
+
+        // Get holder count from DAS (fast, one call)
+        let holderCount = 0;
+        try {
+          const hRes = await fetch(HELIUS_RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 1000 } }),
+            signal: AbortSignal.timeout(5000),
+          });
+          const hData = await hRes.json();
+          holderCount = hData.result?.token_accounts?.length || 0;
+        } catch {}
+
+        // Grade based on holder count + graduation + engagement
+        let grade = "C";
+        let score = 50;
+
+        // Holder count signals
+        if (holderCount > 500) { score += 20; }
+        else if (holderCount > 200) { score += 10; }
+        else if (holderCount > 50) { score += 0; }
+        else if (holderCount > 20) { score -= 10; }
+        else { score -= 25; }
+
+        // Graduated = passed bonding curve = stronger signal
+        if (graduated) { score += 15; }
+
+        // Engagement (reply count on pump.fun)
+        if (replyCount > 100) { score += 10; }
+        else if (replyCount > 20) { score += 5; }
+        else if (replyCount < 3) { score -= 10; }
+
+        // Clamp and assign grade
+        score = Math.max(10, Math.min(95, score));
+        if (score >= 80) grade = "A";
+        else if (score >= 65) grade = "B";
+        else if (score >= 45) grade = "C";
+        else if (score >= 30) grade = "D";
+        else grade = "F";
+
+        return { holderCount, freshPct: 0, avgWalletAgeDays: 0, grade, score };
+      }
+    }
+  } catch {}
+
+  // Fallback: just get holder count from DAS
+  try {
     const res = await fetch(HELIUS_RPC, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 100 } }),
-      signal: AbortSignal.timeout(6000),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint, limit: 1000 } }),
+      signal: AbortSignal.timeout(5000),
     });
     const data = await res.json();
-    const accounts = data.result?.token_accounts || [];
-    if (accounts.length === 0) return { holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
+    const holderCount = data.result?.token_accounts?.length || 0;
 
-    const holderCount = accounts.length;
-    const owners = accounts.slice(0, 50).map((a: any) => a.owner).filter(Boolean);
+    let grade = "C", score = 50;
+    if (holderCount > 500) { score = 70; grade = "B"; }
+    else if (holderCount > 100) { score = 55; grade = "C"; }
+    else if (holderCount < 20) { score = 25; grade = "D"; }
 
-    // Quick wallet age check on sample
-    let freshCount = 0;
-    let totalAgeDays = 0;
-    let checked = 0;
-
-    // Batch check wallet ages via getSignaturesForAddress (oldest tx)
-    const ageResults = await Promise.allSettled(
-      owners.slice(0, 20).map(async (owner: string) => {
-        const sigRes = await fetch(HELIUS_RPC, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [owner, { limit: 1 }] }),
-          signal: AbortSignal.timeout(3000),
-        });
-        const sigData = await sigRes.json();
-        const sigs = sigData.result || [];
-        if (sigs.length > 0 && sigs[0].blockTime) {
-          const ageDays = (Date.now() / 1000 - sigs[0].blockTime) / 86400;
-          return { ageDays, fresh: ageDays < 7 };
-        }
-        return { ageDays: 0, fresh: true };
-      })
-    );
-
-    for (const r of ageResults) {
-      if (r.status === "fulfilled") {
-        checked++;
-        totalAgeDays += r.value.ageDays;
-        if (r.value.fresh) freshCount++;
-      }
-    }
-
-    const freshPct = checked > 0 ? Math.round((freshCount / checked) * 100) : 0;
-    const avgWalletAgeDays = checked > 0 ? Math.round(totalAgeDays / checked) : 0;
-
-    // Simple grade based on fresh wallet %
-    let grade = "A";
-    let score = 90;
-    if (freshPct > 60) { grade = "F"; score = 20; }
-    else if (freshPct > 45) { grade = "D"; score = 35; }
-    else if (freshPct > 30) { grade = "C"; score = 50; }
-    else if (freshPct > 15) { grade = "B"; score = 70; }
-    else { grade = "A"; score = 90; }
-
-    // Adjust for holder count
-    if (holderCount < 20) { score = Math.max(score - 15, 10); if (grade < "C") grade = "C"; }
-
-    return { holderCount, freshPct, avgWalletAgeDays, grade, score };
+    return { holderCount, freshPct: 0, avgWalletAgeDays: 0, grade, score };
   } catch {
     return { holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
   }
