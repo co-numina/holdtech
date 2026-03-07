@@ -47,6 +47,24 @@ interface CoordinatedAlert {
   totalSol: number; firstSeen: number;
 }
 
+function getShareCardUrl(r: ScanResult) {
+  const p = new URLSearchParams({
+    symbol: r.symbol, score: String(r.score), grade: r.grade, holders: String(r.holders),
+    freshPct: String(r.metrics?.freshWalletPct ?? r.freshPct), veteranPct: String(r.metrics?.veteranHolderPct ?? 0),
+    lowActivityPct: String(r.metrics?.lowActivityPct ?? 0), singleTokenPct: String(r.metrics?.singleTokenPct ?? 0),
+    avgAge: String(r.metrics?.avgWalletAgeDays ?? r.avgAge), avgTxs: String(r.metrics?.avgTxCount ?? 0),
+    avgSol: String(r.metrics?.avgSolBalance ?? 0), diamondPct: String(r.metrics?.diamondHandsPct ?? 0),
+    ...(r.tokenImage ? { image: r.tokenImage } : {}),
+    ...(r.verdict?.verdict ? { verdict: r.verdict.verdict } : {}),
+  });
+  return `/api/share-card?${p.toString()}`;
+}
+async function downloadShareCard(r: ScanResult) {
+  const url = getShareCardUrl(r);
+  const res = await fetch(url); const blob = await res.blob();
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+  a.download = `holdtech-${r.symbol}-${r.grade}${r.score}.png`; a.click(); URL.revokeObjectURL(a.href);
+}
 function getTier(b: number) { let t = TIERS[0]; for (const x of TIERS) { if (b >= x.min) t = x; } return t; }
 function timeAgo(ts: number) { const d = Date.now() - ts; if (d < 60000) return "just now"; if (d < 3600000) return `${Math.floor(d / 60000)}m ago`; if (d < 86400000) return `${Math.floor(d / 3600000)}h ago`; return `${Math.floor(d / 86400000)}d ago`; }
 function gc(g: string) { if (g?.startsWith("A")) return "#14F195"; if (g?.startsWith("B")) return "#4ade80"; if (g?.startsWith("C")) return "#eab308"; if (g?.startsWith("D")) return "#f97316"; return "#ef4444"; }
@@ -800,6 +818,7 @@ export default function Dashboard() {
                       </div>
                       <div style={{ display: "flex", gap: "6px" }}>
                         <button onClick={() => addWatch(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>+ Watch</button>
+                        <button onClick={() => downloadShareCard(scanResult)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
                         <button onClick={() => window.open(`/?mint=${scanResult.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
                       </div>
                     </div>
@@ -1030,7 +1049,10 @@ export default function Dashboard() {
                               </table>
                             </div>
                           )}
-                          <button onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer", alignSelf: "flex-start" }}>Full Page →</button>
+                          <div style={{ display: "flex", gap: "6px" }}>
+                            <button onClick={() => downloadShareCard(h)} style={{ ...M, padding: "6px 12px", background: "rgba(153,69,255,0.08)", color: "#9945FF", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>📸 Share</button>
+                            <button onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer" }}>Full Page →</button>
+                          </div>
                         </div>
                       )}
                     </div>
