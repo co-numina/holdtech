@@ -768,6 +768,8 @@ export default function Home() {
   const [analyzeLimit, setAnalyzeLimit] = useState(20);
   const [darkMode, setDarkMode] = useState(false);
   const [lang, setLang] = useState<"en" | "zh">("en");
+  const [shareCard, setShareCard] = useState<{ url: string; symbol: string } | null>(null);
+  const [shareCopied, setShareCopied] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -1299,7 +1301,20 @@ export default function Home() {
               <div className="glass" style={{ borderRadius: "20px", overflow: "hidden" }}>
                 <div style={{ padding: "16px 28px", background: "linear-gradient(135deg, var(--accent-dark), var(--accent))", display: "flex", alignItems: "center", gap: "10px" }}>
                   <ShieldIcon size={20} color="white" />
-                  <span style={{ fontSize: "15px", fontWeight: 700, color: "white" }}>{t.verdictHeader}</span>
+                  <span style={{ fontSize: "15px", fontWeight: 700, color: "white", flex: 1 }}>{t.verdictHeader}</span>
+                  <button onClick={() => {
+                    const p = new URLSearchParams({
+                      symbol: result!.tokenSymbol, score: String(verdict.score), grade: verdict.grade,
+                      holders: String(result!.analyzedHolders), mint: result!.mint,
+                      freshPct: String(result!.metrics.freshWalletPct), veteranPct: String(result!.metrics.veteranHolderPct),
+                      lowActivityPct: String(result!.metrics.lowActivityPct), singleTokenPct: String(result!.metrics.singleTokenPct),
+                      avgAge: String(result!.metrics.avgWalletAgeDays), avgTxs: String(result!.metrics.avgTxCount),
+                      avgSol: String(result!.metrics.avgSolBalance), diamondPct: String(result!.metrics.diamondHandsPct),
+                      top5Pct: String(deepScan?.concentration?.top5Pct ?? 0),
+                      ...(tokenInfo?.image ? { image: tokenInfo.image } : {}),
+                    });
+                    setShareCard({ url: `/api/share-card?${p.toString()}`, symbol: result!.tokenSymbol });
+                  }} style={{ padding: "4px 12px", background: "rgba(255,255,255,0.15)", color: "white", border: "none", borderRadius: "8px", fontSize: "11px", fontWeight: 700, cursor: "pointer", backdropFilter: "blur(4px)" }}>📸 Share</button>
                 </div>
                 <div style={{ padding: "28px", display: "flex", gap: "28px", alignItems: "flex-start" }}>
                   <div style={{ textAlign: "center", flexShrink: 0 }}>
@@ -1473,6 +1488,41 @@ export default function Home() {
           <div className="font-mono" style={{ fontSize: "10px", color: "var(--text-muted)" }}>{t.footer}</div>
         </div>
       </div>
+
+      {/* Share Card Modal */}
+      {shareCard && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }} onClick={() => { setShareCard(null); setShareCopied(false); }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "var(--bg-card)", borderRadius: "16px", padding: "16px", maxWidth: "520px", width: "90%", display: "flex", flexDirection: "column", gap: "12px", border: "1px solid var(--border)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="font-mono" style={{ fontSize: "14px", fontWeight: 800 }}>Share Card — ${shareCard.symbol}</span>
+              <button onClick={() => { setShareCard(null); setShareCopied(false); }} style={{ background: "none", border: "none", fontSize: "18px", cursor: "pointer", color: "var(--text-muted)", padding: "4px 8px" }}>✕</button>
+            </div>
+            <img
+              id="share-card-img"
+              src={shareCard.url}
+              alt={`${shareCard.symbol} scan card`}
+              style={{ width: "100%", borderRadius: "12px", border: "1px solid var(--border)" }}
+              crossOrigin="anonymous"
+            />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={async () => {
+                try {
+                  const img = document.getElementById("share-card-img") as HTMLImageElement;
+                  const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+                  c.getContext("2d")!.drawImage(img, 0, 0);
+                  const blob = await new Promise<Blob>(r => c.toBlob(b => r(b!), "image/png"));
+                  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+                  setShareCopied(true); setTimeout(() => setShareCopied(false), 2000);
+                } catch {
+                  window.open(shareCard.url, "_blank");
+                }
+              }} style={{ flex: 1, padding: "10px", background: shareCopied ? "rgba(20,241,149,0.15)" : "rgba(153,69,255,0.1)", color: shareCopied ? "#14F195" : "#9945FF", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}>
+                {shareCopied ? "✓ Copied to clipboard" : "📋 Copy Image"}</button>
+              <a href={shareCard.url} download={`${shareCard.symbol}-holdtech.png`} style={{ flex: 1, padding: "10px", background: "rgba(153,69,255,0.1)", color: "#9945FF", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>💾 Download</a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
