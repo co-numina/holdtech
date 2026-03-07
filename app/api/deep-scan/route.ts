@@ -299,12 +299,15 @@ export async function POST(req: NextRequest) {
       results.buyTimeline = extractBuyTimeline(txHistory, holderSet);
     }
 
-    // 4. Concentration
+    // 4. Concentration (exclude pool from both balances AND supply denominator)
     if (wallets && wallets.length > 0 && totalSupply) {
-      const balances = wallets
-        .filter((w: { isPool?: boolean }) => !w.isPool)
-        .map((w: { balance: number }) => w.balance);
-      results.concentration = computeConcentration(balances, totalSupply);
+      const nonPoolWallets = wallets.filter((w: { isPool?: boolean }) => !w.isPool);
+      const balances = nonPoolWallets.map((w: { balance: number }) => w.balance);
+      const poolBalance = wallets
+        .filter((w: { isPool?: boolean }) => w.isPool)
+        .reduce((s: number, w: { balance: number }) => s + w.balance, 0);
+      const circulatingSupply = totalSupply - poolBalance;
+      results.concentration = computeConcentration(balances, circulatingSupply > 0 ? circulatingSupply : totalSupply);
     }
 
     // 5. SOL balance distribution
