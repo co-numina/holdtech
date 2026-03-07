@@ -55,7 +55,6 @@ function getShareCardUrl(r: ScanResult) {
     avgAge: String(r.metrics?.avgWalletAgeDays ?? r.avgAge), avgTxs: String(r.metrics?.avgTxCount ?? 0),
     avgSol: String(r.metrics?.avgSolBalance ?? 0), diamondPct: String(r.metrics?.diamondHandsPct ?? 0),
     ...(r.tokenImage ? { image: r.tokenImage } : {}),
-    ...(r.verdict?.verdict ? { verdict: r.verdict.verdict } : {}),
   });
   return `/api/share-card?${p.toString()}`;
 }

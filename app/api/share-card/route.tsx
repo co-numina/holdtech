@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   const avgSol = p.get("avgSol") || "0";
   const diamondPct = p.get("diamondPct") || "0";
   const tokenImage = p.get("image") || "";
-  const verdict = p.get("verdict") || "";
+  // verdict removed — was crashing satori
 
   const gc = gradeColor(grade);
   const warnColor = "#ef4444";
@@ -109,15 +109,10 @@ export async function GET(req: NextRequest) {
               </div>
             </div>
 
-            {/* Verdict snippet */}
-            {verdict && (
-              <div style={{
-                fontSize: "12px", color: "#888", lineHeight: 1.5,
-                marginTop: "4px",
-              }}>
-                {verdict.slice(0, 140)}
-              </div>
-            )}
+            {/* Score label */}
+            <div style={{ fontSize: "13px", color: "#555", marginTop: "8px" }}>
+              {score >= 80 ? "Strong organic holderbase" : score >= 65 ? "Solid holderbase with minor concerns" : score >= 50 ? "Mixed signals — proceed with caution" : score >= 35 ? "Weak holderbase — high sybil risk" : "Critical — textbook sybil pattern"}
+            </div>
           </div>
 
           {/* Right: Metrics grid */}
