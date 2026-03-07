@@ -619,7 +619,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", position: "relative" }}>
+    <div style={{ minHeight: "100vh", position: "relative" }}>
       <FloatingBg />
 
       <div style={{ position: "relative", zIndex: 10, maxWidth: "1100px", margin: "0 auto", padding: "0 32px" }}>
