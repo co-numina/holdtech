@@ -49,7 +49,7 @@ interface CoordinatedAlert {
 
 function getShareCardUrl(r: ScanResult) {
   const p = new URLSearchParams({
-    symbol: r.symbol, score: String(r.score), grade: r.grade, holders: String(r.holders),
+    symbol: r.symbol, score: String(r.score), grade: r.grade, holders: String(r.holders), mint: r.mint,
     freshPct: String(r.metrics?.freshWalletPct ?? r.freshPct), veteranPct: String(r.metrics?.veteranHolderPct ?? 0),
     lowActivityPct: String(r.metrics?.lowActivityPct ?? 0), singleTokenPct: String(r.metrics?.singleTokenPct ?? 0),
     avgAge: String(r.metrics?.avgWalletAgeDays ?? r.avgAge), avgTxs: String(r.metrics?.avgTxCount ?? 0),

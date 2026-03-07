@@ -57,6 +57,9 @@ export async function GET(req: NextRequest) {
   const diamondPct = parseFloat(p.get("diamondPct") || "0");
   const tokenImage = p.get("image") || "";
   const top5Pct = parseFloat(p.get("top5Pct") || "0");
+  const mint = p.get("mint") || "";
+  const now = new Date();
+  const timestamp = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,"0")}-${String(now.getUTCDate()).padStart(2,"0")} ${String(now.getUTCHours()).padStart(2,"0")}:${String(now.getUTCMinutes()).padStart(2,"0")} UTC`;
 
   const color = gc(grade);
   const scoreLabel = score >= 80 ? "STRONG ORGANIC BASE" : score >= 65 ? "SOLID HOLDERBASE" : score >= 50 ? "MIXED SIGNALS" : score >= 35 ? "WEAK — HIGH SYBIL RISK" : "CRITICAL — SYBIL PATTERN";
@@ -128,6 +131,7 @@ export async function GET(req: NextRequest) {
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontSize: "28px", fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1 }}>${symbol}</span>
                 <span style={{ fontSize: "12px", color: "#555", marginTop: "3px" }}>{holders.toLocaleString()} holders</span>
+                {mint && <span style={{ fontSize: "9px", color: "#333", marginTop: "2px", fontFamily: "monospace" }}>{mint.slice(0, 6)}...{mint.slice(-4)}</span>}
               </div>
             </div>
 
@@ -197,7 +201,7 @@ export async function GET(req: NextRequest) {
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <span style={{ fontSize: "10px", color: "#333", letterSpacing: "0.08em" }}>SOLANA TOKEN INTELLIGENCE</span>
             <div style={{ width: "1px", height: "10px", background: "#222", display: "flex" }} />
-            <span style={{ fontSize: "10px", color: "#333" }}>Powered by Helius · DexScreener</span>
+            <span style={{ fontSize: "10px", color: "#333" }}>Powered by Helius · DexScreener · {timestamp}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
             <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: color, display: "flex" }} />
