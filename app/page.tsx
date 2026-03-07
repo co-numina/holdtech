@@ -540,7 +540,23 @@ export default function Home() {
   const [error, setError] = useState("");
   const [showWallets, setShowWallets] = useState(false);
   const [analyzeLimit, setAnalyzeLimit] = useState(20);
+  const [darkMode, setDarkMode] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("holderscope-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = saved ? saved === "dark" : prefersDark;
+    setDarkMode(isDark);
+    document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+  }, []);
+
+  const toggleTheme = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.setAttribute("data-theme", next ? "dark" : "light");
+    localStorage.setItem("holderscope-theme", next ? "dark" : "light");
+  };
 
   const analyze = useCallback(async (limit?: number) => {
     const addr = mint.trim();
@@ -649,6 +665,13 @@ export default function Home() {
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <button onClick={toggleTheme} title={darkMode ? "Light mode" : "Dark mode"}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: "18px", transition: "all 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.color = "var(--accent)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.background = "transparent"; }}>
+              {darkMode ? "☀️" : "🌙"}
+            </button>
+            <div style={{ width: 1, height: 20, background: "var(--border)", margin: "0 4px" }} />
             <a href="https://pump.fun" target="_blank" rel="noopener" title="Pump.fun"
               style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: "10px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
               onMouseEnter={e => { e.currentTarget.style.color = "var(--accent-dark)"; e.currentTarget.style.background = "rgba(153,69,255,0.08)"; }}

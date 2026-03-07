@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-:root {
+:root, [data-theme="light"] {
   --bg: #f0f0f6;
   --bg-card: rgba(255, 255, 255, 0.55);
   --bg-card-alt: rgba(247, 247, 252, 0.6);
@@ -25,6 +25,39 @@
   --glass-card-alt: rgba(255, 255, 255, 0.3);
   --glass-border: rgba(255, 255, 255, 0.5);
   --glass-shadow: 0 8px 32px rgba(153, 69, 255, 0.06);
+  --grid-color: rgba(153, 69, 255, 0.08);
+  --bar-bg: rgba(153, 69, 255, 0.06);
+  --score-text: white;
+}
+
+[data-theme="dark"] {
+  --bg: #0c0c1a;
+  --bg-card: rgba(22, 22, 42, 0.7);
+  --bg-card-alt: rgba(28, 28, 52, 0.7);
+  --bg-deep: rgba(10, 10, 20, 0.5);
+  --text: #e8eaf0;
+  --text-secondary: #9a9ab8;
+  --text-muted: #5c5c7a;
+  --accent: #9945FF;
+  --accent-dark: #b06aff;
+  --accent-bright: #c88aff;
+  --accent-glow: rgba(153, 69, 255, 0.25);
+  --green: #14F195;
+  --green-text: #14F195;
+  --yellow: #f59e0b;
+  --red: #ef4444;
+  --border: rgba(153, 69, 255, 0.15);
+  --border-accent: rgba(153, 69, 255, 0.3);
+  --gradient-solana: linear-gradient(135deg, #9945FF, #14F195);
+  --gradient-solana-soft: linear-gradient(135deg, rgba(153,69,255,0.1), rgba(20,241,149,0.1));
+  --glass-blur: 16px;
+  --glass-card: rgba(30, 30, 55, 0.6);
+  --glass-card-alt: rgba(25, 25, 48, 0.5);
+  --glass-border: rgba(153, 69, 255, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --grid-color: rgba(153, 69, 255, 0.12);
+  --bar-bg: rgba(255, 255, 255, 0.04);
+  --score-text: white;
 }
 
 body {
@@ -42,8 +75,8 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(153, 69, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(153, 69, 255, 0.08) 1px, transparent 1px);
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, black 0%, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 0%, black 85%, transparent 100%);
