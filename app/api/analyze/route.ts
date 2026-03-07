@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const HELIUS_API_KEY = "65a496c3-0f36-4efe-a65a-67a716193997";
+const HELIUS_API_KEY = "2e5afdba-52c8-47bb-a203-d7571a17ade5";
 const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 // Use Helius enhanced API — 1 call gets parsed transaction history
