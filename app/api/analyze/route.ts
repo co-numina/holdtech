@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No holders found" }, { status: 404 });
     }
 
-    // Get real holder count via Helius DAS
+    // Get real holder count via Helius DAS (must request limit >= actual count to get true total)
     let realHolderCount = topAccounts.length;
     try {
       const dasRes = await fetch(HELIUS_RPC, {
@@ -195,23 +195,25 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jsonrpc: "2.0", id: "hc", method: "getTokenAccounts",
-          params: { mint, limit: 1, page: 1 },
+          params: { mint, limit: 1000, page: 1 },
         }),
       });
       const dasData = await dasRes.json();
-      if (dasData.result?.total) realHolderCount = dasData.result.total;
-    } catch { /* keep topAccounts.length */ }
-    
-    // If pump.fun has holder count, prefer it (more accurate for pump tokens)
-    try {
-      const pumpRes = await fetch(`https://frontend-api-v3.pump.fun/coins/${mint}`);
-      if (pumpRes.ok) {
-        const pumpData = await pumpRes.json();
-        if (pumpData.holder_count && pumpData.holder_count > realHolderCount) {
-          realHolderCount = pumpData.holder_count;
-        }
+      const dasTotal = dasData.result?.total;
+      if (dasTotal && dasTotal > realHolderCount) realHolderCount = dasTotal;
+      // If exactly 1000, there might be more pages
+      if (dasTotal === 1000) {
+        try {
+          const p2 = await fetch(HELIUS_RPC, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: "hc2", method: "getTokenAccounts", params: { mint, limit: 1000, page: 2 } }),
+          });
+          const p2Data = await p2.json();
+          const p2Total = p2Data.result?.token_accounts?.length || 0;
+          realHolderCount = 1000 + p2Total;
+        } catch { /* keep 1000 */ }
       }
-    } catch { /* skip */ }
+    } catch { /* keep topAccounts.length */ }
 
     // Step 3: Resolve owners — do sequentially to avoid rate limit
     // getTokenLargestAccounts returns token accounts, need to resolve owners
