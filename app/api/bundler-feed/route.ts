@@ -26,15 +26,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No wallets provided" }, { status: 400 });
     }
 
-    // Limit to 10 wallets per request to avoid rate limits
-    const batch = wallets.slice(0, 10);
+    // Limit to 25 wallets per request
+    const batch = wallets.slice(0, 25);
     const events: TxEvent[] = [];
 
     // Fetch parsed transaction history from Helius for each wallet
     const promises = batch.map(async (w: { address: string; name: string; emoji: string; group: string }) => {
       try {
-        const url = `${HELIUS_API}/addresses/${w.address}/transactions?api-key=${HELIUS_KEY}&limit=5&type=SWAP`;
-        const res = await fetch(url, { next: { revalidate: 30 } });
+        const url = `${HELIUS_API}/addresses/${w.address}/transactions?api-key=${HELIUS_KEY}&limit=2&type=SWAP`;
+        const res = await fetch(url, { next: { revalidate: 60 } });
         if (!res.ok) return [];
         const txs = await res.json();
 

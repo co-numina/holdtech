@@ -172,8 +172,8 @@ export default function Dashboard() {
     if (bundlers.length === 0) return; setFeedLoading(true);
     try {
       const batches: { address: string; name: string; emoji: string; group: string }[][] = [];
-      for (let i = 0; i < bundlers.length; i += 10) {
-        batches.push(bundlers.slice(i, i + 10).map(b => ({ address: b.address, name: b.label, emoji: b.emoji || "🚩", group: b.group || "tracked" })));
+      for (let i = 0; i < bundlers.length; i += 25) {
+        batches.push(bundlers.slice(i, i + 25).map(b => ({ address: b.address, name: b.label, emoji: b.emoji || "🚩", group: b.group || "tracked" })));
       }
       const results = await Promise.all(batches.map(batch =>
         fetch("/api/bundler-feed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ wallets: batch }) })
