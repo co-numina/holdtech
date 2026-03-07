@@ -5,19 +5,25 @@ const HELIUS_RPC = `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`;
 
 async function getHolderCount(mint: string): Promise<number | null> {
   try {
-    // Use getTokenLargestAccounts as a proxy — but for real count, use getProgramAccounts count
-    // Helius DAS getTokenAccounts with mint filter gives us the actual count
+    // Helius DAS getTokenAccounts with displayOptions to get total
     const res = await fetch(HELIUS_RPC, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         jsonrpc: "2.0", id: 1,
         method: "getTokenAccounts",
-        params: { mint, limit: 1, page: 1 },
+        params: {
+          mint,
+          limit: 1,
+          options: { showZeroBalance: false },
+        },
       }),
     });
     const data = await res.json();
-    return data?.result?.total || null;
+    // Helius DAS returns total in result
+    if (data?.result?.total != null) return data.result.total;
+    // Fallback: check if token_accounts array length hint exists
+    return null;
   } catch { return null; }
 }
 

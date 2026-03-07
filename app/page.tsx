@@ -564,6 +564,8 @@ export default function Home() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
       const data: AnalysisResult = await res.json();
       setResult(data);
+      // Patch holder count from analysis (more accurate than token-info API)
+      setTokenInfo(prev => prev ? { ...prev, holderCount: data.totalHolders || prev.holderCount } : prev);
       setProgress("Generating verdict...");
 
       const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: data.totalHolders, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
