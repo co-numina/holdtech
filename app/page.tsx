@@ -564,20 +564,24 @@ export default function Home() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || "Analysis failed"); }
       const data: AnalysisResult = await res.json();
       setResult(data);
-      setProgress("Generating verdict...");
+      setProgress("Counting holders...");
 
-      // Fire holder count fetch async (non-blocking, patches in when ready)
-      fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => {
-          if (d?.holderCount) {
-            setTokenInfo(prev => prev ? { ...prev, holderCount: d.holderCount } : prev);
-            setResult(prev => prev ? { ...prev, totalHolders: d.holderCount } : prev);
+      // Get accurate holder count before verdict
+      let realHolderCount = data.totalHolders;
+      try {
+        const hcRes = await fetch("/api/holder-count", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mint: addr }) });
+        if (hcRes.ok) {
+          const hcData = await hcRes.json();
+          if (hcData?.holderCount) {
+            realHolderCount = hcData.holderCount;
+            setTokenInfo(prev => prev ? { ...prev, holderCount: realHolderCount } : prev);
+            setResult(prev => prev ? { ...prev, totalHolders: realHolderCount } : prev);
           }
-        })
-        .catch(() => {});
+        }
+      } catch { /* use analyze count */ }
 
-      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: data.totalHolders, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
+      setProgress("Generating verdict...");
+      const vRes = await fetch("/api/ai-verdict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metrics: data.metrics, totalHolders: realHolderCount, analyzedHolders: data.analyzedHolders, tokenSymbol: data.tokenSymbol }) });
       if (vRes.ok) setVerdict(await vRes.json());
 
       setLoading(false); setProgress("");
