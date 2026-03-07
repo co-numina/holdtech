@@ -81,6 +81,7 @@ export default function Dashboard() {
   const [lastFeedUpdate, setLastFeedUpdate] = useState<number | null>(null);
   const [tokenPrices, setTokenPrices] = useState<Record<string, TokenPrice>>({});
   const [expandedFeedItem, setExpandedFeedItem] = useState<string | null>(null);
+  const [expandedHistory, setExpandedHistory] = useState<string | null>(null);
   const [inlineScanResult, setInlineScanResult] = useState<ScanResult | null>(null);
   const [inlineScanning, setInlineScanning] = useState(false);
   const [newEventIds, setNewEventIds] = useState<Set<string>>(new Set());
@@ -913,24 +914,128 @@ export default function Dashboard() {
               {history.length > 0 && (
                 <div style={{ ...card({ padding: "20px" }) }}>
                   <div style={{ ...M, fontSize: "11px", fontWeight: 700, color: "var(--text-muted, #888)", marginBottom: "12px" }}>RECENT SCANS</div>
-                  {history.slice(0, 10).map((h, i) => (
-                    <div key={h.mint + i} style={{
-                      display: "flex", alignItems: "center", gap: "12px", padding: "10px 0",
-                      borderTop: i > 0 ? `1px solid var(--border, rgba(153,69,255,0.06))` : "none", cursor: "pointer",
-                    }} onClick={() => window.open(`/?mint=${h.mint}`, "_blank")}>
-                      <span style={{ ...M, fontSize: "18px", fontWeight: 800, color: gc(h.grade), minWidth: "32px" }}>{h.grade}</span>
-                      {h.tokenImage && <img src={h.tokenImage} alt={h.symbol} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 700 }}>{h.symbol}</div>
-                        <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 8)}...{h.mint.slice(-6)}</div>
+                  {history.slice(0, 10).map((h, i) => {
+                    const isExpanded = expandedHistory === h.mint;
+                    return (
+                    <div key={h.mint + i}>
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: "12px", padding: "10px 0",
+                        borderTop: i > 0 ? `1px solid var(--border, rgba(153,69,255,0.06))` : "none", cursor: "pointer",
+                      }} onClick={() => setExpandedHistory(isExpanded ? null : h.mint)}>
+                        <span style={{ ...M, fontSize: "18px", fontWeight: 800, color: gc(h.grade), minWidth: "32px" }}>{h.grade}</span>
+                        {h.tokenImage && <img src={h.tokenImage} alt={h.symbol} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />}
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "13px", fontWeight: 700 }}>{h.symbol}</div>
+                          <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.mint.slice(0, 8)}...{h.mint.slice(-6)}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ ...M, fontSize: "12px", fontWeight: 700 }}>{h.score}/100</div>
+                          <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.holders.toLocaleString()} holders · {timeAgo(h.timestamp)}</div>
+                        </div>
+                        <span style={{ ...M, fontSize: "11px", color: "var(--accent, #9945FF)", opacity: 0.6, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 0.2s" }}>→</span>
                       </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ ...M, fontSize: "12px", fontWeight: 700 }}>{h.score}/100</div>
-                        <div style={{ ...M, fontSize: "9px", color: "var(--text-muted, #aaa)" }}>{h.holders.toLocaleString()} holders · {timeAgo(h.timestamp)}</div>
-                      </div>
-                      <span style={{ ...M, fontSize: "11px", color: "var(--accent, #9945FF)", opacity: 0.6 }}>→</span>
+                      {isExpanded && (
+                        <div style={{ padding: "0 0 14px 0", display: "flex", flexDirection: "column", gap: "10px" }}>
+                          {/* Verdict */}
+                          {h.verdict && (
+                            <div style={{ padding: "10px", background: darkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)", borderRadius: "8px", fontSize: "11px", lineHeight: 1.6, color: "var(--text-secondary, #666)" }}>
+                              {h.verdict.verdict}
+                            </div>
+                          )}
+                          {h.verdict?.flags && h.verdict.flags.length > 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                              {h.verdict.flags.map((f, fi) => (
+                                <div key={fi} style={{ fontSize: "10px", color: "var(--text-secondary, #777)", padding: "4px 8px", borderRadius: "5px", background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(153,69,255,0.03)" }}>{f}</div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Metrics */}
+                          {h.metrics && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6px" }}>
+                              {[
+                                { label: "Fresh Wallets", value: `${h.metrics.freshWalletPct}%`, warn: h.metrics.freshWalletPct > 40 },
+                                { label: "Veterans", value: `${h.metrics.veteranHolderPct}%` },
+                                { label: "Low Activity", value: `${h.metrics.lowActivityPct}%`, warn: h.metrics.lowActivityPct > 40 },
+                                { label: "Single Token", value: `${h.metrics.singleTokenPct}%`, warn: h.metrics.singleTokenPct > 30 },
+                                { label: "Avg Age", value: `${h.metrics.avgWalletAgeDays}d` },
+                                { label: "Avg Txs", value: `${h.metrics.avgTxCount}` },
+                                { label: "Avg SOL", value: `${h.metrics.avgSolBalance}`, warn: h.metrics.avgSolBalance < 0.5 },
+                                { label: "Diamond Hands", value: `${h.metrics.diamondHandsPct}%` },
+                              ].map(m => (
+                                <div key={m.label} style={{ padding: "6px 8px", background: darkMode ? "rgba(255,255,255,0.03)" : "rgba(153,69,255,0.03)", borderRadius: "5px" }}>
+                                  <div style={{ ...M, fontSize: "7px", fontWeight: 700, color: "var(--text-muted, #999)", textTransform: "uppercase", letterSpacing: "0.08em" }}>{m.label}</div>
+                                  <div style={{ ...M, fontSize: "14px", fontWeight: 800, marginTop: "1px", color: m.warn ? "#ef4444" : undefined }}>{m.value}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Distributions */}
+                          {h.distribution && (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                              {[
+                                { title: "Wallet Age", data: h.distribution.walletAge, color: "#9945FF" },
+                                { title: "Hold Duration", data: h.distribution.holdDuration, color: "#14F195" },
+                              ].map(chart => (
+                                <div key={chart.title} style={{ padding: "10px", background: darkMode ? "rgba(255,255,255,0.02)" : "rgba(153,69,255,0.02)", borderRadius: "6px" }}>
+                                  <div style={{ ...M, fontSize: "9px", fontWeight: 700, color: "var(--text-muted, #888)", marginBottom: "6px" }}>{chart.title}</div>
+                                  {chart.data.map((d: any) => {
+                                    const max = Math.max(...chart.data.map((x: any) => x.pct), 1);
+                                    return (
+                                      <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "3px", fontSize: "9px" }}>
+                                        <span style={{ width: "55px", textAlign: "right", color: "var(--text-muted, #888)", flexShrink: 0, ...M }}>{d.label}</span>
+                                        <div style={{ flex: 1, height: "10px", borderRadius: "2px", background: darkMode ? "rgba(255,255,255,0.04)" : "rgba(153,69,255,0.04)", overflow: "hidden" }}>
+                                          <div style={{ height: "100%", width: `${(d.pct / max) * 100}%`, background: chart.color, borderRadius: "2px" }} />
+                                        </div>
+                                        <span style={{ width: "40px", flexShrink: 0, color: "var(--text-secondary, #666)", ...M }}>{d.pct}%</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Top Holders */}
+                          {h.topHolders && h.topHolders.length > 0 && (
+                            <div style={{ overflowX: "auto" }}>
+                              <table style={{ width: "100%", fontSize: "9px", borderCollapse: "collapse" }}>
+                                <thead>
+                                  <tr style={{ borderBottom: `1px solid ${darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}` }}>
+                                    {["#", "Wallet", "Bal%", "Age", "Txs", ""].map(col => (
+                                      <th key={col} style={{ ...M, padding: "5px 6px", textAlign: col === "#" || col === "Wallet" ? "left" : "right", fontSize: "7px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--text-muted, #999)", fontWeight: 700 }}>{col}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {h.topHolders.map((th, ti) => (
+                                    <tr key={th.address} style={{ borderBottom: `1px solid ${darkMode ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)"}` }}>
+                                      <td style={{ ...M, padding: "4px 6px", color: "var(--text-muted, #999)" }}>{ti + 1}</td>
+                                      <td style={{ ...M, padding: "4px 6px", fontFamily: "var(--mono, monospace)" }}>
+                                        <a href={`https://solscan.io/account/${th.address}`} target="_blank" rel="noopener" style={{ color: "#9945FF", textDecoration: "none" }}>{th.address.slice(0, 4)}...{th.address.slice(-4)}</a>
+                                      </td>
+                                      <td style={{ ...M, padding: "4px 6px", textAlign: "right" }}>{th.balancePct}%</td>
+                                      <td style={{ ...M, padding: "4px 6px", textAlign: "right", color: th.walletAgeDays < 7 ? "#ef4444" : th.walletAgeDays > 90 ? "#14F195" : "var(--text-secondary, #666)" }}>
+                                        {th.walletAgeDays < 1 ? "<1d" : `${Math.round(th.walletAgeDays)}d`}
+                                      </td>
+                                      <td style={{ ...M, padding: "4px 6px", textAlign: "right", color: th.totalTxCount < 10 ? "#ef4444" : "var(--text-secondary, #666)" }}>{th.totalTxCount.toLocaleString()}</td>
+                                      <td style={{ padding: "4px 6px", textAlign: "right" }}>
+                                        {th.isPool ? <span style={{ color: "#a78bfa", fontSize: "7px", fontWeight: 700 }}>POOL</span>
+                                        : th.isFresh ? <span style={{ color: "#ef4444", fontSize: "7px", fontWeight: 700 }}>FRESH</span>
+                                        : th.walletAgeDays > 180 ? <span style={{ color: "#14F195", fontSize: "7px", fontWeight: 700 }}>OG</span>
+                                        : th.walletAgeDays > 90 ? <span style={{ color: "#9945FF", fontSize: "7px", fontWeight: 700 }}>VET</span>
+                                        : null}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                          <button onClick={() => window.open(`/?mint=${h.mint}`, "_blank")} style={{ ...M, padding: "6px 12px", background: "rgba(20,241,149,0.08)", color: "#14F195", border: "none", borderRadius: "6px", fontSize: "10px", fontWeight: 700, cursor: "pointer", alignSelf: "flex-start" }}>Full Page →</button>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
