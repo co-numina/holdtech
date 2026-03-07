@@ -202,12 +202,7 @@ export async function POST(req: NextRequest) {
     if (!mint) return NextResponse.json({ error: "Missing mint" }, { status: 400 });
 
     // Step 1: Find the deployer
-    // First try to get deployer from token mint, if that fails treat input as deployer wallet
-    let deployer = await getDeployerFromMint(mint);
-    if (!deployer) {
-      // Maybe the input IS the deployer wallet
-      deployer = mint;
-    }
+    const deployer: string = (await getDeployerFromMint(mint)) || mint;
 
     // Step 2: Get all tokens they've deployed
     const deployedTokens = await getDeployedTokens(deployer);
