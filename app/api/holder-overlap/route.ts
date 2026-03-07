@@ -24,29 +24,35 @@ interface HolderInfo {
 async function getHolders(mint: string, limit = 5000): Promise<HolderInfo[]> {
   const holders: HolderInfo[] = [];
   let cursor: string | undefined;
+  let pages = 0;
 
   // Page through token accounts — full holder base
-  while (holders.length < limit) {
+  while (holders.length < limit && pages < 10) {
     const params: any = {
       mint,
       limit: 1000,
     };
     if (cursor) params.cursor = cursor;
 
-    const result = await heliusRpc("getTokenAccounts", params);
-    if (!result?.token_accounts || result.token_accounts.length === 0) break;
+    try {
+      const result = await heliusRpc("getTokenAccounts", params);
+      if (!result?.token_accounts || result.token_accounts.length === 0) break;
 
-    for (const acc of result.token_accounts) {
-      if (acc.owner && acc.amount) {
-        holders.push({
-          wallet: acc.owner,
-          amount: Number(acc.amount),
-        });
+      for (const acc of result.token_accounts) {
+        if (acc.owner && Number(acc.amount) > 0) {
+          holders.push({
+            wallet: acc.owner,
+            amount: Number(acc.amount),
+          });
+        }
       }
-    }
 
-    cursor = result.cursor;
-    if (!cursor) break;
+      cursor = result.cursor;
+      pages++;
+      if (!cursor || result.token_accounts.length < 1000) break;
+    } catch {
+      break;
+    }
   }
 
   return holders;
