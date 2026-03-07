@@ -163,19 +163,19 @@ const T = {
     holders: "holders...",
     footer: "know before you ape",
     footerData: "Data sourced from Helius RPC · Wallet ages from first on-chain transaction · Top 100 holders analyzed · Results are indicative, not definitive",
-    scopeTitle: "$SCOPE",
+    scopeTitle: "$HOLDTECH",
     scopeTagline: "Stop being the drillpig.",
-    scopeDesc: "HoldTech is free. $SCOPE holders get the edge.",
+    scopeDesc: "HoldTech is free. $HOLDTECH holders get the edge.",
     tierFree: "FREE",
     tierFreeDesc: "Single scans, rate-limited. Prove it works yourself.",
     tierScout: "SCOUT",
-    tierScoutHold: "Hold 5M $SCOPE",
+    tierScoutHold: "Hold 5M $HOLDTECH",
     tierScoutDesc: "Watchlist · Historical scans · Batch scan 5 tokens · Trajectory alerts",
     tierOperator: "OPERATOR",
-    tierOperatorHold: "Hold 10M $SCOPE",
+    tierOperatorHold: "Hold 10M $HOLDTECH",
     tierOperatorDesc: "Real-time launch feed · Drill alerts · Known bundler warnings · API access",
     tierWhale: "WHALE",
-    tierWhaleHold: "Hold 50M $SCOPE",
+    tierWhaleHold: "Hold 50M $HOLDTECH",
     tierWhaleDesc: "Unlimited everything · Raw data export · Priority RPC · Early features",
     scopeFeed: "REAL-TIME FEED",
     scopeFeedDesc: "Every new pump.fun deploy auto-scanned and scored within 30 seconds. Stop finding tokens after the drill — find them before.",
@@ -274,19 +274,19 @@ const T = {
     holders: "名持有者...",
     footer: "入场前先了解",
     footerData: "数据来源：Helius RPC · 钱包年龄基于首笔链上交易 · 前100名持有者 · 结果仅供参考",
-    scopeTitle: "$SCOPE",
+    scopeTitle: "$HOLDTECH",
     scopeTagline: "别再当drillpig了。",
-    scopeDesc: "HoldTech免费使用。持有$SCOPE获得优势。",
+    scopeDesc: "HoldTech免费使用。持有$HOLDTECH获得优势。",
     tierFree: "免费",
     tierFreeDesc: "单次扫描，有频率限制。自己验证效果。",
     tierScout: "侦察兵",
-    tierScoutHold: "持有 5M $SCOPE",
+    tierScoutHold: "持有 5M $HOLDTECH",
     tierScoutDesc: "关注列表 · 历史扫描 · 批量扫描5个代币 · 趋势提醒",
     tierOperator: "操作员",
-    tierOperatorHold: "持有 10M $SCOPE",
+    tierOperatorHold: "持有 10M $HOLDTECH",
     tierOperatorDesc: "实时上线动态 · 钻探预警 · 已知捆绑者警告 · API访问",
     tierWhale: "鲸鱼",
-    tierWhaleHold: "持有 50M $SCOPE",
+    tierWhaleHold: "持有 50M $HOLDTECH",
     tierWhaleDesc: "无限制使用 · 原始数据导出 · 优先RPC · 抢先体验",
     scopeFeed: "实时动态",
     scopeFeedDesc: "每个新的pump.fun代币在30秒内自动扫描评分。不要在被钻之后才发现代币——在之前就发现它。",
@@ -888,7 +888,7 @@ export default function Home() {
           <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
             <button onClick={() => { setResult(null); setVerdict(null); setDeepScan(null); setTokenInfo(null); setMint(""); setError(""); setDeepScanError(""); }} style={{ display: "flex", alignItems: "center", gap: "8px", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
               <img src="/logo.png" alt="HoldTech" width={28} height={28} style={{ objectFit: "contain" }} />
-              <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLDER</span><span style={{ color: "var(--text-muted)" }}>SCOPE</span></span>
+              <span style={{ fontSize: "20px", fontWeight: 800 }}><span style={{ color: "var(--accent)" }}>HOLD</span><span style={{ color: "var(--text-muted)" }}>TECH</span></span>
             </button>
             <span className="font-mono" style={{ fontSize: "10px", fontWeight: 600, padding: "3px 8px", borderRadius: "6px", background: "rgba(153,69,255,0.08)", border: "1px solid var(--border-accent)", color: "var(--accent-dark)" }}>BETA</span>
             <a href="/docs" className="font-mono" style={{ fontSize: "11px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px", color: "var(--text-muted)", textDecoration: "none", transition: "all 0.15s" }}
@@ -1093,9 +1093,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* ═══ $SCOPE + EXTENSION ═══ */}
+            {/* ═══ $HOLDTECH + EXTENSION ═══ */}
             <div className="reveal" style={{ marginBottom: "24px", borderRadius: "16px", border: "1px solid var(--border-accent)", overflow: "hidden" }}>
-              {/* $SCOPE header */}
+              {/* $HOLDTECH header */}
               <div style={{ padding: "28px 24px 20px", textAlign: "center", background: "linear-gradient(180deg, rgba(153,69,255,0.06) 0%, transparent 100%)" }}>
                 <div className="font-mono" style={{ fontSize: "24px", fontWeight: 800, background: "linear-gradient(135deg, var(--accent), var(--green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{t.scopeTitle}</div>
                 <div style={{ fontSize: "14px", color: "var(--text-secondary)", marginTop: "6px" }}>{t.scopeDesc}</div>

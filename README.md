@@ -203,9 +203,9 @@ Get a free Helius API key at [helius.dev](https://helius.dev).
 
 ---
 
-## $SCOPE
+## $HOLDTECH
 
-HoldTech is free. $SCOPE holders get the edge.
+HoldTech is free. $HOLDTECH holders get the edge.
 
 | Tier | Holding | Access |
 |------|---------|--------|

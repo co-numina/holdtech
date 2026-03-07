@@ -1,14 +1,14 @@
 # HolderScope Token-Gated Architecture Spec
 
-## Token: $SCOPE
+## Token: $HOLDTECH
 
 ### Tier Thresholds (tunable via env)
 | Tier | Holding | Access |
 |------|---------|--------|
 | Free | 0 | Single scan, rate-limited (5/hr), no history |
-| Scout | 10K $SCOPE | Watchlist (10 tokens), historical scans (7d), batch scan (5 CAs), basic alerts |
-| Operator | 100K $SCOPE | Watchlist (50 tokens), full history, batch scan (20 CAs), real-time launch feed, drill alerts, API key (100 req/hr) |
-| Whale | 1M $SCOPE | Unlimited everything, API (1000 req/hr), raw data export, priority RPC, early features |
+| Scout | 10K $HOLDTECH | Watchlist (10 tokens), historical scans (7d), batch scan (5 CAs), basic alerts |
+| Operator | 100K $HOLDTECH | Watchlist (50 tokens), full history, batch scan (20 CAs), real-time launch feed, drill alerts, API key (100 req/hr) |
+| Whale | 1M $HOLDTECH | Unlimited everything, API (1000 req/hr), raw data export, priority RPC, early features |
 
 Thresholds stored in `config/tiers.ts`, adjustable without redeploy via Upstash Redis override.
 
@@ -189,7 +189,7 @@ Comparison table ranks tokens by quality score, highlights best/worst metrics.
 
 ## Token Economics
 
-**Supply:** 1B $SCOPE
+**Supply:** 1B $HOLDTECH
 **Platform:** pump.fun (eat our own dogfood — let people scan our own token)
 
 **Allocation:**
@@ -198,8 +198,8 @@ Comparison table ranks tokens by quality score, highlights best/worst metrics.
 - Treasury funds: RPC costs, infra, development
 
 **Revenue sinks (future):**
-- Premium API could charge in $SCOPE (burn on use)
-- Watchlist slots purchasable with $SCOPE (burn)
+- Premium API could charge in $HOLDTECH (burn on use)
+- Watchlist slots purchasable with $HOLDTECH (burn)
 - Creates sustained buy pressure beyond speculation
 
 **Narrative:**
