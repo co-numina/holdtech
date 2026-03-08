@@ -354,20 +354,18 @@ function generateVerdict(metrics, totalHolders, tokenSymbol, mint, clusterData =
     const clustered = clusterData.clusteredWalletCount;
     const clusterCount = clusterData.clusterCount;
     if (clustered >= 10) {
-      score -= 35;
+      score -= 20;
       flags.push(`🚨 ${clustered} wallets share funding sources (${clusterCount} clusters) — coordinated cabal`);
     } else if (clustered >= 6) {
-      score -= 25;
+      score -= 15;
       flags.push(`🚨 ${clustered} wallets linked by common funding — likely coordinated`);
     } else if (clustered >= 4) {
-      score -= 15;
+      score -= 10;
       flags.push(`⚠️ ${clustered} wallets share funding sources — possible coordination`);
     } else if (clustered >= 2) {
-      score -= 8;
+      score -= 5;
       flags.push(`⚠️ ${clustered} wallets linked by funding — minor coordination signal`);
     }
-    // Hard cap: 10+ clustered wallets = max grade C
-    if (clustered >= 10 && score > 55) score = 55;
   }
 
   if (totalHolders < 50) flags.push(`ℹ️ ${totalHolders} total holders — very early stage`);
