@@ -287,11 +287,36 @@ export async function POST(req: NextRequest) {
     const txHistory = await getTokenTransactionHistory(mint, 3);
     results.txHistoryCount = txHistory.length;
 
-    // 2. Bundle detection
-    const bundles = detectBundles(txHistory);
-    results.bundles = bundles.slice(0, 10); // Top 10 bundle groups
-    results.bundleCount = bundles.length;
-    results.bundledWalletCount = new Set(bundles.flatMap((b) => b.wallets)).size;
+    // 2. Bundle detection — split into active (still holding) vs historical (sold)
+    const allBundles = detectBundles(txHistory);
+    const currentHolderSet = wallets && wallets.length > 0
+      ? new Set<string>(wallets.map((w: { address: string }) => w.address))
+      : new Set<string>();
+
+    const activeBundles: BundleGroup[] = [];
+    const historicalBundles: BundleGroup[] = [];
+
+    for (const bundle of allBundles) {
+      const activeWallets = bundle.wallets.filter((w) => currentHolderSet.has(w));
+      const historicalWallets = bundle.wallets.filter((w) => !currentHolderSet.has(w));
+
+      if (activeWallets.length >= 2) {
+        activeBundles.push({ ...bundle, wallets: activeWallets, txCount: bundle.txCount });
+      }
+      if (historicalWallets.length > 0) {
+        historicalBundles.push({ ...bundle, wallets: historicalWallets, txCount: bundle.txCount });
+      }
+    }
+
+    results.bundles = activeBundles.slice(0, 10);
+    results.bundleCount = activeBundles.length;
+    results.bundledWalletCount = new Set(activeBundles.flatMap((b) => b.wallets)).size;
+    results.historicalBundles = historicalBundles.slice(0, 10);
+    results.historicalBundleCount = historicalBundles.length;
+    results.historicalBundledWalletCount = new Set(historicalBundles.flatMap((b) => b.wallets)).size;
+    // Legacy totals for backward compat
+    results.totalBundleCount = allBundles.length;
+    results.totalBundledWalletCount = new Set(allBundles.flatMap((b) => b.wallets)).size;
 
     // 3. Buy timeline
     if (wallets && wallets.length > 0) {
