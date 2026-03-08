@@ -18,7 +18,8 @@ function generateVerdict(
   metrics: Metrics,
   totalHolders: number,
   tokenSymbol: string,
-  tokenAgeHours: number | null
+  tokenAgeHours: number | null,
+  clusterData?: { clusteredWalletCount: number; clusterCount: number } | null
 ): { score: number; grade: string; verdict: string; flags: string[] } {
   let score = 50;
   const flags: string[] = [];
@@ -127,6 +128,26 @@ function generateVerdict(
     flags.push(`⚠️ Average only ${metrics.avgSolBalance} SOL — dust wallets, low conviction`);
   }
 
+  // ═══ FUNDING CLUSTERS — coordinated wallets ═══
+  if (clusterData && clusterData.clusteredWalletCount > 0) {
+    const clustered = clusterData.clusteredWalletCount;
+    const clusterCount = clusterData.clusterCount;
+    if (clustered >= 10) {
+      score -= 35;
+      flags.push(`🚨 ${clustered} wallets share funding sources (${clusterCount} clusters) — coordinated cabal`);
+    } else if (clustered >= 6) {
+      score -= 25;
+      flags.push(`🚨 ${clustered} wallets linked by common funding — likely coordinated`);
+    } else if (clustered >= 4) {
+      score -= 15;
+      flags.push(`⚠️ ${clustered} wallets share funding sources — possible coordination`);
+    } else if (clustered >= 2) {
+      score -= 8;
+      flags.push(`⚠️ ${clustered} wallets linked by funding — minor coordination signal`);
+    }
+    if (clustered >= 10 && score > 55) score = 55;
+  }
+
   // ═══ HOLDER COUNT context (informational) ═══
   if (totalHolders < 50) {
     flags.push(`ℹ️ ${totalHolders} total holders — very early stage`);
@@ -167,13 +188,13 @@ function generateVerdict(
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
-    const { metrics, totalHolders, analyzedHolders, tokenSymbol, tokenAgeHours, mint } = data;
+    const { metrics, totalHolders, analyzedHolders, tokenSymbol, tokenAgeHours, mint, clusterData } = data;
     
     if (!metrics) {
       return NextResponse.json({ error: "Missing metrics" }, { status: 400 });
     }
 
-    const result = generateVerdict(metrics, totalHolders, tokenSymbol, tokenAgeHours ?? null);
+    const result = generateVerdict(metrics, totalHolders, tokenSymbol, tokenAgeHours ?? null, clusterData ?? null);
     
     // Native token — age-aware scoring adjustment
     if (mint === "ENvMgAAzKRffbMpKWzNmZxmRTmNhjNFNazbEJjsJpump") {

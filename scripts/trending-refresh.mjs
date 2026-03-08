@@ -257,7 +257,64 @@ async function runScan(mint, limit = 20) {
 }
 
 // ─── Verdict ───
-function generateVerdict(metrics, totalHolders, tokenSymbol, mint) {
+// ─── Lightweight funding cluster detection ───
+async function detectFundingClusters(holders) {
+  const fundingSources = [];
+  // Check top 20 non-pool holders for common funding
+  const toCheck = holders.filter(h => !h.isPool).slice(0, 20);
+  
+  for (let i = 0; i < toCheck.length; i += 5) {
+    const batch = toCheck.slice(i, i + 5);
+    const results = await Promise.allSettled(
+      batch.map(async h => {
+        try {
+          const sigs = await heliusRpc("getSignaturesForAddress", [h.address || h.owner, { limit: 20 }]);
+          if (!sigs?.length) return { wallet: h.address || h.owner, fundedBy: null };
+          
+          const sorted = [...sigs].sort((a, b) => (a.blockTime || 0) - (b.blockTime || 0));
+          for (const sig of sorted.slice(0, 3)) {
+            try {
+              const tx = await heliusRpc("getTransaction", [sig.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }]);
+              if (!tx?.meta?.preBalances || !tx?.meta?.postBalances) continue;
+              const keys = tx.transaction?.message?.accountKeys || [];
+              const wallet = h.address || h.owner;
+              const wIdx = keys.findIndex(k => (typeof k === "string" ? k : k.pubkey) === wallet);
+              if (wIdx === -1) continue;
+              const diff = ((tx.meta.postBalances[wIdx] || 0) - (tx.meta.preBalances[wIdx] || 0)) / 1e9;
+              if (diff > 0.01) {
+                const fpKey = keys[0];
+                const feePayer = typeof fpKey === "string" ? fpKey : fpKey?.pubkey;
+                if (feePayer && feePayer !== wallet) return { wallet, fundedBy: feePayer };
+              }
+            } catch {}
+          }
+          return { wallet: h.address || h.owner, fundedBy: null };
+        } catch { return { wallet: h.address || h.owner, fundedBy: null }; }
+      })
+    );
+    for (const r of results) if (r.status === "fulfilled") fundingSources.push(r.value);
+    if (i + 5 < toCheck.length) await new Promise(r => setTimeout(r, 50));
+  }
+
+  // Cluster: group by common funder
+  const funderMap = new Map();
+  for (const fs of fundingSources) {
+    if (fs.fundedBy) {
+      if (!funderMap.has(fs.fundedBy)) funderMap.set(fs.fundedBy, []);
+      funderMap.get(fs.fundedBy).push(fs.wallet);
+    }
+  }
+  
+  const clusters = Array.from(funderMap.entries())
+    .filter(([, wallets]) => wallets.length >= 2)
+    .map(([funder, wallets]) => ({ funder, wallets, count: wallets.length }))
+    .sort((a, b) => b.count - a.count);
+
+  const clusteredWalletCount = clusters.reduce((s, c) => s + c.count, 0);
+  return { clusters, clusterCount: clusters.length, clusteredWalletCount };
+}
+
+function generateVerdict(metrics, totalHolders, tokenSymbol, mint, clusterData = null) {
   let score = 50;
   const flags = [];
 
@@ -291,6 +348,27 @@ function generateVerdict(metrics, totalHolders, tokenSymbol, mint) {
 
   if (metrics.avgSolBalance > 5) { score += 5; flags.push(`✅ Average ${metrics.avgSolBalance} SOL per wallet — holders have capital`); }
   else if (metrics.avgSolBalance < 0.5) { score -= 8; flags.push(`⚠️ Average only ${metrics.avgSolBalance} SOL — dust wallets, low conviction`); }
+
+  // ═══ FUNDING CLUSTERS — coordinated wallets ═══
+  if (clusterData && clusterData.clusteredWalletCount > 0) {
+    const clustered = clusterData.clusteredWalletCount;
+    const clusterCount = clusterData.clusterCount;
+    if (clustered >= 10) {
+      score -= 35;
+      flags.push(`🚨 ${clustered} wallets share funding sources (${clusterCount} clusters) — coordinated cabal`);
+    } else if (clustered >= 6) {
+      score -= 25;
+      flags.push(`🚨 ${clustered} wallets linked by common funding — likely coordinated`);
+    } else if (clustered >= 4) {
+      score -= 15;
+      flags.push(`⚠️ ${clustered} wallets share funding sources — possible coordination`);
+    } else if (clustered >= 2) {
+      score -= 8;
+      flags.push(`⚠️ ${clustered} wallets linked by funding — minor coordination signal`);
+    }
+    // Hard cap: 10+ clustered wallets = max grade C
+    if (clustered >= 10 && score > 55) score = 55;
+  }
 
   if (totalHolders < 50) flags.push(`ℹ️ ${totalHolders} total holders — very early stage`);
   else if (totalHolders > 5000) flags.push(`ℹ️ ${totalHolders.toLocaleString()} total holders — widely distributed`);
@@ -396,7 +474,7 @@ async function main() {
   const [hot, live, graduated, active, boosted, advancedHolders] = await Promise.all([
     getPumpCoins("?limit=10&sort=market_cap&order=DESC&includeNsfw=false", "pump_hot"),
     getPumpCoins("/currently-live?limit=10&includeNsfw=false", "pump_live"),
-    getPumpCoins("?limit=15&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_graduated"),
+    getPumpCoins("?limit=50&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_graduated"),
     getPumpCoins("?limit=10&sort=last_trade_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_active"),
     getDexBoosted(),
     getAdvancedHolderData(),
@@ -433,13 +511,17 @@ async function main() {
         // Use pump.fun advanced API for holder count (fast, no DAS pagination)
         const adv = advancedHolders.get(token.mint);
         const realHolderCount = adv?.numHolders || scan.totalHolders;
-        const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint);
-        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s] holders:${realHolderCount}`);
+        // Lightweight cluster detection on scanned wallets
+        const clusterData = await detectFundingClusters(scan.topHolders || []);
+        const elapsed2 = ((Date.now() - t0) / 1000).toFixed(1);
+        const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint, clusterData);
+        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed2}s] holders:${realHolderCount} clusters:${clusterData.clusteredWalletCount}`);
         return {
           ...token, holderCount: realHolderCount, sniperCount: adv?.sniperCount || 0,
           freshPct: scan.metrics.freshWalletPct, avgWalletAgeDays: scan.metrics.avgWalletAgeDays,
           grade: verdict.grade, score: verdict.score, verdict: verdict.verdict, flags: verdict.flags,
           metrics: scan.metrics, topHolders: scan.topHolders, distribution: scan.distribution,
+          clusterData: { clusterCount: clusterData.clusterCount, clusteredWalletCount: clusterData.clusteredWalletCount },
         };
       })
     );
@@ -472,11 +554,19 @@ async function main() {
     sources: ["pump_hot", "pump_live", "pump_graduated", "pump_active", "dex_boosted"],
   };
 
-  await redisCmd(["SET", "trending:results", JSON.stringify(result), "EX", "600"]);
-  console.log(`📦 Cached ${scored.length} tokens to Redis (10 min TTL)\n`);
+  await redisCmd(["SET", "trending:results", JSON.stringify(result), "EX", "1800"]);
+  console.log(`📦 Cached ${scored.length} tokens to Redis (30 min TTL)\n`);
 }
 
-main().catch(err => {
-  console.error("❌ Fatal error:", err);
-  process.exit(1);
-});
+const LOOP = process.argv.includes("--loop");
+const INTERVAL = 5 * 60 * 1000; // 5 min
+
+async function run() {
+  await main().catch(err => console.error("❌ Error:", err));
+  if (LOOP) {
+    console.log(`⏳ Next refresh in 5 min...\n`);
+    setTimeout(run, INTERVAL);
+  }
+}
+
+run();
