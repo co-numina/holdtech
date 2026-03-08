@@ -44,8 +44,9 @@ async function heliusRpc(method, params) {
   return data.result;
 }
 
-// ─── Wallet info cache (Redis, 30 min TTL) ───
+// ─── Cache layers (Redis) ───
 const WALLET_CACHE_TTL = 1800; // 30 min
+const SCAN_CACHE_TTL = 600;    // 10 min — full token scan result
 async function getCachedWalletInfo(wallet) {
   try {
     const cached = await redisCmd(["GET", `wi:${wallet}`]);
@@ -542,7 +543,19 @@ async function main() {
     const results = await Promise.allSettled(
       batch.map(async token => {
         const t0 = Date.now();
-        const scan = await runScan(token.mint, 20);
+        // Check scan cache first
+        let scan = null;
+        let fromCache = false;
+        try {
+          const cached = await redisCmd(["GET", `scan:${token.mint}`]);
+          if (cached) { scan = typeof cached === "string" ? JSON.parse(cached) : cached; fromCache = true; }
+        } catch {}
+        if (!scan) {
+          scan = await runScan(token.mint, 20);
+          if (scan) {
+            try { await redisCmd(["SET", `scan:${token.mint}`, JSON.stringify(scan), "EX", SCAN_CACHE_TTL]); } catch {}
+          }
+        }
         const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
         if (!scan) {
           console.log(`  ✗ ${token.symbol} (${token.source}) — failed [${elapsed}s]`);
@@ -551,7 +564,8 @@ async function main() {
         const adv = advancedHolders.get(token.mint);
         const realHolderCount = adv?.numHolders || scan.totalHolders;
         const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint);
-        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s] holders:${realHolderCount}`);
+        const tag = fromCache ? "⚡" : "✓";
+        console.log(`  ${tag} ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s] holders:${realHolderCount}`);
         return {
           ...token, holderCount: realHolderCount, sniperCount: adv?.sniperCount || 0,
           freshPct: scan.metrics.freshWalletPct, avgWalletAgeDays: scan.metrics.avgWalletAgeDays,
