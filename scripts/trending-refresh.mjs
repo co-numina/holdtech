@@ -532,9 +532,22 @@ async function main() {
   console.log(`  ${tokens.length} unique tokens after dedup`);
 
   // Filter: only scan tokens with mcap >= $20K (skip dust)
-  const toScan = tokens.filter(t => t.marketCap >= 20000);
+  const eligible = tokens.filter(t => t.marketCap >= 20000);
   const skipped = tokens.filter(t => t.marketCap < 20000);
-  console.log(`  Scanning ${toScan.length} tokens (${skipped.length} skipped below $20K mcap)`);
+  
+  // Prioritize: new tokens (no cache) first, then cached tokens
+  const newTokens = [];
+  const cachedTokens = [];
+  for (const t of eligible) {
+    try {
+      const cached = await redisCmd(["EXISTS", `scan:${t.mint}`]);
+      if (cached) cachedTokens.push(t);
+      else newTokens.push(t);
+    } catch { newTokens.push(t); }
+  }
+  // Scan new graduates first, then backfill cached ones
+  const toScan = [...newTokens, ...cachedTokens];
+  console.log(`  Scanning ${toScan.length} tokens (${newTokens.length} new, ${cachedTokens.length} cached, ${skipped.length} skipped below $20K mcap)`);
   const scored = [];
 
   // Phase 1: Basic scan (3 at a time)
@@ -555,6 +568,7 @@ async function main() {
           if (scan) {
             try { await redisCmd(["SET", `scan:${token.mint}`, JSON.stringify(scan), "EX", SCAN_CACHE_TTL]); } catch {}
           }
+          // Don't cache failures — retry next cycle
         }
         const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
         if (!scan) {
