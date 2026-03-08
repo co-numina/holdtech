@@ -431,6 +431,31 @@ async function getDexBoosted() {
   } catch { return []; }
 }
 
+// Paginated graduated coin fetcher — pulls multiple pages
+async function getPumpGraduatedPaginated(total = 200) {
+  const allCoins = [];
+  const perPage = 50;
+  for (let offset = 0; offset < total; offset += perPage) {
+    try {
+      const res = await fetch(
+        `https://frontend-api-v3.pump.fun/coins?limit=${perPage}&offset=${offset}&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true`,
+        { signal: AbortSignal.timeout(6000) }
+      );
+      if (!res.ok) break;
+      const data = await res.json();
+      if (!data?.length) break;
+      for (const c of data) {
+        allCoins.push({
+          mint: c.mint, name: c.name || "Unknown", symbol: c.symbol || "???",
+          image: c.image_uri || null, marketCap: Math.round(c.usd_market_cap || 0), source: "pump_graduated",
+        });
+      }
+      if (data.length < perPage) break;
+    } catch { break; }
+  }
+  return allCoins;
+}
+
 // Fetch real holder counts + top holders from pump.fun advanced API
 async function getAdvancedHolderData() {
   const holderMap = new Map(); // mint -> { numHolders, holders[] }
@@ -472,7 +497,7 @@ async function main() {
   const [hot, live, graduated, active, boosted, advancedHolders] = await Promise.all([
     getPumpCoins("?limit=10&sort=market_cap&order=DESC&includeNsfw=false", "pump_hot"),
     getPumpCoins("/currently-live?limit=10&includeNsfw=false", "pump_live"),
-    getPumpCoins("?limit=50&sort=created_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_graduated"),
+    getPumpGraduatedPaginated(200),
     getPumpCoins("?limit=10&sort=last_trade_timestamp&order=DESC&includeNsfw=false&complete=true", "pump_active"),
     getDexBoosted(),
     getAdvancedHolderData(),
@@ -491,10 +516,13 @@ async function main() {
   tokens = tokens.filter(t => { if (seen.has(t.mint)) return false; seen.add(t.mint); return true; });
   console.log(`  ${tokens.length} unique tokens after dedup`);
 
-  // Scan all tokens — 3 at a time (local, no timeout constraint)
-  const toScan = tokens;
+  // Filter: only scan tokens with mcap >= $20K (skip dust)
+  const toScan = tokens.filter(t => t.marketCap >= 20000);
+  const skipped = tokens.filter(t => t.marketCap < 20000);
+  console.log(`  Scanning ${toScan.length} tokens (${skipped.length} skipped below $20K mcap)`);
   const scored = [];
 
+  // Phase 1: Basic scan (3 at a time)
   for (let i = 0; i < toScan.length; i += 3) {
     const batch = toScan.slice(i, i + 3);
     const results = await Promise.allSettled(
@@ -506,25 +534,52 @@ async function main() {
           console.log(`  ✗ ${token.symbol} (${token.source}) — failed [${elapsed}s]`);
           return { ...token, holderCount: 0, freshPct: 0, avgWalletAgeDays: 0, grade: "?", score: 0 };
         }
-        // Use pump.fun advanced API for holder count (fast, no DAS pagination)
         const adv = advancedHolders.get(token.mint);
         const realHolderCount = adv?.numHolders || scan.totalHolders;
-        // Lightweight cluster detection on scanned wallets
-        const clusterData = await detectFundingClusters(scan.topHolders || []);
-        const elapsed2 = ((Date.now() - t0) / 1000).toFixed(1);
-        const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint, clusterData);
-        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed2}s] holders:${realHolderCount} clusters:${clusterData.clusteredWalletCount}`);
+        // First pass verdict (no cluster data yet)
+        const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint);
+        console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s] holders:${realHolderCount}`);
         return {
           ...token, holderCount: realHolderCount, sniperCount: adv?.sniperCount || 0,
           freshPct: scan.metrics.freshWalletPct, avgWalletAgeDays: scan.metrics.avgWalletAgeDays,
           grade: verdict.grade, score: verdict.score, verdict: verdict.verdict, flags: verdict.flags,
           metrics: scan.metrics, topHolders: scan.topHolders, distribution: scan.distribution,
-          clusterData: { clusterCount: clusterData.clusterCount, clusteredWalletCount: clusterData.clusteredWalletCount },
+          _scan: scan, _adv: adv,
         };
       })
     );
     for (const r of results) { if (r.status === "fulfilled") scored.push(r.value); }
   }
+
+  // Phase 2: Cluster detection only on tokens scoring >= 40 (potential feed candidates)
+  const clusterCandidates = scored.filter(t => t.score >= 40 && t.topHolders?.length > 0);
+  console.log(`  Running cluster detection on ${clusterCandidates.length} candidates...`);
+  
+  for (let i = 0; i < clusterCandidates.length; i += 3) {
+    const batch = clusterCandidates.slice(i, i + 3);
+    await Promise.allSettled(
+      batch.map(async token => {
+        try {
+          const clusterData = await detectFundingClusters(token.topHolders || []);
+          if (clusterData.clusteredWalletCount > 0) {
+            // Re-score with cluster data
+            const adv = token._adv;
+            const realHolderCount = token.holderCount;
+            const verdict = generateVerdict(token.metrics, realHolderCount, token.symbol, token.mint, clusterData);
+            token.grade = verdict.grade;
+            token.score = verdict.score;
+            token.verdict = verdict.verdict;
+            token.flags = verdict.flags;
+            console.log(`  ↻ ${token.symbol} rescored to ${verdict.grade} (${verdict.score}) — ${clusterData.clusteredWalletCount} clustered wallets`);
+          }
+          token.clusterData = { clusterCount: clusterData.clusterCount, clusteredWalletCount: clusterData.clusteredWalletCount };
+        } catch {}
+      })
+    );
+  }
+
+  // Clean up internal fields
+  for (const t of scored) { delete t._scan; delete t._adv; }
 
   // Add remaining unscanned tokens
   const scannedMints = new Set(scored.map(t => t.mint));
