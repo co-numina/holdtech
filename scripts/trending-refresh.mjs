@@ -44,7 +44,21 @@ async function heliusRpc(method, params) {
   return data.result;
 }
 
-async function getWalletInfo(wallet) {
+// ─── Wallet info cache (Redis, 30 min TTL) ───
+const WALLET_CACHE_TTL = 1800; // 30 min
+async function getCachedWalletInfo(wallet) {
+  try {
+    const cached = await redisCmd(["GET", `wi:${wallet}`]);
+    if (cached) return typeof cached === "string" ? JSON.parse(cached) : cached;
+  } catch {}
+  const info = await getWalletInfoRaw(wallet);
+  try {
+    await redisCmd(["SET", `wi:${wallet}`, JSON.stringify(info), "EX", WALLET_CACHE_TTL]);
+  } catch {}
+  return info;
+}
+
+async function getWalletInfoRaw(wallet) {
   const [sigsResult, balResult, tokensResult] = await Promise.allSettled([
     heliusRpc("getSignaturesForAddress", [wallet, { limit: 1000 }]),
     heliusRpc("getBalance", [wallet]),
@@ -187,7 +201,7 @@ async function runScan(mint, limit = 20) {
       const batch = holders.slice(i, i + 5);
       const results = await Promise.allSettled(
         batch.map(async h => {
-          const info = await getWalletInfo(h.owner);
+          const info = await getCachedWalletInfo(h.owner);
           const ageDays = info.firstTxTime ? (now - info.firstTxTime) / (1000 * 60 * 60 * 24) : 0;
           return {
             address: h.owner, balance: h.amount,
@@ -528,7 +542,7 @@ async function main() {
     const results = await Promise.allSettled(
       batch.map(async token => {
         const t0 = Date.now();
-        const scan = await runScan(token.mint, 20);
+        const scan = await runScan(token.mint, 10);
         const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
         if (!scan) {
           console.log(`  ✗ ${token.symbol} (${token.source}) — failed [${elapsed}s]`);
@@ -612,7 +626,7 @@ async function main() {
 }
 
 const LOOP = process.argv.includes("--loop");
-const INTERVAL = 5 * 60 * 1000; // 5 min
+const INTERVAL = 10 * 60 * 1000; // 10 min
 
 async function run() {
   await main().catch(err => console.error("❌ Error:", err));
