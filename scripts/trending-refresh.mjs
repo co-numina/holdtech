@@ -523,8 +523,8 @@ async function main() {
   const scored = [];
 
   // Phase 1: Basic scan (3 at a time)
-  for (let i = 0; i < toScan.length; i += 3) {
-    const batch = toScan.slice(i, i + 3);
+  for (let i = 0; i < toScan.length; i += 2) {
+    const batch = toScan.slice(i, i + 2);
     const results = await Promise.allSettled(
       batch.map(async token => {
         const t0 = Date.now();
@@ -536,7 +536,6 @@ async function main() {
         }
         const adv = advancedHolders.get(token.mint);
         const realHolderCount = adv?.numHolders || scan.totalHolders;
-        // First pass verdict (no cluster data yet)
         const verdict = generateVerdict(scan.metrics, realHolderCount, scan.tokenSymbol, token.mint);
         console.log(`  ✓ ${token.symbol} ${verdict.grade} (${verdict.score}) — ${token.source} [${elapsed}s] holders:${realHolderCount}`);
         return {
@@ -549,7 +548,7 @@ async function main() {
       })
     );
     for (const r of results) { if (r.status === "fulfilled") scored.push(r.value); }
-    if (i + 3 < toScan.length) await new Promise(r => setTimeout(r, 500));
+    if (i + 2 < toScan.length) await new Promise(r => setTimeout(r, 1000));
   }
 
   // Phase 2: Cluster detection only on tokens scoring >= 40 (potential feed candidates)
