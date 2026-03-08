@@ -542,7 +542,7 @@ async function main() {
     const results = await Promise.allSettled(
       batch.map(async token => {
         const t0 = Date.now();
-        const scan = await runScan(token.mint, 10);
+        const scan = await runScan(token.mint, 20);
         const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
         if (!scan) {
           console.log(`  ✗ ${token.symbol} (${token.source}) — failed [${elapsed}s]`);
