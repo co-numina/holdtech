@@ -549,6 +549,7 @@ async function main() {
       })
     );
     for (const r of results) { if (r.status === "fulfilled") scored.push(r.value); }
+    if (i + 3 < toScan.length) await new Promise(r => setTimeout(r, 500));
   }
 
   // Phase 2: Cluster detection only on tokens scoring >= 40 (potential feed candidates)
